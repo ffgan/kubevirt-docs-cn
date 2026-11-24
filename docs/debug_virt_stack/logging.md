@@ -1,10 +1,10 @@
-# Control libvirt logging for each component
+# 控制每个组件的 libvirt 日志 {#control-libvirt-logging-for-each-component}
 
-Generally, cluster admins can control the log verbosity of each KubeVirt component in KubeVirt CR. For more details, please, check the [KubeVirt documentation](https://kubevirt.io/user-guide/operations/debug/#log-verbosity).
+通常，集群管理员可以在 KubeVirt CR 中控制每个 KubeVirt 组件的日志详细级别。更多细节请查阅 [KubeVirt 文档](https://kubevirt.io/user-guide/operations/debug/#log-verbosity)。
 
-Nonetheless, regular users can also adjust the qemu component logging to have a finer control over it. The annotation `kubevirt.io/libvirt-log-filters` enables you to modify each component's log level.
+尽管如此，普通用户也可以调整 qemu 组件的日志记录，以便对它进行更精细的控制。注解 `kubevirt.io/libvirt-log-filters` 使你能够修改每个组件的日志级别。
 
-Example:
+示例：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachineInstance
@@ -40,7 +40,7 @@ spec:
     name: cloudinitdisk
 ```
 
-Then, it is possible to obtain the logs from the virt-launcher output:
+然后，就可以从 virt-launcher 的输出中取得这些日志：
 
 ```console
 $ kubectl get pods
@@ -55,10 +55,9 @@ $ kubectl  logs virt-launcher-vmi-debug-tools-fk64q
 [..]
 ```
 
-The annotation enables the filter from the container creation. However, in
-certain cases you might desire to change the logging level dynamically once the container and libvirt have already been started. In this case, [`virt-admin`](https://libvirt.org/manpages/virt-admin.html) comes to the rescue.
+该注解从容器创建之时起就启用过滤器。不过，在某些情况下，你可能希望在容器和 libvirt 都已经启动之后，动态地更改日志级别。这时，[`virt-admin`](https://libvirt.org/manpages/virt-admin.html) 就能派上用场。
 
-Example:
+示例：
 ```console
 $ kubectl get pods
 NAME                                READY   STATUS    RESTARTS   AGE
@@ -68,9 +67,9 @@ $ kubectl  exec -ti virt-launcher-vmi-ephemeral-nqcld -- virt-admin  -c virtqemu
  Logging filters: 1:*libvirt* 1:*qemu* 1:*conf* 1:*security* 3:*event* 3:*json* 3:*file* 3:*object* 1:*util*
 ```
 
-Otherwise, if you prefer to redirect the output to a file and fetch it later, you can rely on `kubectl cp` to retrieve the file. In this case, we are saving the file in the `/var/run/libvirt` directory because the compute container has the permissions to write there.
+或者，如果你更希望把输出重定向到文件并在稍后获取它，可以依靠 `kubectl cp` 来取回该文件。在这种情况下，我们把文件保存在 `/var/run/libvirt` 目录中，因为 compute 容器拥有向该目录写入的权限。
 
-Example:
+示例：
 ```console
 $ kubectl get pods
 NAME                                READY   STATUS    RESTARTS   AGE

@@ -1,15 +1,15 @@
 
-## Customize KubeVirt Components
+## 自定义 KubeVirt 组件 {#customize-kubevirt-components}
 
 
-### Customize components using patches
+### 使用补丁自定义组件 {#customize-components-using-patches}
 
-> :warning: If the patch created is invalid KubeVirt will not be able to update or deploy the system. This is intended for special use cases and should not be used unless you know what you are doing.
+> :warning: 如果创建的补丁无效，KubeVirt 将无法更新或部署系统。此功能面向特殊用例，除非你清楚自己在做什么，否则不应使用。
 
-Valid resource types are: Deployment, DaemonSet, Service, ValidatingWebhookConfiguraton, MutatingWebhookConfiguration, APIService, and CertificateSecret. More information can be found in the [API spec](http://kubevirt.io/api-reference/master/definitions.html#_v1_customizecomponentspatch).
+有效的资源类型有：Deployment、DaemonSet、Service、ValidatingWebhookConfiguraton、MutatingWebhookConfiguration、APIService 和 CertificateSecret。更多信息见 [API 规范](http://kubevirt.io/api-reference/master/definitions.html#_v1_customizecomponentspatch)。
 
 
-Example customization patch:
+自定义补丁示例：
 ```yaml
 ---
 apiVersion: kubevirt.io/v1
@@ -32,15 +32,15 @@ spec:
       type: strategic
 ```
 
-The above example will update the `virt-controller` deployment to have an annotation in it's metadata that says `patch: true` and will remove the livenessProbe from the container definition.
+上面的示例会更新 `virt-controller` Deployment，在其 metadata 中添加内容为 `patch: true` 的注解，并从容器定义中移除 livenessProbe。
 
 
-### Customize Flags
+### 自定义标志 {#customize-flags}
 
-> :warning: If the flags are invalid or become invalid on update the component will not be able to run
+> :warning: 如果标志无效，或在更新后变为无效，组件将无法运行
 
 
-By using the customize flag option, whichever component the flags are to be applied to, all default flags will be removed and only the flags specified will be used. The available resources to change the flags on are `api`, `controller` and `handler`. You can find our more details about the API in the [API spec](http://kubevirt.io/api-reference/master/definitions.html#_v1_flags).
+使用自定义标志选项时，对于要应用标志的组件，所有默认标志都会被移除，只使用指定的标志。可以更改标志的可用资源是 `api`、`controller` 和 `handler`。关于该 API 的更多细节见 [API 规范](http://kubevirt.io/api-reference/master/definitions.html#_v1_flags)。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -60,7 +60,7 @@ spec:
         subresources-only: "true"
 ```
 
-The above example would produce a `virt-api` pod with the following command
+上面的示例会生成一个 `virt-api` Pod，其命令如下
 
 ```yaml
 ...
@@ -79,4 +79,4 @@ spec:
     - --subresources-only
     - "true"
     ...
-```    
+```

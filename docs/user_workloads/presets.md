@@ -1,24 +1,15 @@
-# Presets
+# 预设 {#presets}
 
-**FEATURE STATE:** 
+**功能状态：**
 
-* `VirtualMachineInstancePresets` are deprecated as of the [`v0.57.0`](https://github.com/kubevirt/kubevirt/releases/tag/v0.57.0) release and will be removed in a future release. 
-* Users should instead look to use [Instancetypes and preferences](../user_workloads/instancetypes.md) as a replacement.
+* `VirtualMachineInstancePresets` 自 [`v0.57.0`](https://github.com/kubevirt/kubevirt/releases/tag/v0.57.0) 发行版起已被弃用，并将在未来的发行版中移除。
+* 用户应转而考虑使用[实例类型和偏好](../user_workloads/instancetypes.md)作为替代。
 
-`VirtualMachineInstancePresets` are an extension to general
-`VirtualMachineInstance` configuration behaving much like `PodPresets`
-from Kubernetes. When a `VirtualMachineInstance` is created, any
-applicable `VirtualMachineInstancePresets` will be applied to the
-existing spec for the `VirtualMachineInstance`. This allows for re-use
-of common settings that should apply to multiple
-`VirtualMachineInstances`.
+`VirtualMachineInstancePresets` 是对一般 `VirtualMachineInstance` 配置的扩展，其行为很像 Kubernetes 中的 `PodPresets`。当创建 `VirtualMachineInstance` 时，任何适用的 `VirtualMachineInstancePresets` 都会应用到该 `VirtualMachineInstance` 的现有 spec 上。这样就可以复用应当应用于多个 `VirtualMachineInstances` 的通用设置。
 
-## Create a VirtualMachineInstancePreset
+## 创建 VirtualMachineInstancePreset {#create-a-virtualmachineinstancepreset}
 
-You can describe a `VirtualMachineInstancePreset` in a YAML file. For
-example, the `vmi-preset.yaml` file below describes a
-`VirtualMachineInstancePreset` that requests a `VirtualMachineInstance`
-be created with a resource request for 64M of RAM.
+你可以在 YAML 文件中描述 `VirtualMachineInstancePreset`。例如，下面的 `vmi-preset.yaml` 文件描述了一个 `VirtualMachineInstancePreset`，它请求在创建 `VirtualMachineInstance` 时带有 64M RAM 的资源请求。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -35,77 +26,39 @@ spec:
         memory: 64M
 ```
 
--   Create a `VirtualMachineInstancePreset` based on that YAML file:
+-   基于该 YAML 文件创建 `VirtualMachineInstancePreset`：
 
 ```console
     kubectl create -f vmipreset.yaml
 ```
 
-### Required Fields
+### 必填字段 {#required-fields}
 
-As with most Kubernetes resources, a `VirtualMachineInstancePreset`
-requires `apiVersion`, `kind` and `metadata` fields.
+与大多数 Kubernetes 资源一样，`VirtualMachineInstancePreset` 需要 `apiVersion`、`kind` 和 `metadata` 字段。
 
-Additionally `VirtualMachineInstancePresets` also need a `spec` section.
-While not technically required to satisfy syntax, it is strongly
-recommended to include a `Selector` in the `spec` section, otherwise a
-`VirtualMachineInstancePreset` will match all `VirtualMachineInstances`
-in a namespace.
+此外，`VirtualMachineInstancePresets` 还需要一个 `spec` 部分。虽然从语法上讲并非严格必需，但强烈建议包含 `Selector`，并把它放在 `spec` 部分中，否则 `VirtualMachineInstancePreset` 会匹配某个命名空间中的所有 `VirtualMachineInstances`。
 
-### VirtualMachine Selector
+### VirtualMachine 选择器 {#virtualmachine-selector}
 
-KubeVirt uses Kubernetes `Labels` and `Selectors` to determine which
-`VirtualMachineInstancePresets` apply to a given
-`VirtualMachineInstance`, similarly to how `PodPresets` work in
-Kubernetes. If a setting from a `VirtualMachineInstancePreset` is
-applied to a `VirtualMachineInstance`, the `VirtualMachineInstance` will
-be marked with an Annotation upon completion.
+KubeVirt 使用 Kubernetes 的 `Labels` 和 `Selectors` 来确定哪些 `VirtualMachineInstancePresets` 适用于给定的 `VirtualMachineInstance`，这与 Kubernetes 中 `PodPresets` 的工作方式类似。如果来自 `VirtualMachineInstancePreset` 的某项设置被应用到 `VirtualMachineInstance`，该 `VirtualMachineInstance` 会在完成时被标上一条注解。
 
-Any domain structure can be listed in the `spec` of a
-`VirtualMachineInstancePreset`, e.g. Clock, Features, Memory, CPU, or
-Devices such as network interfaces. All elements of the `spec` section
-of a `VirtualMachineInstancePreset` will be applied to the
-`VirtualMachineInstance`.
+可以在 `spec`（属于某个 `VirtualMachineInstancePreset`）中列出任何 domain 结构，例如 Clock、Features、Memory、CPU，或者网络接口等 Devices。该 `spec` 部分（属于 `VirtualMachineInstancePreset`）中的所有元素都会应用到 `VirtualMachineInstance`。
 
-Once a `VirtualMachineInstancePreset` is successfully applied to a
-`VirtualMachineInstance`, the `VirtualMachineInstance` will be marked
-with an annotation to indicate that it was applied. If a conflict occurs
-while a `VirtualMachineInstancePreset` is being applied, that portion of
-the `VirtualMachineInstancePreset` will be skipped.
+一旦 `VirtualMachineInstancePreset` 成功应用到 `VirtualMachineInstance`，该 `VirtualMachineInstance` 会被标上一条注解，以表明它已被应用。如果在应用 `VirtualMachineInstancePreset` 的过程中发生冲突，该 `VirtualMachineInstancePreset` 的相应部分会被跳过。
 
-Any valid `Label` can be matched against, but it is suggested that a
-general rule of thumb is to use os/shortname, e.g.
-`kubevirt.io/os: rhel7`.
+可以匹配任何有效的 `Label`，但建议的经验法则是使用 os/shortname，例如 `kubevirt.io/os: rhel7`。
 
-## Updating a VirtualMachineInstancePreset
+## 更新 VirtualMachineInstancePreset {#updating-a-virtualmachineinstancepreset}
 
-If a `VirtualMachineInstancePreset` is modified, changes will *not* be
-applied to existing `VirtualMachineInstances`. This applies to both the
-`Selector` indicating which `VirtualMachineInstances` should be matched,
-and also the `Domain` section which lists the settings that should be
-applied to a `VirtualMachine`.
+如果修改了 `VirtualMachineInstancePreset`，变更将*不会*应用到现有的 `VirtualMachineInstances`。这既适用于 `Selector`（它表明应当匹配哪些 `VirtualMachineInstances`），也适用于 `Domain` 部分（它列出应当应用到 `VirtualMachine` 的设置）。
 
-## Overrides
+## 覆盖 {#overrides}
 
-`VirtualMachineInstancePresets` use a similar conflict resolution
-strategy to Kubernetes `PodPresets`. If a portion of the domain spec is
-present in both a `VirtualMachineInstance` and a
-`VirtualMachineInstancePreset` and both resources have the identical
-information, then creation of the `VirtualMachineInstance` will continue
-normally. If however there is a difference between the resources, an
-Event will be created indicating which `DomainSpec` element of which
-`VirtualMachineInstancePreset` was overridden. For example: If both the
-`VirtualMachineInstance` and `VirtualMachineInstancePreset` define a
-`CPU`, but use a different number of `Cores`, KubeVirt will note the
-difference.
+`VirtualMachineInstancePresets` 使用与 Kubernetes `PodPresets` 类似的冲突解决策略。如果 domain spec 的某一部分同时存在于 `VirtualMachineInstance` 和 `VirtualMachineInstancePreset` 中，并且两个资源具有完全相同的信息，那么 `VirtualMachineInstance` 的创建会正常继续。但如果这些资源之间存在差异，则会创建一个事件，指出哪个 `DomainSpec` 元素、属于哪个 `VirtualMachineInstancePreset` 被覆盖。例如：如果 `VirtualMachineInstance` 和 `VirtualMachineInstancePreset` 都定义了 `CPU`，但使用了不同数量的 `Cores`，KubeVirt 会记下这一差异。
 
-If any settings from the `VirtualMachineInstancePreset` were
-successfully applied, the `VirtualMachineInstance` will be annotated.
+如果 `VirtualMachineInstancePreset` 中的任何设置被成功应用，该 `VirtualMachineInstance` 会被加上注解。
 
-In the event that there is a difference between the `Domains` of a
-`VirtualMachineInstance` and `VirtualMachineInstancePreset`, KubeVirt
-will create an `Event`. `kubectl get events` can be used to show all
-`Events`. For example:
+如果 `Domains` 在 `VirtualMachineInstance` 与 `VirtualMachineInstancePreset` 之间存在差异，KubeVirt 会创建一个 `Event`。可以使用 `kubectl get events` 来显示所有 `Events`。例如：
 
 ```console
     $ kubectl get events
@@ -115,16 +68,13 @@ will create an `Event`. `kubectl get events` can be used to show all
       2m          2m           1         myvmi.1515bbb8d397f258                       VirtualMachineInstance                                     Warning   Conflict                  virtualmachineinstance-preset-controller   Unable to apply VirtualMachineInstancePreset 'example-preset': spec.cpu: &{6} != &{4}
 ```
 
-## Usage
+## 用法 {#usage}
 
-`VirtualMachineInstancePresets` are namespaced resources, so should be
-created in the same namespace as the `VirtualMachineInstances` that will
-use them:
+`VirtualMachineInstancePresets` 是命名空间作用域的资源，因此应当创建在将要使用它们的 `VirtualMachineInstances` 所在的同一命名空间中：
 
 `kubectl create -f <preset>.yaml [--namespace <namespace>]`
 
-KubeVirt will determine which `VirtualMachineInstancePresets` apply to a
-Particular `VirtualMachineInstance` by matching `Labels`. For example:
+KubeVirt 会确定哪些 `VirtualMachineInstancePresets` 适用于某个特定的 `VirtualMachineInstance`，方式是匹配 `Labels`。例如：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -137,8 +87,7 @@ metadata:
   ...
 ```
 
-would match any `VirtualMachineInstance` in the same namespace with a
-`Label` of `flavor: foo`. For example:
+会匹配同一命名空间中的任何 `VirtualMachineInstance`，其 `Label` 为 `flavor: foo`。例如：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -151,33 +100,17 @@ metadata:
   ...
 ```
 
-## Conflicts
+## 冲突 {#conflicts}
 
-When multiple `VirtualMachineInstancePresets` match a particular
-`VirtualMachineInstance`, if they specify the same settings within a Domain,
-those settings must match. If two `VirtualMachineInstancePresets` have
-conflicting settings (e.g. for the number of CPU cores requested), an error will
-occur, and the `VirtualMachineInstance` will enter the `Failed` state, and a
-`Warning` event will be emitted explaining which settings of which
-`VirtualMachineInstancePresets` were problematic.
+当多个 `VirtualMachineInstancePresets` 匹配某个特定的 `VirtualMachineInstance` 时，如果它们在 Domain 内指定了相同的设置，这些设置必须一致。如果两个 `VirtualMachineInstancePresets` 的设置发生冲突（例如所请求的 CPU 核数），就会发生错误，`VirtualMachineInstance` 会进入 `Failed` 状态，并发出一条 `Warning` 事件，说明哪些 `VirtualMachineInstancePresets` 的哪些设置存在问题。
 
-## Matching Multiple `VirtualMachineInstances`
+## 匹配多个 `VirtualMachineInstances` {#matching-multiple-virtualmachineinstances}
 
-The main use case for `VirtualMachineInstancePresets` is to create
-re-usable settings that can be applied across various machines. Multiple
-methods are available to match the labels of a `VirtualMachineInstance`
-using selectors.
+`VirtualMachineInstancePresets` 的主要用例是创建可以跨各种机器应用的可复用设置。有多种方法可以使用选择器来匹配 `VirtualMachineInstance` 的标签。
 
--   matchLabels: Each `VirtualMachineInstance` can use a specific label
-    shared by all
+-   matchLabels：每个 `VirtualMachineInstance` 都可以使用一个由所有实例共享的特定标签。\* matchExpressions：可以使用集合的逻辑运算符来匹配多个标签。
 
-    instances. \* matchExpressions: Logical operators for sets can be
-    used to match multiple
-
-    labels.
-
-Using matchLabels, the label used in the `VirtualMachineInstancePreset`
-must match one of the labels of the `VirtualMachineInstance`:
+使用 matchLabels 时，`VirtualMachineInstancePreset` 中所使用的标签必须匹配 `VirtualMachineInstance` 的标签之一：
 
 ```yaml
 selector:
@@ -185,7 +118,7 @@ selector:
     kubevirt.io/memory: large
 ```
 
-would match
+会匹配
 
 ```yaml
 metadata:
@@ -194,7 +127,7 @@ metadata:
     kubevirt.io/os: win10
 ```
 
-or
+或
 
 ```yaml
 metadata:
@@ -203,8 +136,7 @@ metadata:
     kubevirt.io/os: fedora27
 ```
 
-Using matchExpressions allows for matching multiple labels of
-`VirtualMachineInstances` without needing to explicity list a label.
+使用 matchExpressions 可以匹配 `VirtualMachineInstances` 的多个标签，而无需显式列出某个标签。
 
 ```yaml
 selector:
@@ -212,7 +144,7 @@ selector:
     - {key: kubevirt.io/os, operator: In, values: [fedora27, fedora26]}
 ```
 
-would match both:
+会同时匹配：
 ```yaml
 metadata:
   labels:
@@ -223,17 +155,11 @@ metadata:
     kubevirt.io/os: fedora27
 ```
 
-The Kubernetes
-[documentation](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
-has a detailed explanation. Examples are provided below.
+Kubernetes [文档](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) 有详细说明。下面提供了示例。
 
-## Exclusions
+## 排除 {#exclusions}
 
-Since `VirtualMachineInstancePresets` use `Selectors` that indicate
-which `VirtualMachineInstances` their settings should apply to, there
-needs to exist a mechanism by which `VirtualMachineInstances` can opt
-out of `VirtualMachineInstancePresets` altogether. This is done using an
-annotation:
+由于 `VirtualMachineInstancePresets` 使用 `Selectors` 来表明它们的设置应当应用到哪些 `VirtualMachineInstances`，因此需要存在一种机制，使 `VirtualMachineInstances` 能够完全选择退出 `VirtualMachineInstancePresets`。这通过注解来完成：
 
 ```yaml
 kind: VirtualMachineInstance
@@ -245,9 +171,9 @@ metadata:
   ...
 ```
 
-## Examples
+## 示例 {#examples}
 
-### Simple `VirtualMachineInstancePreset` Example
+### 简单的 `VirtualMachineInstancePreset` 示例 {#simple-virtualmachineinstancepreset-example}
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -282,8 +208,7 @@ spec:
       uuid: c8f99fc8-20f5-46c4-85e5-2b841c547cef
 ```
 
-Once the `VirtualMachineInstancePreset` is applied to the
-`VirtualMachineInstance`, the resulting resource would look like this:
+一旦 `VirtualMachineInstancePreset` 应用到 `VirtualMachineInstance`，得到的资源会如下所示：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -322,11 +247,9 @@ spec:
         memory: 8Mi
 ```
 
-### Conflict Example
+### 冲突示例 {#conflict-example}
 
-This is an example of a merge conflict. In this case both the
-`VirtualMachineInstance` and `VirtualMachineInstancePreset` request
-different number of CPU's.
+这是一个合并冲突的示例。在此情况下，`VirtualMachineInstance` 和 `VirtualMachineInstancePreset` 请求了不同数量的 CPU。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -355,8 +278,7 @@ spec:
       cores: 6
 ```
 
-In this case the `VirtualMachineInstance` Spec will remain unmodified.
-Use `kubectl get events` to show events.
+在此情况下，`VirtualMachineInstance` 的 Spec 将保持不被修改。使用 `kubectl get events` 来显示事件。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -380,19 +302,17 @@ spec:
 status: {}
 ```
 
-Calling `kubectl get events` would have a line like:
+调用 `kubectl get events` 会有类似下面这样的一行：
 
 ```console
 2m 2m 1 myvmi.1515bbb8d397f258 VirtualMachineInstance Warning Conflict virtualmachineinstance-preset-controller Unable to apply VirtualMachineInstancePreset example-preset: spec.cpu: &{6} != &{4}
 ```
 
-### Matching Multiple VirtualMachineInstances Using MatchLabels
+### 使用 MatchLabels 匹配多个 VirtualMachineInstance {#matching-multiple-virtualmachineinstances-using-matchlabels}
 
-These `VirtualMachineInstances` have multiple labels, one that is unique
-and one that is shared.
+这些 `VirtualMachineInstances` 带有多个标签，其中一个是独有的，另一个是共享的。
 
-Note: This example breaks from the convention of using os-shortname as a
-`Label` for demonstration purposes.
+注意：此示例为了演示目的，打破了使用 os-shortname 作为 `Label` 的惯例。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -427,8 +347,7 @@ spec:
   terminationGracePeriodSeconds: 0
 ```
 
-Adding this `VirtualMachineInstancePreset` and these
-`VirtualMachineInstances` will result in:
+添加这个 `VirtualMachineInstancePreset` 以及这些 `VirtualMachineInstances` 会得到：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -471,10 +390,9 @@ spec:
   terminationGracePeriodSeconds: 0
 ```
 
-### Matching Multiple VirtualMachineInstances Using MatchExpressions
+### 使用 MatchExpressions 匹配多个 VirtualMachineInstance {#matching-multiple-virtualmachineinstances-using-matchexpressions}
 
-This `VirtualMachineInstancePreset` has a matchExpression that will
-match two labels: `kubevirt.io/os: win10` and `kubevirt.io/os: win7`.
+这个 `VirtualMachineInstancePreset` 带有一个 matchExpression，它会匹配两个标签：`kubevirt.io/os: win10` 和 `kubevirt.io/os: win7`。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -509,7 +427,7 @@ spec:
   terminationGracePeriodSeconds: 120
 ```
 
-Applying the preset to both VM's will result in:
+把该预设应用到两台 VM 会得到：
 
 ```yaml
 apiVersion: v1

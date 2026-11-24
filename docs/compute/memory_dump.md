@@ -1,31 +1,29 @@
-# Virtual machine memory dump  
+# 虚拟机内存转储 {#virtual-machine-memory-dump}
 
-Kubevirt now supports getting a VM memory dump for analysis purposes.
-The Memory dump can be used to diagnose, identify and resolve issues in the VM. Typically providing information about the last state of the programs, applications and system before they were terminated or crashed.
+KubeVirt 现在支持获取 VM 内存转储，以供分析之用。
+内存转储可用于诊断、识别并解决 VM 中的问题。它通常提供程序、应用程序和系统在被终止或崩溃之前最后状态的信息。
 
-> *Note* This memory dump is not used for saving VM state and resuming it later.
+> *注意* 此内存转储不用于保存 VM 状态并在以后恢复。
 
-## Prerequisites
+## 前提条件 {#prerequisites}
 
-### Hot plug Feature Gate
+### 热插拔功能门控 {#hot-plug-feature-gate}
 
-The memory dump process mounts a PVC to the virt-launcher in order to get the output in that PVC, hence the hot plug volumes feature gate must be enabled. The
-[feature gates](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-field in the KubeVirt CR must be expanded by adding the `HotplugVolumes` to it.
+内存转储流程会将 PVC 挂载到 virt-launcher，以便在该 PVC 中获取输出，因此必须启用热插拔卷功能门控。必须通过添加 `HotplugVolumes` 来扩展 KubeVirt CR 中的[功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)字段。
 
-## Virtctl support
+## virtctl 支持 {#virtctl-support}
 
-### Get memory dump
+### 获取内存转储 {#get-memory-dump}
 
-Now lets assume we have a running VM and the name of the VM is 'my-vm'.
-We can either dump to an existing pvc, or request one to be created.
+现在假设我们有一台正在运行的 VM，该 VM 的名称是 'my-vm'。
+我们可以转储到现有的 PVC，也可以请求创建一个 PVC。
 
-#### Existing PVC
-The size of the PVC must be big enough to hold the memory dump. The calculation is (VMMemorySize + 100Mi) * FileSystemOverhead, Where `VMMemorySize` is the memory size,
-100Mi is reserved space for the memory dump overhead and `FileSystemOverhead` is the value used to adjust requested PVC size with the filesystem overhead.
-also the PVC must have a `FileSystem` volume mode.
+#### 现有 PVC {#existing-pvc}
+PVC 的大小必须足够容纳内存转储。计算公式为 (VMMemorySize + 100Mi) * FileSystemOverhead，其中 `VMMemorySize` 是内存大小，
+100Mi 是为内存转储开销预留的空间，`FileSystemOverhead` 是用于按文件系统开销调整所请求 PVC 大小的值。
+此外，PVC 必须具有 `FileSystem` 卷模式。
 
-Example for such PVC:
+此类 PVC 的示例：
 
 ```yaml
 apiVersion: v1
@@ -42,38 +40,38 @@ spec:
   volumeMode: Filesystem
 ```
 
-We can get a memory dump of the VM to the PVC by using the 'memory-dump get' command available with virtctl
+我们可以使用 virtctl 提供的 'memory-dump get' 命令，将 VM 的内存转储获取到该 PVC。
 
 ```bash
 $ virtctl memory-dump get my-vm --claim-name=my-pvc
 ```
 
-#### On demand PVC
-For on demand PVC, we need to add `--create-claim` flag to the virtctl request:
+#### 按需 PVC {#on-demand-pvc}
+对于按需 PVC，我们需要向 virtctl 请求添加 `--create-claim` 标志：
 
 ```bash
 $ virtctl memory-dump get my-vm --claim-name=new-pvc --create-claim
 ```
 
-A PVC with size big enough for the dump will be created. We can also request specific storage class and access mode with appropriate flags.
+将创建一个大小足以容纳转储的 PVC。我们还可以使用相应标志请求特定的存储类和访问模式。
 
-#### Download memory dump
-By adding the `--output` flag, the memory will be dumped to the PVC and then downloaded to the given output path.
+#### 下载内存转储 {#download-memory-dump}
+添加 `--output` 标志后，内存将被转储到 PVC，然后下载到给定的输出路径。
 
 ```bash
 $ virtctl memory-dump get myvm --claim-name=memoryvolume --create-claim --output=memoryDump.dump.gz
 ```
 
-For downloading the last memory dump from the PVC associated with the VM, without triggering another memory dump, use the memory dump download command.
+要从与 VM 关联的 PVC 下载最近一次内存转储，而不触发另一次内存转储，请使用内存转储下载命令。
 
 ```bash
 $ virtctl memory-dump download myvm --output=memoryDump.dump.gz
 ```
 
-For downloading a memory dump from a PVC already disassociated from the VM you can use the [virtctl vmexport command](https://github.com/kubevirt/user-guide/blob/main/docs/operations/export_api.md)
+要从已经与 VM 解除关联的 PVC 下载内存转储，可以使用 [virtctl vmexport 命令](https://github.com/kubevirt/user-guide/blob/main/docs/operations/export_api.md)
 
-### Monitoring the memory dump
-Information regarding the memory dump process will be available on the VM's status section
+### 监控内存转储 {#monitoring-the-memory-dump}
+有关内存转储流程的信息将出现在 VM 的 status 部分。
 ```yaml
 memoryDumpRequest:
   claimName: memory-dump
@@ -83,32 +81,32 @@ memoryDumpRequest:
   fileName: my-vm-my-pvc-20220329-110004
 ```
 
-During the process the volumeStatus on the VMI will be updated with the process information such as the attachment pod information and messages, if all goes well once the process is completed, the PVC is unmounted from the virt-launcher pod and the volumeStatus is deleted.
-A memory dump annotation will be added to the PVC with the memory dump file name.
+在此过程中，VMI 上的 volumeStatus 会更新流程信息，例如挂载 Pod 的信息和消息；如果一切顺利，一旦流程完成，PVC 会从 virt-launcher Pod 卸载，并且 volumeStatus 会被删除。
+内存转储注解将被添加到 PVC 上，其中包含内存转储文件名。
 
-### Retriggering the memory dump
-Getting a new memory dump to the same PVC is possible without the need to use any flag:
+### 重新触发内存转储 {#retriggering-the-memory-dump}
+无需使用任何标志，即可将新的内存转储获取到同一个 PVC：
 ```bash
 $ virtctl memory-dump get my-vm
 ```
 
-> *Note* Each memory-dump command will delete the previous dump in that PVC.
+> *注意* 每条 memory-dump 命令都会删除该 PVC 中先前的转储。
 
-In order to get a memory dump to a different PVC you need to 'remove' the current memory-dump PVC and then do a new get with the new PVC name.
+要将内存转储获取到不同的 PVC，你需要 'remove' 当前的 memory-dump PVC，然后使用新的 PVC 名称执行新的 get。
 
-### Remove memory dump
+### 移除内存转储 {#remove-memory-dump}
 
-As mentioned in order to remove the associated memory dump PVC you need to run a 'memory-dump remove' command. This will allow you to replace the current PVC and get the memory dump to a new one.
+如前所述，要移除关联的内存转储 PVC，你需要运行 'memory-dump remove' 命令。这样你就可以替换当前 PVC，并将内存转储获取到新的 PVC。
 
 ```bash
 $ virtctl memory-dump remove my-vm
 ```
 
-## Handle the memory dump
-Once the memory dump process is completed the PVC will hold the output.
-You can manage the dump in one of the following ways:
-- Download the memory dump
-- Create a pod with troubleshooting tools that will mount the PVC and inspect it within the pod.
-- Include the memory dump in the VM Snapshot (will include both the memory dump and the disks) to save a snapshot of the VM in that point of time and inspect it when needed. (The VM Snapshot can be exported and downloaded).
+## 处理内存转储 {#handle-the-memory-dump}
+内存转储流程完成后，PVC 将保存输出。
+你可以通过以下方式之一管理该转储：
+- 下载内存转储
+- 创建一个带有故障排查工具的 Pod，由它挂载 PVC 并在 Pod 内进行检查。
+- 将内存转储包含在 VM 快照中（将同时包含内存转储和磁盘），以保存该时间点的 VM 快照，并在需要时进行检查。（VM 快照可以导出和下载）。
 
-The output of the memory dump can be inspected with memory analysis tools for example [Volatility3](https://github.com/volatilityfoundation/volatility3)
+可以使用内存分析工具检查内存转储的输出，例如 [Volatility3](https://github.com/volatilityfoundation/volatility3)。

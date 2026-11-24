@@ -1,16 +1,16 @@
-# Persistent TPM and UEFI state
+# 持久化 TPM 和 UEFI 状态 {#persistent-tpm-and-uefi-state}
 
-**FEATURE STATE:** KubeVirt v1.0.0
+**功能状态：** KubeVirt v1.0.0
 
-For both TPM and UEFI, libvirt supports persisting data created by a virtual machine as files on the virtualization host.  
-In KubeVirt, the virtualization host is the virt-launcher pod, which is ephemeral (created on VM start and destroyed on VM stop).  
-As of v1.0.0, KubeVirt supports using a PVC to persist those files. KubeVirt usually refers to that storage area as "backend storage".
+对于 TPM 和 UEFI，libvirt 支持将虚拟机创建的数据以文件形式持久保存在虚拟化宿主机上。
+在 KubeVirt 中，虚拟化宿主机就是 virt-launcher Pod，它是临时的（在 VM 启动时创建，在 VM 停止时销毁）。
+从 v1.0.0 起，KubeVirt 支持使用 PVC 来持久保存这些文件。KubeVirt 通常将该存储区域称为“后端存储”。
 
-## Backend storage
+## 后端存储 {#backend-storage}
 
-KubeVirt automatically creates backend storage PVCs for VMs that need it. However, to persist TPM and UEFI state, the admin must first enable the `VMPersistentState` feature gate. The KubeVirt CR configuration option `vmStateStorageClass` may be used to manually specify a storage class, otherwise the default storage class will be used.
+KubeVirt 会自动为需要它的 VM 创建后端存储 PVC。但是，要持久保存 TPM 和 UEFI 状态，管理员必须首先启用 `VMPersistentState` 功能门控。可以使用 KubeVirt CR 配置选项 `vmStateStorageClass` 手动指定存储类，否则将使用默认存储类。
 
-Here's an example of KubeVirt CR that sets both:
+以下是同时设置这两者的 KubeVirt CR 示例：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: KubeVirt
@@ -22,22 +22,22 @@ spec:
       - VMPersistentState
 ```
 
-### Notes:
+### 注意： {#notes}
 
-#### Snapshot and restore compatibility
+#### 快照与恢复兼容性 {#snapshot-and-restore-compatibility}
 
-Since KubeVirt v1.4, VirtualMachines that use backend state storage support both online and offline snapshots. These snapshots can be successfully restored as long as they are restored back into the same VirtualMachine.
+从 KubeVirt v1.4 起，使用后端状态存储的 VirtualMachine 同时支持在线快照和离线快照。只要恢复到同一个 VirtualMachine，这些快照就可以成功恢复。
 
-Restoring a snapshot into a different VirtualMachine (VM Clone) is not currently supported.
+目前不支持将快照恢复到另一个 VirtualMachine（VM 克隆）。
 
-Support for snapshot-based VM cloning with backend storage is planned to be revisited in a future release.
+计划在未来的版本中重新审视对带有后端存储的、基于快照的 VM 克隆的支持。
 
-## TPM with persistent state
+## 带持久状态的 TPM {#tpm-with-persistent-state}
 
-Since KubeVirt v0.53.0, a TPM device can be added to a VM (with just `tpm: {}`). However, the data stored in it does not persist across reboots.  
-Support for persistence was added in v1.0.0 using a simple `persistent` boolean parameter that default to false, to preserve previous behavior.  
-Of course, backend storage must first be configured before adding a persistent TPM to a VM. See above.  
-Here's a portion of a VM definition that includes a persistent TPM:
+从 KubeVirt v0.53.0 起，可以向 VM 添加 TPM 设备（只需 `tpm: {}`）。但是，存储在其中的数据不会在多次重启之间保持。
+持久化支持在 v1.0.0 中加入，使用一个简单的 `persistent` 布尔参数，该参数默认为 false，以保留先前的行为。
+当然，在向 VM 添加持久 TPM 之前，必须先配置后端存储。请参见上文。
+以下是包含持久 TPM 的 VM 定义片段：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -53,34 +53,34 @@ spec:
 ```
 
 
-In order for the persistent tpm volume to be created successfully you must ensure your storage classes and [storage profiles](https://github.com/kubevirt/containerized-data-importer/blob/main/doc/storageprofile.md) are configured correctly.  
-The persistent tpm volume will be created with the below access mode if one of the constraints for the access mode is true.
+为了成功创建持久 tpm 卷，你必须确保存储类和[存储配置文件](https://github.com/kubevirt/containerized-data-importer/blob/main/doc/storageprofile.md)配置正确。
+如果某一访问模式的约束条件之一成立，持久 tpm 卷将按下面的访问模式创建。
 
-* RWX (ReadWriteMany):
-    * the respective storage profile has any `claimPropertySet` in `claimPropertySets` with Filesystem volume mode and RWX access mode.
-    * the kubevirt cluster config has `VMStateStorageClass` set and the storage profile does not exist.
-    * the kubevirt cluster config has `VMStateStorageClass` set and the storage profile exists but `claimPropertySets` is an empty list.
+* RWX（ReadWriteMany）：
+    * 相应的存储配置文件拥有任意 `claimPropertySet`，它位于 `claimPropertySets` 中，并且具有 Filesystem 卷模式和 RWX 访问模式。
+    * kubevirt 集群配置已设置 `VMStateStorageClass`，且存储配置文件不存在。
+    * kubevirt 集群配置已设置 `VMStateStorageClass`，且存储配置文件存在，但 `claimPropertySets` 为空列表。
 
-* RWO (ReadWriteOnce):
-    * the respective storage profile has `claimPropertySets` where all `claimPropertySet` in `claimPropertySets` have Filesystem volume mode and RWO access mode but not RWX.
-    * the kubevirt cluster config has `VMStateStorageClass` **unset** and the storage profile does not exist.
-    * the kubevirt cluster config has `VMStateStorageClass` **unset** and the storage profile exists but `claimPropertySets` is an empty list.
+* RWO（ReadWriteOnce）：
+    * 相应的存储配置文件具有 `claimPropertySets`，其中所有 `claimPropertySet` 都位于 `claimPropertySets` 之中，并且具有 Filesystem 卷模式和 RWO 访问模式，但没有 RWX。
+    * kubevirt 集群配置**未设置** `VMStateStorageClass`，且存储配置文件不存在。
+    * kubevirt 集群配置**未设置** `VMStateStorageClass`，且存储配置文件存在，但 `claimPropertySets` 为空列表。
 
-### Uses
-- The Microsoft Windows 11 installer requires the presence of a TPM device, even though it doesn't use this. Persistence is not required in this case however.
-- Some disk encryption software have optional/mandatory TPM support. For example, Bitlocker requires a persistent TPM device.
+### 用途 {#uses}
+- Microsoft Windows 11 安装程序要求存在 TPM 设备，即使它并不使用该设备。不过，这种情况下并不需要持久化。
+- 某些磁盘加密软件具有可选或强制的 TPM 支持。例如，Bitlocker 需要持久的 TPM 设备。
 
-### Notes
-- The TPM device exposed to the virtual machine is fully emulated (vTPM). The worker nodes do not need to have a TPM device.
-- When TPM persistence is enabled, the `tpm-crb` model is used (instead of `tpm-tis` for non-persistent vTPMs)
-- A virtual TPM does not provide the same security guarantees as a physical one.
+### 注意 {#notes_1}
+- 暴露给虚拟机的 TPM 设备是完全模拟的（vTPM）。工作节点不需要具备 TPM 设备。
+- 启用 TPM 持久化后，使用的是 `tpm-crb` 模型（非持久 vTPM 则使用 `tpm-tis`）
+- 虚拟 TPM 无法提供与物理 TPM 相同的安全保证。
 
-## EFI with persistent VARS
+## 带持久 VARS 的 EFI {#efi-with-persistent-vars}
 
-EFI support is handled by libvirt using OVMF. OVMF data usually consists of 2 files, CODE and VARS. VARS is where persistent data from the guest can be stored.  
-When EFI persistence is enabled on a VM, the VARS file will be persisted inside the backend storage.  
-Of course, backend storage must first be configured before enabling EFI persistence on a VM. See above.  
-Here's a portion of a VM definition that includes a persistent EFI:
+EFI 支持由 libvirt 使用 OVMF 来处理。OVMF 数据通常由 2 个文件组成，即 CODE 和 VARS。VARS 是可以存储来自客户机的持久数据的位置。
+在 VM 上启用 EFI 持久化后，VARS 文件将持久保存在后端存储中。
+当然，在 VM 上启用 EFI 持久化之前，必须先配置后端存储。请参见上文。
+以下是包含持久 EFI 的 VM 定义片段：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -96,9 +96,9 @@ spec:
               persistent: true
 ```
 
-### Uses
-- Preserving user-created Secure Boot certificates.
-- Preserving EFI firmware settings, like language or display resolution.
+### 用途 {#uses_1}
+- 保留用户创建的安全启动证书。
+- 保留 EFI 固件设置，例如语言或显示分辨率。
 
-### Notes
-- The boot entries/order can, and most likely will, get overriden by libvirt. This is to satisfy the VM specfications. Do not expect manual boot setting changes to persist.
+### 注意 {#notes_2}
+- 启动项和启动顺序可能会，而且很可能会被 libvirt 覆盖。这是为了满足 VM 规格。不要期望手动更改的启动设置会持久保留。

@@ -1,480 +1,475 @@
-# General Technical Review - KubeVirt / Incubation
+# 通用技术评审 - KubeVirt / 孵化 {#general-technical-review-kubevirt-incubation}
 
 !!! note
-    This document was created as part of a CNCF initiative and a requirement for 
-    projects to move between levels. It was originally created as part of the process
-    for KubeVirt to graduate. It is intended to be a living document, however it is not
-    expected to be updated for every release. Similarly, the [General Technical Review
-    template](https://github.com/cncf/toc/blob/main/toc_subprojects/project-reviews-subproject/general-technical-questions.md) maintained by the CNCF is expected to evolve.
+    本文档是作为一项 CNCF 倡议而创建的，也是项目在不同级别之间迁移的一项要求。它最初是在 KubeVirt 毕业流程中创建的。它旨在成为一份持续维护的文档，但并不期望每个发行版都更新。同样，由 CNCF 维护的[通用技术评审模板](https://github.com/cncf/toc/blob/main/toc_subprojects/project-reviews-subproject/general-technical-questions.md)预计也会演进。
     
-    Please pay attention to the `Date updated` and `Template version` metadata.
+    请留意 `Date updated` 和 `Template version` 元数据。
     
-    If you notice disparities or inconsistencies, please feel welcome to raise an issue 
-    or PR to have this corrected.
+    如果你发现差异或不一致之处，欢迎提交 issue 或 PR，以便予以纠正。
     
 
-- **Project: KubeVirt**
-- **Project Version: 1.4** 
-- **Website: kubevirt.io**
-- **Date Updated:** 2025-01-24
-- **Template Version:** v1.0
-- **Description:** KubeVirt is an open-source project that extends Kubernetes to enable the management of virtual machines (VMs) alongside containerized workloads. It provides seamless integration with Kubernetes API using a custom resource definition (CRD). Users can leverage Kubernetes capabilities for both traditional and containerized workloads in a cloud-native environment.
+- **项目：KubeVirt**
+- **项目版本：1.4**
+- **网站：kubevirt.io**
+- **更新日期：** 2025-01-24
+- **模板版本：** v1.0
+- **描述：** KubeVirt 是一个开源项目，它扩展了 Kubernetes，使虚拟机（VM）能够与容器化工作负载一起得到管理。它通过自定义资源定义（CRD）与 Kubernetes API 无缝集成。用户可以在云原生环境中，同时为传统工作负载和容器化工作负载利用 Kubernetes 的能力。
 
 
-## Day 0 - Planning Phase
+## 第 0 天 - 规划阶段 {#day-0-planning-phase}
 
-### Scope
+### 范围 {#scope}
 
-  * Describe the roadmap process, how scope is determined for mid to long term features, as well as how the roadmap maps back to current contributions and maintainer ladder?
+* 描述路线图流程，中长期功能的范围是如何确定的，以及路线图如何对应到当前贡献和维护者进阶阶梯？
 
-  The roadmap of the KubeVirt project is shaped by contributions from the community. Prioritized work items are being derived from the community-submitted proposals in the kubevirt/community repo. We also document our [upcoming changes](https://github.com/kubevirt/sig-release/blob/main/upcoming-changes.md) in our sig-release repo to show what will likely be in our next version of KubeVirt.  
-  The enhancement framework provides a standardized way to propose and track features via issues and community reviews.  
-  Approved enhancement proposals drive priorities and guide contributions and code reviews.  
-  The roadmap supports the maintainer ladder by giving contributors opportunities to grow through impactful work on governance, prioritized features, encouraging new contributors, and review efforts.
+  KubeVirt 项目的路线图由社区的贡献塑造。优先工作项来自 kubevirt/community 仓库中社区提交的提案。我们还在 sig-release 仓库中记录我们的[即将发生的变更](https://github.com/kubevirt/sig-release/blob/main/upcoming-changes.md)，以展示下一个 KubeVirt 版本中可能会包含的内容。
+  增强提案框架提供了一种标准化方式，通过 issue 和社区评审来提议并跟踪功能。
+  已批准的增强提案驱动优先级，并指导贡献与代码评审。
+  路线图通过让贡献者在治理、优先功能、鼓励新贡献者以及评审工作上做出有影响力的工作来获得成长机会，从而支持维护者进阶阶梯。
 
-* Describe the target persona or user(s) for the project?
+* 描述本项目的目标用户画像或用户？
 
-  The target audience of KubeVirt includes infrastructure owners, platform engineers, DevOps teams, and application developers who require running and orchestrating virtual machines alongside containers using Kubernetes, bridging legacy and cloud-native workloads within a unified platform.
+  KubeVirt 的目标受众包括基础设施所有者、平台工程师、DevOps 团队和应用开发者。他们需要使用 Kubernetes 来运行并编排与容器并列的虚拟机，从而在统一平台内衔接遗留工作负载与云原生工作负载。
 
-* Explain the primary use case for the project. What additional use cases are supported by the project?
+* 说明本项目的主要使用场景。本项目还支持哪些额外的使用场景？
 
-  The primary use case for KubeVirt is enabling organizations to manage and orchestrate virtual machines (VMs) alongside containerized workloads in Kubernetes clusters. This is particularly valuable for hybrid environments where legacy applications require VMs, while modern applications are containerized, allowing unified management and application integration through Kubernetes APIs and workflows.
+  KubeVirt 的主要使用场景是让组织能够在 Kubernetes 集群中，与容器化工作负载一起管理和编排虚拟机（VM）。这对于混合环境尤其有价值：遗留应用需要 VM，而现代应用已经容器化，从而可以通过 Kubernetes API 和工作流实现统一管理与应用集成。
 
-  **Additional Use Cases:**
-  
-  * **Infrastructure Modernization:**  
-    Gradually transitioning from traditional virtualization platforms to cloud-native infrastructures without disrupting existing VM workloads.
-  
-  * **Hybrid Application Architectures:**  
-    Supporting applications that combine VM-based components (e.g., databases) with containerized workloads.
-  
-  * **Development and Testing Environments:**  
-    Providing developers a Kubernetes-native way to create, test, and run VM-based workloads in CI/CD pipelines.
-  
-  * **Edge Computing:**  
-    Managing VMs on edge devices for workloads that require dedicated resources or specific operating system environments.
-  
-  * **Isolation:**  
-    Combination of containerized workloads and VMs with a higher level of isolation.
-  
-  * **Multi-tenancy:**  
-    VMs serving Kubernetes clusters or VMs being used as nodes in virtual Kubernetes clusters.
+  **额外使用场景：**
 
-* Explain which use cases have been identified as unsupported by the project.
+  * **基础设施现代化：**
+    在不中断现有 VM 工作负载的情况下，逐步从传统虚拟化平台过渡到云原生基础设施。
 
-  * “Delta Cloud” like abstraction. Thus having the KubeVirt APIs being a single API to different cloud platforms, such as hyperscalers.
-  * Supporting other than KVM hypervisors and qemu virtual machine monitor (VMM) runtimes. However, the project remains open to ideas.
+  * **混合应用架构：**
+    支持将基于 VM 的组件（例如数据库）与容器化工作负载组合在一起的应用。
 
-* Describe the intended types of organizations who would benefit from adopting this project. (i.e., financial services, any software manufacturer, organizations providing platform engineering services)?
+  * **开发与测试环境：**
+    为开发者提供一种 Kubernetes 原生的方式，在 CI/CD 流水线中创建、测试和运行基于 VM 的工作负载。
 
-  KubeVirt would benefit organizations that operate in hybrid environments or are looking to modernize their infrastructure and bridge traditional and cloud-native technologies.  
-  Organizations with the requirement to run internal private clouds of mixed VM and container workloads or are planning to adopt mixed workloads in the future.  
-  Due to the ubiquity of virtualization in IT, KubeVirt is not tied to any specific market segment.
+  * **边缘计算：**
+    在边缘设备上管理 VM，以服务于需要专用资源或特定操作系统环境的工作负载。
 
-* Please describe any completed end user research and link to any reports.
+  * **隔离：**
+    将容器化工作负载与 VM 组合起来，以获得更高程度的隔离。
 
-  There have been no end user studies around KubeVirt that we are aware of.
+  * **多租户：**
+    由 VM 来承载 Kubernetes 集群，或者将 VM 用作虚拟 Kubernetes 集群中的节点。
+
+* 说明哪些使用场景已被认定为本项目不支持的。
+
+  * 类似 “Delta Cloud” 的抽象。也就是让 KubeVirt API 成为面向不同云平台（例如超大规模云厂商）的单一 API。
+  * 支持 KVM 以外的虚拟机监控程序，以及 qemu 以外的虚拟机监控器（VMM）运行时。不过，项目仍然对想法保持开放。
+
+* 描述采用本项目后会受益的预期组织类型。（即金融服务机构、任意软件制造商、提供平台工程服务的组织）？
+
+  KubeVirt 将惠及在混合环境中运营，或希望实现基础设施现代化并衔接传统技术与云原生技术的组织。
+  有需求运行由 VM 与容器混合工作负载组成的内部私有云，或计划在未来采用混合工作负载的组织。
+  由于虚拟化在 IT 中无处不在，KubeVirt 并不绑定于任何特定的市场细分。
+
+* 请描述任何已经完成的终端用户研究，并链接到任何报告。
+
+  据我们所知，目前没有围绕 KubeVirt 开展过的终端用户研究。
 
 
-### Usability
+### 可用性 {#usability}
 
-### Usability
+### 可用性 {#usability_1}
 
-* How should the target personas interact with your project?
+* 目标用户画像应当如何与你的项目交互？
 
-  VM owners and cluster admins alike - users of the project - should interact with KubeVirt primarily through Kubernetes native and KubeVirt-specific APIs and/or CLI.
+  虚拟机所有者和集群管理员——即本项目的用户——都应当主要通过 Kubernetes 原生 API 和 KubeVirt 专用 API 和/或 CLI 与 KubeVirt 交互。
 
-* Describe the user experience (UX) and user interface (UI) of the project.
+* 描述本项目的用户体验（UX）和用户界面（UI）。
 
-  Usability-wise, KubeVirt tries to adopt Kubernetes UX and API patterns in order to provide a “unified” user experience for users - regardless of whether or not they are working with virtual machines or containers.
+  在可用性方面，KubeVirt 尽量采用 Kubernetes 的 UX 和 API 模式，以便为用户提供“统一”的用户体验——无论他们使用的是虚拟机还是容器。
 
-  There is no official KubeVirt user interface. However, there are a couple of user interfaces provided by platform vendors, such as:
-  
+  没有官方的 KubeVirt 用户界面。不过，平台厂商提供了若干用户界面，例如：
+
   * SUSE Virtualization
   * Red Hat OpenShift Virtualization
-  * Deckhouse (Virtualization)
-  * KubeVirt Manager (community project)
+  * Deckhouse（Virtualization）
+  * KubeVirt Manager（社区项目）
 
-* Describe how this project integrates with other projects in a production environment.
+* 描述本项目在生产环境中如何与其他项目集成。
 
-  **Kubernetes** - KubeVirt extends Kubernetes by introducing custom resource definitions (CRDs) like VirtualMachine and VirtualMachineInstance. These resources integrate directly into Kubernetes workflows. Users can manage VMs using Kubernetes-native APIs.
+  **Kubernetes** - KubeVirt 通过引入 VirtualMachine 和 VirtualMachineInstance 等自定义资源定义（CRD）来扩展 Kubernetes。这些资源直接融入 Kubernetes 工作流。用户可以使用 Kubernetes 原生 API 来管理 VM。
 
-  **Prometheus** - KubeVirt components expose Prometheus-compatible endpoints, Alerts, and runbooks in order to integrate well with this monitoring solution.
+  **Prometheus** - KubeVirt 组件暴露与 Prometheus 兼容的端点、告警和运维手册，以便与这一监控方案良好集成。
 
-  **Medik8s** - KubeVirt community members contributed to Medik8s in order to add high-availability support for bare-metal Kubernetes clusters, supporting KubeVirt’s use case.
+  **Medik8s** - KubeVirt 社区成员向 Medik8s 做了贡献，以便为裸金属 Kubernetes 集群增加高可用支持，从而支撑 KubeVirt 的使用场景。
 
-  **ovn-kubernetes** and **kubernetes-ovn** - KubeVirt contributors contributed to both projects to allow them to seamlessly integrate with KubeVirt virtual machines. Additional work is done for CNI plugins to be used with multus for better secondary network support.
+  **ovn-kubernetes** 和 **kubernetes-ovn** - KubeVirt 贡献者向这两个项目都做了贡献，使它们能够与 KubeVirt 虚拟机无缝集成。此外还在开展工作，以便 CNI 插件与 multus 一起使用，从而更好地支持辅助网络。
 
-  **Istio** - KubeVirt contributors provided patches to Istio in order to integrate KubeVirt VMs out of the box with Istio.
+  **Istio** - KubeVirt 贡献者向 Istio 提供了补丁，以便让 KubeVirt VM 开箱即用地与 Istio 集成。
 
-  **ArgoCD** - KubeVirt contributors provided patches to Argo in order to align with common Argo practices.
+  **ArgoCD** - KubeVirt 贡献者向 Argo 提供了补丁，以便与常见的 Argo 实践保持一致。
 
-  **Tekton** - KubeVirt maintains a set of Tekton tasks in order to easily build Tekton Pipelines around VMs.
+  **Tekton** - KubeVirt 维护了一组 Tekton 任务，以便轻松围绕 VM 构建 Tekton Pipeline。
 
-  **Velero** - KubeVirt contributors integrate Velero into KubeVirt in order to support third-party backup vendors.
+  **Velero** - KubeVirt 贡献者将 Velero 集成进 KubeVirt，以便支持第三方备份厂商。
 
-  **cluster-api-kubevirt** - Cluster API KubeVirt is built on KubeVirt.
+  **cluster-api-kubevirt** - Cluster API KubeVirt 构建于 KubeVirt 之上。
 
-  **Kubernetes descheduler** - KubeVirt community members contributed several changes to the Kubernetes descheduler in order to let the descheduler work seamlessly with VMs as well.
+  **Kubernetes descheduler** - KubeVirt 社区成员向 Kubernetes descheduler 贡献了若干变更，以便让 descheduler 也能与 VM 无缝协作。
 
-  **kubernetes-nmstate** - KubeVirt community members contributed to kubernetes-nmstate to provide a declarative approach for host network configuration—a common problem in bare-metal clusters.
+  **kubernetes-nmstate** - KubeVirt 社区成员向 kubernetes-nmstate 做了贡献，以提供一种声明式的宿主机网络配置方法——这是裸金属集群中的常见问题。
 
-  **multus** - KubeVirt leverages Multus APIs in order to implement secondary networks for VMs.
+  **multus** - KubeVirt 利用 Multus API 来为 VM 实现辅助网络。
 
-  And others like Kubernetes itself, AAQ, CRI-O.
+  以及其他项目，例如 Kubernetes 本身、AAQ、CRI-O。
 
-### Design
+### 设计 {#design}
 
-* Explain the design principles and best practices the project is following.  
+* 说明本项目遵循的设计原则和最佳实践。
 
-  KubeVirt prioritizes integration with and the usability experience of Kubernetes. It takes advantage of Kubernetes native APIs, CRDs (Custom Resource Definitions), and core primitives and patterns to manage VMs as first-class citizens.  
+  KubeVirt 优先考虑与 Kubernetes 的集成以及 Kubernetes 的可用性体验。它利用 Kubernetes 原生 API、CRD（自定义资源定义）以及核心原语和模式，将 VM 作为一等公民来管理。
 
-  Here is more information on KubeVirt Architecture and guiding principles, especially the KubeVirt Razor:  
-  "If something is useful for Pods, we should not implement it for VMs only".
+  以下是有关 KubeVirt 架构和指导原则的更多信息，尤其是 KubeVirt Razor：
+  “如果某项能力对 Pod 有用，我们就不应当只针对 VM 实现它”。
 
-* Outline or link to the project’s architecture requirements? Describe how they differ for Proof of Concept, Development, Test and Production environments, as applicable.  
+* 概述或链接到项目的架构要求。说明它们在概念验证、开发、测试和生产环境中有何不同（如适用）。
 
-  KubeVirt works from single-node setup all the way up to large scale Kubernetes clusters with hundreds of nodes.  
-  For production workloads, the primary requirement is to provide bare metal nodes.  
+  KubeVirt 适用于从单节点部署一直到拥有数百个节点的大规模 Kubernetes 集群。
+  对于生产工作负载，主要要求是提供裸金属节点。
 
-  All the details can be found at [KubeVirt Installation Guide](https://kubevirt.io/user-guide/cluster_admin/installation/)
+  全部细节见 [KubeVirt 安装指南](https://kubevirt.io/user-guide/cluster_admin/installation/)
 
-* Define any specific service dependencies the project relies on in the cluster.  
+* 定义项目在集群中所依赖的任何特定服务依赖。
 
-  KubeVirt requires Kubernetes to be present, nothing else.  
-  The cluster should have bare metal nodes if production workloads are planned to be run.
+  KubeVirt 要求存在 Kubernetes，除此之外别无其他。
+  如果计划运行生产工作负载，集群应当拥有裸金属节点。
 
-* Describe how the project implements Identity and Access Management.  
+* 说明项目如何实现身份与访问管理。
 
-  KubeVirt leverages Kubernetes' native Identity and Access Management (IAM) capabilities to control access to resources and operations related to virtual machines (VMs).
+  KubeVirt 利用 Kubernetes 原生的身份与访问管理（IAM）能力，来控制对与虚拟机（VM）相关的资源和操作的访问。
 
-* Describe how the project has addressed sovereignty.  
+* 说明项目如何应对主权问题。
 
-  KubeVirt depends on the Kubernetes community but operates an independent community outside of the Kubernetes SIGs. This includes but is not limited to its own [SIG/Subproject/WG structure](https://github.com/kubevirt/community/blob/main/sig-list.md).
+  KubeVirt 依赖 Kubernetes 社区，但在 Kubernetes SIG 之外运营一个独立社区。这包括但不限于其自身的 [SIG/子项目/工作组结构](https://github.com/kubevirt/community/blob/main/sig-list.md)。
 
-* Describe any compliance requirements addressed by the project.  
+* 说明项目所应对的任何合规要求。
 
-  The project is not actively pursuing any compliance effort.  
-  However, some of the vendors that distribute KubeVirt do.
+  项目目前没有主动推进任何合规工作。
+  不过，一些分发 KubeVirt 的厂商会这样做。
 
-* Describe the project’s High Availability requirements.  
+* 说明项目的高可用要求。
 
-  KubeVirt implements best practices for High Availability using replication for its control-plane resources.  
-  It’s also supporting the project (medik8s) in order to add high availability to the Kubernetes cluster it runs and depends on.
+  KubeVirt 采用对控制平面资源进行副本复制的最佳实践来实现高可用。
+  它也在支持 medik8s 项目，以便为其运行所依赖的 Kubernetes 集群增加高可用能力。
 
-* Describe the project’s resource requirements, including CPU, Network and Memory.  
+* 说明项目的资源要求，包括 CPU、网络和内存。
 
-  KubeVirt’s resource requirements depend on the end user’s scale requirements. A good estimate is around 1 CPU and 1GB of memory. The network requirements are the same for KubeVirt as Kubernetes.  
+  KubeVirt 的资源要求取决于终端用户的规模要求。一个较好的估计是大约 1 个 CPU 和 1GB 内存。KubeVirt 的网络要求与 Kubernetes 相同。
 
-  In the end, the resource requirements depend on the scale of the environment. Some dimensions of the scale are node count, VM count, and disk count.  
-  Members of the KubeVirt community are operating KubeVirt on single-node deployments, up to clusters with hundreds of nodes.
+  最终，资源要求取决于环境的规模。规模的若干维度包括节点数量、VM 数量和磁盘数量。
+  KubeVirt 社区成员在单节点部署上运行 KubeVirt，也在拥有数百个节点的集群上运行。
 
-* Describe the project’s storage requirements, including its use of ephemeral and/or persistent storage.  
+* 说明项目的存储要求，包括它对临时存储和/或持久存储的使用。
 
-  KubeVirt shares the same storage requirements as Kubernetes. The end user defines what storage is required for their workloads, and KubeVirt will use Kubernetes APIs to use what is defined.
+  KubeVirt 与 Kubernetes 具有相同的存储要求。终端用户定义其工作负载需要何种存储，KubeVirt 将使用 Kubernetes API 来使用所定义的内容。
 
-* Please outline the project’s API Design  
+* 请概述项目的 API 设计
 
-  KubeVirt is a Kubernetes API extension defined by Custom Resource Definitions. KubeVirt’s philosophy is to re-use Kubernetes APIs for defining infrastructure. Then, KubeVirt will make the infrastructure resources available to Virtual Machines.
+  KubeVirt 是由自定义资源定义所定义的 Kubernetes API 扩展。KubeVirt 的理念是复用 Kubernetes API 来定义基础设施。然后，KubeVirt 会把基础设施资源提供给虚拟机。
 
-  * Describe the project’s API topology and conventions  
+  * 说明项目的 API 拓扑与约定
 
-    KubeVirt’s API is RESTful and declarative, following precedents set by Kubernetes as much as possible.
+    KubeVirt 的 API 是 RESTful 且声明式的，尽可能遵循 Kubernetes 所确立的先例。
 
-  * Describe the project defaults  
+  * 说明项目的默认值
 
-    KubeVirt provides configuration defaults, allowing users to “just” deploy KubeVirt without requiring any input.
+    KubeVirt 提供配置默认值，允许用户“直接”部署 KubeVirt，而无需任何输入。
 
-  * Outline any additional configurations from default to make reasonable use of the project  
+  * 概述为了合理使用本项目而需要在默认配置之外做出的任何额外配置
 
-    KubeVirt has one default configuration that it shares between KubeVirt components.
+    KubeVirt 有一套在各 KubeVirt 组件之间共享的默认配置。
 
-  * Describe any new or changed API types and calls - including to cloud providers - that will result from this project being enabled and used  
+  * 说明因启用并使用本项目而产生的任何新的或变更的 API 类型与调用——包括对云提供商的调用
 
-    Most KubeVirt APIs are Kubernetes API extensions (CRDs). They are documented at [KubeVirt API Reference](http://kubevirt.io/api-reference/)
+    大多数 KubeVirt API 是 Kubernetes API 扩展（CRD）。它们的文档位于 [KubeVirt API 参考](http://kubevirt.io/api-reference/)
 
-  * Describe compatibility of any new or changed APIs with API servers, including the Kubernetes API server  
+  * 说明任何新的或变更的 API 与 API 服务器（包括 Kubernetes API 服务器）的兼容性
 
-    Compatibility is provided in [KubeVirt Kubernetes Compatibility](https://github.com/kubevirt/kubevirt/blob/main/docs/kubernetes-compatibility.md)
+    兼容性说明见 [KubeVirt 与 Kubernetes 的兼容性](https://github.com/kubevirt/kubevirt/blob/main/docs/kubernetes-compatibility.md)
 
-  * Describe versioning of any new or changed APIs, including how breaking changes are handled  
+  * 说明任何新的或变更的 API 的版本管理，包括如何处理破坏性变更
 
-    For releases, KubeVirt follows Semantic Versioning - just like Kubernetes does.  
-    For CRDs, KubeVirt follows Kubernetes standards for API versioning to ensure stability, compatibility, and a clear evolution of its APIs.  
-    KubeVirt APIs are versioned with labels such as v1alpha1, v1beta1, and v1 - where alpha is considered experimental, beta is more stable with some backward compatibility, and v1 is a fully mature API with strong backward compatibility guarantees.  
-    KubeVirt v1 APIs maintain backward compatibility, and changes that are not backward compatible are avoided in stable APIs.
+    对于发行版，KubeVirt 遵循语义化版本——正如 Kubernetes 所做的那样。
+    对于 CRD，KubeVirt 遵循 Kubernetes 的 API 版本管理标准，以确保其 API 的稳定性、兼容性和清晰的演进。
+    KubeVirt API 使用 v1alpha1、v1beta1 和 v1 等标签进行版本管理——其中 alpha 被视为实验性，beta 更为稳定并具备一定的向后兼容性，v1 则是完全成熟的 API，具有强有力的向后兼容性保证。
+    KubeVirt v1 API 保持向后兼容，在稳定 API 中会避免不向后兼容的变更。
 
-* Describe the project’s release processes, including major, minor and patch releases.  
+* 说明项目的发布流程，包括主版本、次版本和补丁版本。
 
-  The release process is described in [KubeVirt Release Guide](https://github.com/kubevirt/kubevirt/blob/main/docs/release.md)
+  发布流程描述于 [KubeVirt 发布指南](https://github.com/kubevirt/kubevirt/blob/main/docs/release.md)
 
 
-### Installation
+### 安装 {#installation}
 
-* Describe how the project is installed and initialized, e.g. a minimal install with a few lines of code or does it require more complex integration and configuration?  
+* 描述项目是如何安装和初始化的，例如用几行代码即可完成的最小安装，还是需要更复杂的集成与配置？
 
-  KubeVirt is providing an Operator for deployment and application life-cycle management. Alternatively, deployment can be manually performed by installing key components from the kubevirt and containerized-data-importer repositories.   These are all installed using `kubectl`.
+  KubeVirt 提供一个 Operator，用于部署和应用生命周期管理。此外，也可以通过从 kubevirt 和 containerized-data-importer 仓库安装关键组件来手动执行部署。这些都使用 `kubectl` 安装。
 
-  There are then additional optional network plugins that can be installed.
+  然后还可以安装额外的可选网络插件。
 
-  Reference: https://kubevirt.io/user-guide/cluster_admin/installation/#installing-kubevirt-on-kubernetes
+  参考：https://kubevirt.io/user-guide/cluster_admin/installation/#installing-kubevirt-on-kubernetes
 
-* How does an adopter test and validate the installation?
+* 采用者如何测试并验证安装？
 
-  An adopter can run the KubeVirt testsuite on their deployment.
+  采用者可以在其部署上运行 KubeVirt 测试套件。
 
-### Security
+### 安全 {#security}
 
-* Please provide a link to the project’s cloud native [security self assessment](https://github.com/cncf/tag-security/blob/main/community/assessments/guide/self-assessment.md).
+* 请提供项目的云原生[安全自评估](https://github.com/cncf/tag-security/blob/main/community/assessments/guide/self-assessment.md)链接。
 
-  The self assessment is in progress and tracked at [https://github.com/kubevirt/community/issues/335](https://github.com/kubevirt/community/issues/335).  
-  This document will be updated pointing to the self-assessment once it is completed.
+  该自评估正在进行中，跟踪于 [https://github.com/kubevirt/community/issues/335](https://github.com/kubevirt/community/issues/335)。
+  一旦完成，本文档将更新并指向该自评估。
 
-* Please review the [Cloud Native Security Tenets](https://github.com/cncf/tag-security/blob/main/security-whitepaper/secure-defaults-cloud-native-8.md) from TAG Security.
-  * How are you satisfying the tenets of cloud native security projects?  
-    Currently there are no processes in place in order to enforce the tenets of cloud native security.
+* 请查阅来自 TAG Security 的[云原生安全原则](https://github.com/cncf/tag-security/blob/main/security-whitepaper/secure-defaults-cloud-native-8.md)。
+  * 你们如何满足云原生安全项目的各项原则？
+    目前没有已经到位的流程来强制执行云原生安全原则。
 
-  * Describe how each of the cloud native principles apply to your project.  
-    TBD  
-    Possible link: [Cloud Native Principles](https://github.com/cloud-native-principles/cloud-native-principles/blob/master/cloud-native-principles.md)
+  * 说明每一项云原生原则如何适用于你的项目。
+    TBD
+    可能的链接：[云原生原则](https://github.com/cloud-native-principles/cloud-native-principles/blob/master/cloud-native-principles.md)
 
-  * How do you recommend users alter security defaults in order to "loosen" the security of the project? Please link to any documentation the project has written concerning these use cases.  
-    [KubeVirt Security Fundamentals](https://kubevirt.io/2020/KubeVirt-Security-Fundamentals.html)
+  * 你建议用户如何更改安全默认值，以便“放宽”本项目的安全性？请链接到项目针对这些使用场景所写的任何文档。
+    [KubeVirt 安全基础](https://kubevirt.io/2020/KubeVirt-Security-Fundamentals.html)
 
-### Security Hygiene
+### 安全卫生 {#security-hygiene}
 
-* Please describe the frameworks, practices, and procedures the project uses to maintain the basic health and security of the project.  
-  While there is no formal framework for ensuring security practices, discussing security is part of the PR review process.
+* 请描述项目用于维持项目基本健康与安全的框架、实践和流程。
+  虽然没有用于确保安全实践的正式框架，但讨论安全性是 PR 评审过程的一部分。
 
-* Describe how the project has evaluated which features will be a security risk to users if they are not maintained by the project?  
-  The KubeVirt maintainers acknowledge the risk of unmaintained code and features for end users.  
-  A structural change in order to address this challenge is to require every piece of code to be owned and maintained by a KubeVirt SIG.  
-  If a piece of code is not accepted by a SIG then it cannot land in KubeVirt, as it bears the risk of becoming unmaintained, and thus a security risk.
+* 说明项目如何评估：哪些功能如果得不到项目维护，将会对用户构成安全风险？
+  KubeVirt 维护者承认，未得到维护的代码和功能对终端用户构成风险。
+  为应对这一挑战而做出的一项结构性改变是：要求每一段代码都由某个 KubeVirt SIG 拥有并维护。
+  如果某段代码未被某个 SIG 接受，它就不能合入 KubeVirt，因为它承受着变得无人维护的风险，从而构成安全风险。
 
-### Cloud Native Threat Modeling
+### 云原生威胁建模 {#cloud-native-threat-modeling}
 
-* Explain the least minimal privileges required by the project and reasons for additional privileges.  
-  By design, KubeVirt VMs are designed to work with the restricted PSL.  
-  There is also the design principle that a user must not gain any additional privileges or permissions when running a VM compared to any other pod the user could run.
+* 说明项目所需的最低限度权限，以及需要额外权限的原因。
+  按照设计，KubeVirt VM 被设计为可在受限 PSL 下工作。
+  还有一条设计原则：用户在运行 VM 时，不得获得相比于该用户所能运行的任何其他 Pod 而言更多的特权或权限。
 
-  Special privileges are only granted to infrastructure components such as virt-handler (the node agent).
+  特殊权限仅授予基础设施组件，例如 virt-handler（节点代理）。
 
-* Describe how the project is handling certificate rotation and mitigates any issues with certificates.  
-  “In KubeVirt both our CA and certificates are rotated on a user-defined recurring interval.  
-  In the event that either the CA key or a certificate is compromised, this information will eventually be rendered stale and unusable regardless of whether the compromise is known or not.  
-  If the compromise is known, a forced CA and certificate rotation can be invoked by the cluster admin simply by deleting the corresponding secrets in the KubeVirt install namespace.”  
-  - [KubeVirt Security Fundamentals](https://kubevirt.io/2020/KubeVirt-Security-Fundamentals.html)
+* 说明项目如何处理证书轮换，以及如何缓解与证书相关的任何问题。
+  “在 KubeVirt 中，我们的 CA 和证书都会按照用户定义的重复间隔进行轮换。
+  如果 CA 密钥或某张证书遭到泄露，这些信息最终都会变得过时且不可用，无论该泄露是否已被知晓。
+  如果已知发生泄露，集群管理员只需删除 KubeVirt 安装命名空间中的相应 Secret，即可发起一次强制的 CA 和证书轮换。”
+  - [KubeVirt 安全基础](https://kubevirt.io/2020/KubeVirt-Security-Fundamentals.html)
 
-* Describe how the project is following and implementing [secure software supply chain best practices](https://project.linuxfoundation.org/hubfs/CNCF_SSCP_v1.pdf)  
-  While there is no active work by the community to implement SSSC best practices, there are recurring discussions of how to get this on track.
+* 说明项目如何遵循并落实[安全软件供应链最佳实践](https://project.linuxfoundation.org/hubfs/CNCF_SSCP_v1.pdf)
+  虽然社区目前没有正在进行的工作来落实 SSSC 最佳实践，但关于如何使其走上正轨的讨论反复出现。
 
-## Day 1 \- Installation and Deployment Phase
+## 第 1 天 - 安装与部署阶段 {#day-1-installation-and-deployment-phase}
 
-### Project Installation and Configuration
+### 项目安装与配置 {#project-installation-and-configuration}
 
-* Describe what project installation and configuration look like.
-     
-  This is described in 
+* 描述项目的安装与配置是什么样的。
+
+  相关内容描述于
   https://kubevirt.io/user-guide/cluster_admin/installation/#installing-kubevirt-on-kubernetes
 
-### Project Enablement and Rollback
+### 项目启用与回滚 {#project-enablement-and-rollback}
 
-* How can this project be enabled or disabled in a live cluster? Please describe any downtime required of the control plane or nodes.  
+* 如何在运行中的集群里启用或禁用本项目？请说明控制平面或节点需要的任何停机时间。
 
-  After deploying the KubeVirt operator, this is as simple as deploying the KubeVirt CR - or removing it for uninstallation.
+  在部署 KubeVirt Operator 之后，这就像部署 KubeVirt CR 一样简单——卸载时则将其移除。
 
-* Describe how enabling the project changes any default behavior of the cluster or running workloads.
+* 说明启用本项目会如何改变集群或正在运行的工作负载的任何默认行为。
 
-  KubeVirt installation adds virtualization capabilities to a Kubernetes cluster, allowing the users to manage and run virtual machines. Although the default behavior and existing workloads should not be impacted, it introduces new   resources and components to support VMs.
-  The cluster-configuration  - i.e. API server configuration - itself is not modified by KubeVirt.  
+  KubeVirt 的安装为 Kubernetes 集群增加了虚拟化能力，允许用户管理和运行虚拟机。尽管默认行为和现有工作负载不应受到影响，但它会引入新的资源与组件以支持 VM。
+  集群配置——即 API 服务器配置——本身不会被 KubeVirt 修改。
 
-* Describe how the project tests enablement and disablement.  
+* 说明项目如何测试启用与禁用。
 
-  Installing and uninstalling KubeVirt is part of the KubeVirt testsuite.
+  安装和卸载 KubeVirt 是 KubeVirt 测试套件的一部分。
 
-* How does the project clean up any resources created, including CRDs?
+* 项目如何清理所创建的任何资源，包括 CRD？
 
-  KubeVirt is using an operator for application life-cycle management. This operator is removing all KubeVirt related components.
-  KubeVirt related CRDs are deleted with `kubectl delete -f kubevirt.yaml` all associated resources will be deleted. 
+  KubeVirt 使用 Operator 来进行应用生命周期管理。该 Operator 会移除所有与 KubeVirt 相关的组件。
+  与 KubeVirt 相关的 CRD 通过 `kubectl delete -f kubevirt.yaml` 删除，所有关联资源都会被删除。
 
-  All the details are documented in: https://kubevirt.io/user-guide/cluster_admin/updating_and_deletion/#deleting-kubevirt
+  所有细节记录于：https://kubevirt.io/user-guide/cluster_admin/updating_and_deletion/#deleting-kubevirt
 
 
 
-### Rollout, Upgrade and Rollback Planning
+### 推出、升级与回滚规划 {#rollout-upgrade-and-rollback-planning}
 
-* How does the project intend to provide and maintain compatibility with infrastructure and orchestration management tools like Kubernetes and with what frequency?  
+* 项目打算如何提供并维持与 Kubernetes 等基础设施和编排管理工具的兼容性，以及以何种频率？
 
-  KubeVirt has a defined compatibility matrix:
+  KubeVirt 有一份已定义的兼容性矩阵：
   https://github.com/kubevirt/kubevirt/blob/main/docs/kubernetes-compatibility.md
-    
-  In addition, KubeVirt is - by itself - a cloud native application, delivered completely in containers, ensuring a strong separation from the underlying infrastructure.
+
+  此外，KubeVirt 本身就是一个云原生应用，完全以容器形式交付，从而确保与底层基础设施充分分离。
 
   https://kubevirt.io/user-guide/cluster_admin/updating_and_deletion/#updating-and-deletion
 
-* Describe how the project handles rollback procedures.  
+* 说明项目如何处理回滚流程。
 
-  KubeVirt is designed to roll forward only. Feature development, bug fixes, and testing are aligned to this objective.
-  However, technically it is possible to rollback.
+  KubeVirt 被设计为只向前滚动。功能开发、缺陷修复和测试都与这一目标对齐。
+  不过，从技术上讲，回滚是可能的。
 
-* How can a rollout or rollback fail? Describe any impact to already running workloads.  
+* 推出或回滚如何会失败？说明对已在运行的工作负载的任何影响。
 
-  Running workloads are not immediately impacted by a failed rollout or rollback. Workloads - just like Kubernetes - will keep running for a while.
-  Depending on the failure and environment - workloads will continue to run for long, or eventually be impacted by rippled issues in the cluster.
+  正在运行的工作负载不会立即受到失败的推出或回滚的影响。工作负载——就像 Kubernetes 一样——会继续运行一段时间。
+  取决于故障和环境，工作负载可能会继续长时间运行，或者最终受到集群中连带问题的影响。
 
-* Describe any specific metrics that should inform a rollback.  
+* 说明应当提示进行回滚的任何具体指标。
 
-  The KubeVirt Operator’s “Ready” condition is staying in “false”.
+  KubeVirt Operator 的 “Ready” 状况一直为 “false”。
 
-* Explain how upgrades and rollbacks were tested and how the upgrade-\>downgrade-\>upgrade path was tested.
+* 说明升级和回滚是如何测试的，以及升级->降级->升级路径是如何测试的。
 
-  Upgrade testing is part of pre-submit testing.
-  Rollbacks and up- → down- → upgrade testing is not covered.
+  升级测试是预提交测试的一部分。
+  回滚以及升级 → 降级 → 升级测试并未覆盖。
 
-* Explain how the project informs users of deprecations and removals of features and APIs.
+* 说明项目如何告知用户功能和 API 的弃用与移除。
 
-  KubeVirt is currently using API v1 and has maintained a strict commitment to not removing existing API constructs. Any feature that has been considered for removal has been restricted by an opt-in FeatureGate. Removal of any such   feature is discussed on the KubeVirt development mailing list well in advance.
+  KubeVirt 目前使用 API v1，并一直严格承诺不移除现有的 API 构造。任何曾被考虑移除的功能，都被限制为需要选择启用的功能门控。任何此类功能的移除，都会提前很久在 KubeVirt 开发邮件列表上讨论。
 
-* Explain how the project permits utilization of alpha and beta capabilities as part of a rollout.
+* 说明项目如何允许在推出过程中使用 alpha 和 beta 能力。
 
-  KubeVirt’s feature lifecycle uses the Kubernetes model. Features are initially implemented using alpha version strings in the API and are feature gated. Features then graduate to beta and the feature gate is removed as part of the   release lifecycle.
+  KubeVirt 的功能生命周期采用 Kubernetes 模型。功能最初使用 API 中的 alpha 版本字符串来实现，并受功能门控约束。功能随后毕业进入 beta，并作为发布生命周期的一部分移除功能门控。
 
-## Day 2 \- Day-to-Day Operations Phase
+## 第 2 天 - 日常运维阶段 {#day-2-day-to-day-operations-phase}
 
-### Scalability/Reliability
+### 可扩展性/可靠性 {#scalabilityreliability}
 
-* Describe how the project increases the size or count of existing API objects.
+* 说明项目如何增加现有 API 对象的大小或数量。
 
-  KubeVirt is a Kubernetes cloud native application leveraging core Kube entities at runtime.
-  While the exact numbers depend on the cluster size, it is in the ballpark of tens of pods, tens of secrets, some deployment, and a daemonset.
+  KubeVirt 是一个 Kubernetes 云原生应用，在运行时利用核心 Kube 实体。
+  虽然确切数字取决于集群规模，但大致是数十个 Pod、数十个 Secret、若干 Deployment 以及一个 DaemonSet。
 
-  In general KubeVirt is considered to have a small footprint compared to the cluster where it is expected to be running on.
+  总体而言，与预期运行 KubeVirt 的集群相比，KubeVirt 被认为占用较小。
 
-  There will be some etcd load induced according to the number of running VMs.
+  根据正在运行的 VM 数量，会产生一定的 etcd 负载。
 
-* Describe how the project defines Service Level Objectives (SLOs) and Service Level Indicators (SLIs).  
+* 说明项目如何定义服务等级目标（SLO）和服务等级指标（SLI）。
 
-  KubeVirt does not describe any SLO or SLI.
+  KubeVirt 没有描述任何 SLO 或 SLI。
 
 
-* Describe any operations that will increase in time covered by existing SLIs/SLOs.  
+* 说明任何会使现有 SLI/SLO 所覆盖的耗时增加的操作。
 
   N/A
 
-* Describe the increase in resource usage in any components as a result of enabling this project, to include CPU, Memory, Storage, Throughput.  
+* 说明因启用本项目而导致任何组件资源使用增长的情况，包括 CPU、内存、存储、吞吐量。
 
-  There is an increased resource usage.
-  Depending on the cluster and workload size it is recommended to maintain dedicated infra nodes, or just keep sufficient spare capacity on the cluster.
+  资源使用会增加。
+  取决于集群和工作负载的规模，建议维护专用的基础设施节点，或者只是在集群上保留足够的空闲容量。
 
-* Describe which conditions enabling / using this project would result in resource exhaustion of some node resources (PIDs, sockets, inodes, etc.)  
-
-
-  Every VM is run in it’s own pod. Due to this usually all limits that relate to pods apply to VMs as well.
-
-* Describe the load testing that has been performed on the project and the results. 
-
-  KubeVirt project is doing regular performance and load testing as part of SIG scale.
-
-  Vendors like Red Hat perform regular performance and scale tests as part of their productization.
-
-* Describe the recommended limits of users, requests, system resources, etc. and how they were obtained.
-
-  Limits on number of VMs or number of nodes is not only determined by the project, but also by how the underlying cluster is operated.
-
-  Highly optimized organizations can easily go to tens of thousands of VMs on a single cluster with hundreds of nodes.
-  Regular users are recommended to adjust their cluster size to operational models and requirements.
-
-  A regular - large - KubeVirt cluster is expected to host thousands of VMs on less than 100 nodes.
-
-* Describe which resilience pattern the project uses and how, including the circuit breaker pattern.
-
-### Observability Requirements
-
-* Describe the signals the project is using or producing, including logs, metrics, profiles and traces. Please include supported formats, recommended configurations and data storage.
-
-  KubeVirt is providing metric endpoints, and shipping Prometheus alert rules including runbooks.
-  KubeVirt is also consistently using error conditions on it’s CRs.
-
-* Describe how the project captures audit logging.
-
-  The Kubernetes audit log can be used for KubeVirt, as all user-facing API calls go through the Kubernetes API server.
-
-* Describe any dashboards the project uses or implements as well as any dashboard requirements.
-
-  KubeVirt does not implement any dashboard.
-  There are some community maintained grafana dashboards available.
-
-* Describe how the project surfaces project resource requirements for adopters to monitor cloud and infrastructure costs, e.g. FinOps  
-
-  Adopters just need to continue to monitor their Kubernetes usage.
-
-* Which parameters is the project covering to ensure the health of the application/service and its workloads?  
-
-  KubeVirt allows to set health checks for the workloads.
-  The KubeVirt operator is checking the health of it’s infra components.
-  The KubeVirt Operator health (including it’s dependents) is also reported via a prometheus endpoint.
-
-* How can an operator determine if the project is in use by workloads?  
-
-  KubeVirt is providing the ability to run virtual machine workloads. Those run in pods. Thus the same mechanism for monitoring pods can be used for monitoring VMs.
-
-* How can someone using this project know that it is working for their instance?  
-
-  They can look at the KubeVirt Operator conditions. If it’s not working, then a condition will be set.
-
-* Describe the SLOs (Service Level Objectives) for this project.
-
-  There are no SLOs defined.
-
-* What are the SLIs (Service Level Indicators) an operator can use to determine the health of the service?
-
-  There are no SLIs defined.
-
-### Dependencies
-
-* Describe the specific running services the project depends on in the cluster.
-
-  KubeVirt relies on Kubernetes only, with no other mandatory dependencies. KubeVirt can optionally work in harmony with the Containerized Data Importer and nmstate projects.
-
-* Describe the project’s dependency lifecycle policy.
-
-  KubeVirt is written in golang and uses go.mod/go.sum to track dependencies added to the build chain. Each dependency added is vetted during the code review/submission process.
-
-* How does the project incorporate and consider source composition analysis as part of its development and security hygiene? Describe how this source composition analysis (SCA) is tracked.
-
-  KubeVirt uses FOSSA to ensure compliance with security and license requirements. These checks are applied to every pull request for the project.
-
-* Describe how the project implements changes based on source composition analysis (SCA) and the timescale.
-
-  FOSSA checks are applied to every pull request. Additionally, KubeVirt periodically leverages SonarCloud to detect commonly problematic code patterns.
-
-### Troubleshooting
-
-* How does this project recover if a key component or feature becomes unavailable? e.g Kubernetes API server, etcd, database, leader node, etc.  
-
-  If the cluster control plane is lost. The workload will remain to run. They will try to periodically reconnect with the cluster control plane.
+* 说明在哪些条件下，启用/使用本项目会导致某些节点资源（PID、套接字、inode 等）耗尽。
 
 
-* Describe the known failure modes.
+  每个 VM 都运行在它自己的 Pod 中。因此，通常所有与 Pod 相关的限制也同样适用于 VM。
 
-  The cluster API goes down: Workloads continue to run. KubeVirt control plane will recover eventually.
-  The node/kubelet goes down: Workloads will go down. KubeVirt will reschedule the workloads on other nodes if possible
+* 说明已对项目执行的负载测试及其结果。
 
-### Security
+  KubeVirt 项目作为 SIG scale 工作的一部分，定期进行性能与负载测试。
 
-* Security Hygiene
-  * How is the project executing access control?
+  像 Red Hat 这样的厂商会在其产品化过程中定期进行性能与规模测试。
 
-    KubeVirt relies on Kubernetes access control and is not performing access control by itself.
+* 说明对用户、请求、系统资源等的建议限制，以及这些限制是如何得出的。
 
-* Cloud Native Threat Modeling  
+  对 VM 数量或节点数量的限制不仅由本项目决定，也取决于底层集群的运维方式。
 
-  Cloud Native Threat Modeling has not been performed yet for KubeVirt.
+  高度优化的组织可以轻松地在拥有数百个节点的单个集群上运行数万个 VM。
+  建议普通用户根据运维模型和要求来调整其集群规模。
 
-  * How does the project ensure its security reporting and response team is representative of its community diversity (organizational and individual)?  
+  一个常规的大型 KubeVirt 集群预期在不到 100 个节点上承载数千个 VM。
 
-    It’s a best effort by the KubeVirt maintainers to keep multiple organizations involved in security reporting, security response teams, and auditing efforts.
+* 说明项目使用哪种弹性模式以及如何使用，包括熔断器模式。
 
-  * How does the project invite and rotate security reporting team members?
+### 可观测性要求 {#observability-requirements}
 
-    The project relies on vendors to perform this rotation.
+* 说明项目正在使用或产生的信号，包括日志、指标、性能剖析和追踪。请包括支持的格式、建议的配置以及数据存储。
+
+  KubeVirt 提供指标端点，并附带包含运维手册的 Prometheus 告警规则。
+  KubeVirt 也在其 CR 上一致地使用错误状况。
+
+* 说明项目如何捕获审计日志。
+
+  Kubernetes 审计日志可用于 KubeVirt，因为所有面向用户的 API 调用都经过 Kubernetes API 服务器。
+
+* 说明项目使用或实现的任何仪表板，以及任何仪表板要求。
+
+  KubeVirt 没有实现任何仪表板。
+  有一些由社区维护的 Grafana 仪表板可用。
+
+* 说明项目如何向采用者呈现项目的资源要求，以便监控云与基础设施成本，例如 FinOps
+
+  采用者只需继续监控其 Kubernetes 用量。
+
+* 项目覆盖了哪些参数，以确保应用/服务及其工作负载的健康？
+
+  KubeVirt 允许为工作负载设置健康检查。
+  KubeVirt Operator 会检查其基础设施组件的健康状况。
+  KubeVirt Operator 的健康状况（包括其依赖项）也会通过 Prometheus 端点上报。
+
+* 运维人员如何确定本项目是否正被工作负载使用？
+
+  KubeVirt 提供运行虚拟机工作负载的能力。这些工作负载运行在 Pod 中。因此，用于监控 Pod 的同一机制也可用于监控 VM。
+
+* 使用本项目的人如何知道它对其实例而言正在正常工作？
+
+  他们可以查看 KubeVirt Operator 的状况。如果它没有正常工作，则会设置一个状况。
+
+* 说明本项目的 SLO（服务等级目标）。
+
+  没有定义 SLO。
+
+* 运维人员可以使用哪些 SLI（服务等级指标）来判断服务的健康状况？
+
+  没有定义 SLI。
+
+### 依赖 {#dependencies}
+
+* 说明项目在集群中所依赖的具体运行中的服务。
+
+  KubeVirt 仅依赖 Kubernetes，没有其他强制性依赖。KubeVirt 可以选择与 Containerized Data Importer 和 nmstate 项目协同工作。
+
+* 说明项目的依赖生命周期策略。
+
+  KubeVirt 使用 golang 编写，并使用 go.mod/go.sum 来跟踪加入构建链的依赖。每个新增依赖都会在代码评审/提交过程中受到审查。
+
+* 项目如何在其开发和安全卫生中纳入并考虑源成分分析？说明这种源成分分析（SCA）是如何跟踪的。
+
+  KubeVirt 使用 FOSSA 来确保符合安全与许可证要求。这些检查会应用于本项目的每一个拉取请求。
+
+* 说明项目如何基于源成分分析（SCA）实施变更，以及时间尺度。
+
+  FOSSA 检查应用于每一个拉取请求。此外，KubeVirt 会定期利用 SonarCloud 来检测常见的问题代码模式。
+
+### 故障排查 {#troubleshooting}
+
+* 如果某个关键组件或功能变得不可用，本项目如何恢复？例如 Kubernetes API 服务器、etcd、数据库、leader 节点等。
+
+  如果集群控制平面丢失，工作负载将继续运行。它们会尝试定期重新连接集群控制平面。
+
+
+* 说明已知的故障模式。
+
+  集群 API 不可用：工作负载继续运行。KubeVirt 控制平面最终会恢复。
+  节点/kubelet 不可用：工作负载会停止。如果可能，KubeVirt 会将工作负载重新调度到其他节点。
+
+### 安全 {#security_1}
+
+* 安全卫生
+  * 项目如何执行访问控制？
+
+    KubeVirt 依赖 Kubernetes 的访问控制，自身并不执行访问控制。
+
+* 云原生威胁建模
+
+  尚未对 KubeVirt 进行云原生威胁建模。
+
+  * 项目如何确保其安全报告与响应团队能够代表其社区多样性（组织层面和个人层面）？
+
+    KubeVirt 维护者会尽力让多个组织参与安全报告、安全响应团队以及审计工作。
+
+  * 项目如何邀请和轮换安全报告团队成员？
+
+    项目依靠厂商来执行这一轮换。

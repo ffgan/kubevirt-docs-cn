@@ -1,92 +1,75 @@
-# Creating Instance Types and Preferences by using virtctl
+# 使用 virtctl 创建实例类型和偏好 {#creating-instance-types-and-preferences-by-using-virtctl}
 
-As of KubeVirt v1.0, you can use virtctl subcommands to create instance
-types and preferences.
+从 KubeVirt v1.0 起，你可以使用 virtctl 子命令创建实例类型和偏好。
 
-## Creating Instance Types
+## 创建实例类型 {#creating-instance-types}
 
-The virtctl subcommand `create instancetype` allows easy creation of an instance
-type manifest from the command line. The command also provides several flags
-that can be used to create your desired manifest.
+virtctl 子命令 `create instancetype` 让你能够从命令行轻松创建实例类型清单。该命令还提供若干标志，可用于创建所需的清单。
 
-There are two required flags that need to be specified:
+有两个必须指定的标志：
 
-1. `--cpu`: the number of vCPUs to be requested
-2. `--memory`: the amount of memory to be requested
+1. `--cpu`：要请求的 vCPU 数量
+2. `--memory`：要请求的内存量
 
-Additionally, there are several optional flags that can be used, such as
-specifying a list of GPUs for passthrough, choosing the desired IOThreadsPolicy,
-or simply providing the name of our instance type.
+此外还有若干可选标志，例如指定用于直通的 GPU 列表、选择所需的 IOThreadsPolicy，或直接提供实例类型的名称。
 
-By default, the command creates cluster-wide instance types. If the user
-wants to create the namespaced version, they need to provide the namespaced
-flag. The namespace name can be specified by using the `--namespace` flag.
+默认情况下，该命令创建集群范围的实例类型。如果用户想创建命名空间范围的版本，需要提供 namespaced 标志。可以使用 `--namespace` 标志指定命名空间名称。
 
-For a complete list of flags and their descriptions, use the following command:
+要查看标志的完整列表及其说明，请使用以下命令：
 
 ```shell
 virtctl create instancetype -h
 ```
 
-### Examples
+### 示例 {#examples}
 
-Create a manifest for a VirtualMachineClusterInstancetype with the required
-`--cpu` and `--memory` flags:
+使用必需的 `--cpu` 和 `--memory` 标志，为 VirtualMachineClusterInstancetype 创建清单：
 
 ```shell
 virtctl create instancetype --cpu 2 --memory 256Mi
 ```
 
-Create a manifest for a VirtualMachineInstancetype with a specified namespace:
+为指定了命名空间的 VirtualMachineInstancetype 创建清单：
 
 ```shell
 virtctl create instancetype --cpu 2 --memory 256Mi --namespace my-namespace
 ```
 
-Create a manifest for a VirtualMachineInstancetype without a specified
-namespace name:
+为未指定命名空间名称的 VirtualMachineInstancetype 创建清单：
 
 ```shell
 virtctl create instancetype --cpu 2 --memory 256Mi --namespaced
 ```
 
-## Creating Preferences
+## 创建偏好 {#creating-preferences}
 
-The virtctl subcommand `create preference` allows easy creation of a preference
-manifest from the command line. This command serves as a starting point to
-create the basic structure of a preference manifest, as it does not allow
-specifying all the options that are supported in preferences.
+virtctl 子命令 `create preference` 让你能够从命令行轻松创建偏好清单。该命令是创建偏好清单基本结构的起点，因为它不允许指定偏好所支持的全部选项。
 
-The current set of flags allows us, for example, to specify the preferred CPU
-topology, machine type or a storage class.
+当前这组标志允许我们指定例如首选 CPU 拓扑、机器类型或存储类。
 
-By default, the command creates cluster-wide preferences. If the user wants to
-create the namespaced version, they need to provide the namespaced flag. The
-namespace name can be specified by using the `--namespace` flag.
+默认情况下，该命令创建集群范围的偏好。如果用户想创建命名空间范围的版本，需要提供 namespaced 标志。可以使用 `--namespace` 标志指定命名空间名称。
 
-For a complete list of flags and their descriptions, use the following command:
+要查看标志的完整列表及其说明，请使用以下命令：
 
 ```shell
 virtctl create preference -h
 ```
 
-### Examples
+### 示例 {#examples_1}
 
-Create a manifest for a VirtualMachineClusterPreference with a preferred CPU
-topology:
+为具有首选 CPU 拓扑的 VirtualMachineClusterPreference 创建清单：
 
 ```shell
 virtctl create preference --cpu-topology preferSockets
 ```
 
-Create a manifest for a VirtualMachinePreference with a specified namespace:
+为指定了命名空间的 VirtualMachinePreference 创建清单：
 
 ```shell
 virtctl create preference --namespace my-namespace
 ```
 
-Create a manifest for a VirtualMachinePreference with the preferred storage
-class:
+为具有首选存储类的 VirtualMachinePreference 创建清单：
 
 ```shell
 virtctl create preference --namespaced --volume-storage-class my-storage

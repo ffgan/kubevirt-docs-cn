@@ -1,10 +1,10 @@
-# Execute virsh commands in virt-launcher pod
+# 在 virt-launcher Pod 中执行 virsh 命令 {#execute-virsh-commands-in-virt-launcher-pod}
 
-A powerful utility to check and troubleshoot the VM state is [`virsh`](https://www.libvirt.org/manpages/virsh.html) and the utility is already installed in the `compute` container on the virt-launcher pod.
+一个用来检查并排查 VM 状态的强大工具是 [`virsh`](https://www.libvirt.org/manpages/virsh.html)，而且该工具已经安装在 virt-launcher Pod 的 `compute` 容器中。
 
-For example, it possible to run any QMP commands.
+例如，可以运行任何 QMP 命令。
 
-For a full list of QMP command, please refer to the [QEMU documentation](https://qemu-project.gitlab.io/qemu/interop/qemu-qmp-ref.html).
+如需 QMP 命令的完整列表，请参阅 [QEMU 文档](https://qemu-project.gitlab.io/qemu/interop/qemu-qmp-ref.html)。
 
 ```console
 $ kubectl get po
@@ -34,9 +34,9 @@ $ virsh qemu-monitor-command default_vmi-debug-tools query-kvm --pretty
 }
 ```
 
-Another useful virsh command is the `qemu-monitor-event`. Once invoked, it observes and reports the QEMU events.
+另一个有用的 virsh 命令是 `qemu-monitor-event`。一经调用，它就会观察并报告 QEMU 事件。
 
-The following example shows the events generated for pausing and unpausing the guest.
+下面的示例展示因暂停和取消暂停客户机而产生的事件。
 
 ```console
 $ kubectl get po
@@ -45,7 +45,7 @@ virt-launcher-vmi-ephemeral-nqcld   3/3     Running   0          57m
 $ kubectl exec -ti virt-launcher-vmi-ephemeral-nqcld -- virsh qemu-monitor-event --pretty --loop
 ```
 
-Then, you can, for example, pause and then unpause the guest and check the triggered events:
+然后，你可以例如先暂停、再取消暂停该客户机，并查看被触发的事件：
 ```console
 $ virtctl pause vmi vmi-ephemeral
 VMI vmi-ephemeral was scheduled to pause
@@ -53,7 +53,7 @@ VMI vmi-ephemeral was scheduled to pause
 VMI vmi-ephemeral was scheduled to unpause
 ```
 
-From the monitored events:
+来自被监视的事件：
 ```console
 $ kubectl exec -ti virt-launcher-vmi-ephemeral-nqcld -- virsh qemu-monitor-event --pretty --loop
 event STOP at 1698405797.422823 for domain 'default_vmi-ephemeral': <null>

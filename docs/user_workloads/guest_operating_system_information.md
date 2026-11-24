@@ -1,7 +1,6 @@
-# Guest Operating System Information
+# 客户机操作系统信息 {#guest-operating-system-information}
 
-Guest operating system identity for the VirtualMachineInstance will be
-provided by the label `kubevirt.io/os` :
+VirtualMachineInstance 的客户机操作系统标识将由标签 `kubevirt.io/os` 提供：
 
 ```yaml
 metadata:
@@ -10,9 +9,7 @@ metadata:
     kubevirt.io/os: win2k12r2
 ```
 
-The `kubevirt.io/os` label is based on the short OS identifier from
-[libosinfo](https://libosinfo.org/) database. The following Short IDs
-are currently supported:
+`kubevirt.io/os` 标签基于 [libosinfo](https://libosinfo.org/) 数据库中的短 OS 标识符。目前支持以下短 ID：
 
 <table>
 <colgroup>
@@ -24,10 +21,10 @@ are currently supported:
 </colgroup>
 <thead>
 <tr class="header">
-<th>Short ID</th>
-<th>Name</th>
-<th>Version</th>
-<th>Family</th>
+<th>短 ID</th>
+<th>名称</th>
+<th>版本</th>
+<th>系列</th>
 <th>ID</th>
 </tr>
 </thead>
@@ -42,16 +39,13 @@ are currently supported:
 </tbody>
 </table>
 
-## Use with presets
+## 与预设一起使用 {#use-with-presets}
 
-A VirtualMachineInstancePreset representing an operating system with a
-`kubevirt.io/os` label could be applied on any given
-VirtualMachineInstance that have and match the `kubevirt.io/os` label.
+带有 `kubevirt.io/os` 标签、代表某一操作系统的 VirtualMachineInstancePreset，可以应用到任何同样带有并匹配该 `kubevirt.io/os` 标签的 VirtualMachineInstance 上。
 
-Default presets for the OS identifiers above are included in the current
-release.
+当前发行版包含上述 OS 标识符的默认预设。
 
-### Windows Server 2012R2 `VirtualMachineInstancePreset` Example
+### Windows Server 2012R2 `VirtualMachineInstancePreset` 示例 {#windows-server-2012r2-virtualmachineinstancepreset-example}
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -109,8 +103,7 @@ spec:
         claimName: my-windows-image
 ```
 
-Once the `VirtualMachineInstancePreset` is applied to the
-`VirtualMachineInstance`, the resulting resource would look like this:
+将 `VirtualMachineInstancePreset` 应用到 `VirtualMachineInstance` 之后，得到的资源如下所示：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -161,25 +154,15 @@ spec:
         claimName: my-windows-image
 ```
 
-For more information see [VirtualMachineInstancePresets](../user_workloads/presets.md)
+更多信息见 [VirtualMachineInstancePresets](../user_workloads/presets.md)
 
-### HyperV optimizations
+### HyperV 优化 {#hyperv-optimizations}
 
-KubeVirt supports quite a lot of so-called "HyperV enlightenments",
-which are optimizations for Windows Guests. Some of these optimization
-may require an up to date host kernel support to work properly, or to
-deliver the maximum performance gains.
+KubeVirt 支持相当多所谓的 “HyperV enlightenment”，它们是针对 Windows 客户机的优化。其中一些优化可能需要较新的宿主机内核支持才能正常工作，或才能带来最大的性能提升。
 
-KubeVirt can perform extra checks on the hosts before to run Hyper-V
-enabled VMs, to make sure the host has no known issues with Hyper-V
-support, properly expose all the required features and thus we can
-expect optimal performance. These checks are disabled by default for
-backward compatibility and because they depend on the
-[node-feature-discovery](https://github.com/kubernetes-sigs/node-feature-discovery)
-and on extra configuration.
+KubeVirt 可以在运行启用了 Hyper-V 的 VM 之前对宿主机执行额外检查，以确保宿主机在 Hyper-V 支持方面没有已知问题，正确暴露所有必需的功能，从而可以预期获得最优性能。出于向后兼容，并且因为这些检查依赖于 [node-feature-discovery](https://github.com/kubernetes-sigs/node-feature-discovery) 以及额外配置，这些检查默认禁用。
 
-To enable strict host checking, the user may expand the `featureGates`
-field in the KubeVirt CR by adding the `HypervStrictCheck` to it.
+要启用严格的宿主机检查，用户可以扩展 KubeVirt CR 中的 `featureGates` 字段，向其中加入 `HypervStrictCheck`。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -195,7 +178,7 @@ spec:
         - "HypervStrictCheck"
 ```
 
-Alternatively, users can edit an existing kubevirt CR:
+另外，用户可以编辑现有的 kubevirt CR：
 
 ```bash
 kubectl edit kubevirt kubevirt -n kubevirt

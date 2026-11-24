@@ -1,3 +1,7 @@
+# KubeVirt 用户指南（中文译本）
+
+这是 [kubevirt/user-guide](https://github.com/kubevirt/user-guide) 的非官方中文译本，对应上游提交 `ebbaef465b4ee28b29b4363b4911b7aa4ac6c98e`（2026-11-20，`document live migration compression (#1024)`）。正文许可证仍为 Apache-2.0。布局、代码示例、命令、链接与图片保持与该提交一致，仅翻译可见文字。英文原文：<https://kubevirt.io/user-guide/>。
+
 # KubeVirt User-Guide
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/2430a4f6-4a28-4e60-853d-f0cc395e13bb/deploy-status)](https://app.netlify.com/sites/kubevirt-user-guide/deploys)

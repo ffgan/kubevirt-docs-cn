@@ -1,54 +1,47 @@
-# Activating and deactivating feature gates
+# 启用与停用功能门控 {#activating-and-deactivating-feature-gates}
 
-KubeVirt has a set of features that are not mature enough to be enabled by
-default. As such, they are protected by a Kubernetes concept called
-[feature gates](https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/).
+KubeVirt 有一组尚未成熟到足以默认启用的功能。因此，它们受到 Kubernetes 中称为
+[功能门控](https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/) 的概念保护。
 
-## Feature gate lifecycle
+## 功能门控生命周期 {#feature-gate-lifecycle}
 
-KubeVirt features progress through maturity stages, each with different
-default behavior:
+KubeVirt 功能会经历多个成熟度阶段，每个阶段的默认行为不同：
 
-| Stage | Default state | How to change |
+| 阶段 | 默认状态 | 如何更改 |
 |---|---|---|
-| **Alpha** | Disabled | Enable via `featureGates` |
-| **Beta** | Enabled (from v1.9) | Disable via `disabledFeatureGates` |
-| **GA** | Always enabled | Cannot be disabled |
+| **Alpha** | 已禁用 | 通过 `featureGates` 启用 |
+| **Beta** | 已启用（自 v1.9 起） | 通过 `disabledFeatureGates` 停用 |
+| **GA** | 始终启用 | 无法停用 |
 
-- **Alpha** features are experimental and must be explicitly enabled.
-  They may be incomplete, have breaking API changes, or be removed
-  entirely.
-- **Beta** features are considered stable enough for broad testing.
-  Starting from KubeVirt v1.9, all Beta feature gates are
-  **enabled by default**. See
-  [VEP 229: Beta features on by default](https://github.com/kubevirt/enhancements/blob/main/veps/meta-VEPs/229-beta-features-on-by-default/vep.md)
-  and the [blog post](https://kubevirt.io/2026/Beta-Features-On-By-Default-In-v1-9.html)
-  for full details.
-- **GA** features are always enabled and cannot be toggled. The
-  feature gate itself is considered obsolete at this stage.
+- **Alpha** 功能是实验性的，必须显式启用。
+  它们可能不完整、包含破坏性 API 变更，或被完全移除。
+- **Beta** 功能被认为已足够稳定，可供广泛测试。
+  从 KubeVirt v1.9 起，所有 Beta 功能门控
+  **默认启用**。完整细节见
+  [VEP 229：Beta 功能默认开启](https://github.com/kubevirt/enhancements/blob/main/veps/meta-VEPs/229-beta-features-on-by-default/vep.md)
+  以及[博客文章](https://kubevirt.io/2026/Beta-Features-On-By-Default-In-v1-9.html)。
+- **GA** 功能始终启用，且无法切换。在此阶段，
+  功能门控本身被视为已过时。
 
-## Feature gate report
+## 功能门控报告 {#feature-gate-report}
 
-Starting from v1.9, KubeVirt ships a **feature gate report** as
-part of every release's artifacts. This JSON file lists every non-GA
-feature gate and its current state (Alpha, Beta, or Deprecated).
+从 v1.9 起，KubeVirt 会在每个发行版的制品中附带一份**功能门控报告**。
+该 JSON 文件列出每一个非 GA 功能门控及其当前状态（Alpha、Beta 或已弃用）。
 
-You can find it in the
-[release artifacts](https://github.com/kubevirt/kubevirt/releases)
-for each version, or generate it yourself from a KubeVirt source
-tree:
+你可以在每个版本的
+[发行制品](https://github.com/kubevirt/kubevirt/releases)
+中找到它，也可以从 KubeVirt 源码树自行生成：
 
 ```bash
 make feature-gate-report
 ```
 
-The full list of feature gates can also be checked directly from the
-[source code](https://github.com/kubevirt/kubevirt/blob/main/pkg/virt-config/featuregate/active.go).
+完整的功能门控列表也可以直接从
+[源代码](https://github.com/kubevirt/kubevirt/blob/main/pkg/virt-config/featuregate/active.go) 查看。
 
-## How to activate a feature gate
+## 如何启用功能门控 {#how-to-activate-a-feature-gate}
 
-Alpha features must be explicitly enabled. You can activate a feature
-gate in KubeVirt's CR:
+Alpha 功能必须显式启用。你可以在 KubeVirt 的 CR 中启用功能门控：
 
 ```bash
 cat << END > enable-feature-gate.yaml
@@ -68,7 +61,7 @@ END
 kubectl apply -f enable-feature-gate.yaml
 ```
 
-Alternatively, edit the existing KubeVirt CR:
+也可以编辑现有的 KubeVirt CR：
 
 ```bash
 kubectl edit kubevirt kubevirt -n kubevirt
@@ -83,25 +76,19 @@ spec:
         - AlphaFeatureToEnable
 ```
 
-**Note:** the name of the feature gates is case sensitive.
+**注意：**功能门控的名称区分大小写。
 
-The snippets above assume KubeVirt is installed in the `kubevirt`
-namespace. Change the namespace to suit your installation.
+上面的代码片段假定 KubeVirt 安装在 `kubevirt`
+命名空间中。请根据你的安装更改命名空间。
 
-## How to disable a feature gate
+## 如何停用功能门控 {#how-to-disable-a-feature-gate}
 
-Starting from KubeVirt v1.8, you can explicitly disable feature gates
-using the `disabledFeatureGates` field. From v1.9, this is the
-only way to opt out of Beta features that are enabled by
-default.
+从 KubeVirt v1.8 起，你可以使用 `disabledFeatureGates` 字段显式停用功能门控。从 v1.9 起，这是退出默认启用的 Beta 功能的唯一方式。
 
-**It is recommended to disable all Beta feature gates in production**
-unless you have explicitly validated them for your environment. Use
-the feature gate report from the release artifacts to
-programmatically populate this list.
+**建议在生产环境中停用所有 Beta 功能门控**，除非你已针对自己的环境明确验证过它们。可使用发行制品中的功能门控报告以编程方式填充此列表。
 
-To disable specific feature gates, add them to the
-`disabledFeatureGates` list:
+要停用特定功能门控，请将它们添加到
+`disabledFeatureGates` 列表中：
 
 ```bash
 cat << END > disable-feature-gate.yaml
@@ -121,7 +108,7 @@ END
 kubectl apply -f disable-feature-gate.yaml
 ```
 
-Alternatively, edit the existing KubeVirt CR:
+也可以编辑现有的 KubeVirt CR：
 
 ```bash
 kubectl edit kubevirt kubevirt -n kubevirt
@@ -136,18 +123,18 @@ spec:
         - BetaFeatureToDisable
 ```
 
-!!! warning "Important"
-    A feature gate cannot be listed in both `featureGates` and
-    `disabledFeatureGates` at the same time. This will result in a
-    validation error.
+!!! warning "重要"
+    功能门控不能同时列在 `featureGates` 和
+    `disabledFeatureGates` 中。否则将导致
+    校验错误。
 
-## Upgrade considerations
+## 升级注意事项 {#upgrade-considerations}
 
-When upgrading to v1.9 or later, be aware that all Beta features
-will become active by default. Review the feature gate report for
-the target version and configure `disabledFeatureGates` as needed.
+升级到 v1.9 或更高版本时，请注意所有 Beta 功能
+将默认变为启用状态。请查阅目标版本的功能门控报告，
+并按需配置 `disabledFeatureGates`。
 
-The `disabledFeatureGates` mechanism was introduced in v1.8. If
-you are upgrading from v1.7 or older directly to v1.9, Beta
-features will be unconditionally enabled until you patch the
-KubeVirt CR post-upgrade. Upgrading to v1.8 first is recommended.
+`disabledFeatureGates` 机制在 v1.8 中引入。如果
+你从 v1.7 或更早版本直接升级到 v1.9，Beta
+功能将无条件启用，直到你在升级后修补
+KubeVirt CR。建议先升级到 v1.8。

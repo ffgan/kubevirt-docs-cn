@@ -1,27 +1,18 @@
-# Creating VirtualMachines by using virtctl
+# 使用 virtctl 创建 VirtualMachine {#creating-virtualmachines-by-using-virtctl}
 
-The virtctl sub command `create vm` allows easy creation of VirtualMachine
-manifests from the command line. It leverages
-[instance types and preferences](../user_workloads/instancetypes.md) and
-inference by default (see
-[Using instance types and preferences](#using-instance-types-and-preferences))
-and it provides several flags to control details of the created virtual machine.
+virtctl 子命令 `create vm` 允许从命令行方便地创建 VirtualMachine 清单。它默认使用[实例类型和偏好](../user_workloads/instancetypes.md)并进行推断（参见[使用实例类型和偏好](#using-instance-types-and-preferences)），并且提供若干标志来控制所创建虚拟机的细节。
 
-For example there are flags to specify the name or run strategy of a
-virtual machine or flags to add volumes to a virtual machine. Instance types
-and preferences can either be specified directly or it is possible to let
-KubeVirt infer those from the volume used to boot the virtual machine.
+例如，有些标志用来指定虚拟机的名称或运行策略，也有些标志用来向虚拟机添加卷。实例类型和偏好既可以显式指定，也可以让 KubeVirt 从用于启动该虚拟机的卷中推断它们。
 
-For a full set of flags and their description use the following command:
+要查看完整的标志集合及其说明，请使用下面的命令：
 
 ```shell
 virtctl create vm -h
 ```
 
-## Creating VirtualMachines on a cluster
+## 在集群上创建 VirtualMachine {#creating-virtualmachines-on-a-cluster}
 
-The output of `virtctl create vm` can be piped directly into `kubectl` to
-create a VirtualMachine on a cluster, e.g.:
+`virtctl create vm` 的输出可以直接通过管道传给 `kubectl`，从而在集群上创建 VirtualMachine，例如：
 
 ```shell
 # Create a VM with name my-vm on the cluster
@@ -29,23 +20,17 @@ virtctl create vm --name my-vm | kubectl create -f -
 virtualmachine.kubevirt.io/my-vm created
 ```
 
-## Using instance types and preferences
+## 使用实例类型和偏好 {#using-instance-types-and-preferences}
 
-Instance types and preferences can be used with the appropriate flags. If
-they are not otherwise specified, instance types and preferences are inferred
-from the boot volume of a virtual machine by default. For more information
-about inference, see [below](#inference-of-instance-type-andor-preference).
+实例类型和偏好可以通过相应的标志来使用。如果没有另行指定，默认会从虚拟机的启动卷推断实例类型和偏好。关于推断的更多信息，见[下文](#inference-of-instance-type-andor-preference)。
 
-The following example creates a VM specifying an instance type and preference by
-using the appropriate flags:
+下面的示例通过相应标志创建一台指定了实例类型和偏好的 VM：
 
 ```shell
 virtctl create vm --instancetype my-instancetype --preference my-preference
 ```
 
-The type of the instance type or preference (namespaced or cluster scope)
-can be controlled by prefixing the instance type or preference name with the
-corresponding CRD name, e.g.:
+实例类型或偏好的类型（命名空间作用域或集群作用域）可以通过在实例类型或偏好名称前加上相应的 CRD 名称作为前缀来控制，例如：
 
 ```shell
 # Using a cluster scoped instance type and a namespaced preference
@@ -54,30 +39,19 @@ virtctl create vm \
   --preference virtualmachinepreference/my-preference
 ```
 
-If a prefix was not supplied the cluster scoped resources will be used by
-default.
+如果未提供前缀，则默认使用集群作用域的资源。
 
-### Inference of instance type and/or preference
+### 推断实例类型和/或偏好 {#inference-of-instance-type-andor-preference}
 
-To explicitly
-infer [instance types and/or preferences](../user_workloads/instancetypes.md#inferFromVolume)
-from the volume used to boot the virtual machine add the following flags:
+要从用于启动虚拟机的卷显式推断[实例类型和/或偏好](../user_workloads/instancetypes.md#inferFromVolume)，请添加下面的标志：
 
 ```shell
 virtctl create vm --infer-instancetype --infer-preference
 ```
 
-The implicit default is to always try to infer an instance type and
-preference from the boot volume. This feature makes use of the
-`IgnoreInferFromVolumeFailure` policy, which suppresses failures on inference
-of instance types and preferences. If one of the above switches has been
-explicitly specified, the `RejectInferFromVolumeFailure` policy is used
-instead. This way users are made aware of potential issues during the
-virtual machine creation.
+隐式的默认行为是始终尝试从启动卷推断实例类型和偏好。此功能使用 `IgnoreInferFromVolumeFailure` 策略，该策略会抑制实例类型和偏好推断时的失败。如果上面的某个开关被显式指定，则会改用 `RejectInferFromVolumeFailure` 策略。这样，用户就会在虚拟机创建期间意识到潜在问题。
 
-To infer an instance type or preference from another volume than the volume used
-to boot the virtual machine, use the `--infer-instancetype-from` and
-`--infer-preference-from` flags to specify any of the virtual machine's volumes.
+要从用于启动虚拟机的那个卷以外的另一个卷推断实例类型或偏好，请使用 `--infer-instancetype-from` 和 `--infer-preference-from` 标志来指定该虚拟机的任意卷。
 
 ```shell
 # This virtual machine will boot from volume-a, but the instance type and
@@ -89,63 +63,49 @@ virtctl create vm \
   --infer-preference-from volume-b
 ```
 
-## Boot order of added volumes
+## 所添加卷的启动顺序 {#boot-order-of-added-volumes}
 
-Please note that volumes of different kinds currently have the following fixed
-boot order regardless of the order their flags were specified on the
-command line:
+请注意，不同种类的卷目前具有下面这一固定的启动顺序，与这些标志在命令行上的指定顺序无关：
 
-1. Containerdisks
-2. Directly used PVCs
-3. DataSources
-4. Cloned PVCs
-5. Blank volumes
-6. Imported volumes (through the `--volume-import` flag)
+1. Containerdisk
+2. 直接使用的 PVC
+3. DataSource
+4. 克隆的 PVC
+5. 空白卷
+6. 导入的卷（通过 `--volume-import` 标志）
 
-If multiple volumes of the same kind were specified their order is
-determined by the order in which their flags were specified.
+如果指定了多个相同种类的卷，它们的顺序由这些标志被指定的先后顺序决定。
 
-## Generating cloud-init user data
+## 生成 cloud-init 用户数据 {#generating-cloud-init-user-data}
 
-To generate cloud-init user data with `virtctl create vm` the following
-flags can be used.
+要使用 `virtctl create vm` 生成 cloud-init 用户数据，可以使用下面的标志。
 
 !!! Note
-    Generating cloud-init user data is mutually exclusive with [specifying custom cloud-init user data](#specifying-custom-cloud-init-user-data), as explained below.
+    生成 cloud-init 用户数据与[指定自定义 cloud-init 用户数据](#specifying-custom-cloud-init-user-data)互斥，如下所述。
 
-### `--user` flag
+### `--user` 标志 {#-user-flag}
 
-Specify the main user of the virtual machine that is created by cloud-init. It
-sets the `user` parameter in the generated cloud-init user data.
+指定由 cloud-init 创建的虚拟机主用户。它会在生成的 cloud-init 用户数据中设置 `user` 参数。
 
-### `--password-file` flag
+### `--password-file` 标志 {#-password-file-flag}
 
-Specify a file to read the password for the virtual machine's main user from.
-In the generated cloud-init user data, it sets the value of the `password`
-parameter to the read in value and the value of the `chpasswd` parameter to
-`{ expire: False }`.
+指定一个文件，从中读取虚拟机主用户的密码。在生成的 cloud-init 用户数据中，它把 `password` 参数的值设置为所读入的值，并把 `chpasswd` 参数的值设置为 `{ expire: False }`。
 
-### `--ssh-key` flag
+### `--ssh-key` 标志 {#-ssh-key-flag}
 
-Specify one or more SSH authorized keys for the virtual machine's main user.
-It sets the `ssh_authorized_keys` parameter in the generated cloud-init user
-data.
+为虚拟机的主用户指定一个或多个 SSH 授权密钥。它会在生成的 cloud-init 用户数据中设置 `ssh_authorized_keys` 参数。
 
-### `--ga-manage-ssh` flag
+### `--ga-manage-ssh` 标志 {#-ga-manage-ssh-flag}
 
-When this flag is set, a command enabling the `qemu-guest-agent` to manage SSH
-authorized keys is added to the generated cloud-init user data. The command
-is added to the `runcmd` parameter which is required on SELinux enabled
-distributions that would otherwise not allow the `qemu-guest-agent` to manage
-SSH authorized keys in the home directories of users.
+设置此标志时，会向生成的 cloud-init 用户数据中添加一条命令，使 `qemu-guest-agent` 能够管理 SSH 授权密钥。该命令被添加到 `runcmd` 参数中；这在启用了 SELinux 的发行版上是必需的，否则这些发行版不会允许 `qemu-guest-agent` 管理用户主目录中的 SSH 授权密钥。
 
-### Example
+### 示例 {#example}
 
 ```shell
 $ virtctl create vm --user myuser --access-cred=src:my-keys --ga-manage-ssh
 ```
 
-This command will generate the following cloud-init user data:
+此命令会生成下面的 cloud-init 用户数据：
 
 ```yaml
 volumes:
@@ -158,20 +118,16 @@ volumes:
     name: cloudinitdisk
 ```
 
-By passing the `--ga-manage-ssh` flag explicitly, the `qemu-guest-agent` is
-able to manage the credentials read from the Secret `my-keys` specified as
-source parameter to the `--access-cred` flag. Note that if `--ga-manage-ssh`
-was not explicitly set to `false`, this is also the default behavior.
+通过显式传入 `--ga-manage-ssh` 标志，`qemu-guest-agent` 能够管理从 Secret `my-keys` 读取的凭据，该 Secret 被指定为 `--access-cred` 标志的 source 参数。请注意，如果没有把 `--ga-manage-ssh` 显式设置为 `false`，这也是默认行为。
 
-## Specifying custom cloud-init user data
+## 指定自定义 cloud-init 用户数据 {#specifying-custom-cloud-init-user-data}
 
-To pass custom cloud-init user data to virtctl it needs to be encoded into a
-base64 string.
+要把自定义 cloud-init 用户数据传给 virtctl，需要把它编码为 base64 字符串。
 
 !!! Note
-    Specifying custom cloud-init user data is mutually exclusive with [generating cloud-init user data](#generating-cloud-init-user-data), as explained above.
+    指定自定义 cloud-init 用户数据与[生成 cloud-init 用户数据](#generating-cloud-init-user-data)互斥，如上所述。
 
-Here is an example how to do it:
+下面是一个做法示例：
 
 ```shell
 # Put your cloud-init user data into a file.
@@ -190,37 +146,25 @@ $ echo $CLOUD_INIT_USERDATA
 I2Nsb3VkLWNvbmZpZwpzc2hfYXV0aG9yaXplZF9rZXlzOgogIC0gc3NoLXJzYSBBQUFBLi4uCg==
 ```
 
-You can now use this variable as an argument to the `--cloud-init-user-data`
-flag:
+现在可以把这个变量作为 `--cloud-init-user-data` 标志的参数：
 
 ```shell
 virtctl create vm --cloud-init-user-data $CLOUD_INIT_USERDATA
 ```
 
-## Adding access credentials to a virtual machine
+## 向虚拟机添加访问凭据 {#adding-access-credentials-to-a-virtual-machine}
 
-By using the `--access-cred` flag, the `virtctl create vm` command can configure
-[access credentials](./accessing_virtual_machines.md#dynamic-ssh-public-key-injection-via-qemu-guest-agent)
-in a created virtual machine. It supports SSH authorized key and password
-access credentials and can configure them to be injected either through the
-`qemu-guest-agent` or through cloud-init metadata. The supported parameters of
-the flag depend on the chosen `type` and `method`. The flag can be passed
-multiple times to configure more than one access credential.
+通过使用 `--access-cred` 标志，`virtctl create vm` 命令可以在所创建的虚拟机中配置[访问凭据](./accessing_virtual_machines.md#dynamic-ssh-public-key-injection-via-qemu-guest-agent)。它支持 SSH 授权密钥和密码这两种访问凭据，并且可以把它们配置为通过 `qemu-guest-agent` 注入，或者通过 cloud-init 元数据注入。该标志所支持的参数取决于所选的 `type` 和 `method`。该标志可以多次传入，以配置不止一个访问凭据。
 
-This flag interacts with the flags used to
-[generate cloud-init user data](#generating-cloud-init-user-data), namely it
-inherits the same `--user` for SSH key injection, and it enables
-`qemu-guest-agent` to manage SSH authorized keys (`--ga-manage-ssh`), if it
-is not explicitly disabled by the user.
+此标志会与用于[生成 cloud-init 用户数据](#generating-cloud-init-user-data)的那些标志相互作用：它为 SSH 密钥注入沿用相同的 `--user`，并且会让 `qemu-guest-agent` 管理 SSH 授权密钥（`--ga-manage-ssh`），前提是用户没有显式禁用它。
 
-### Example
+### 示例 {#example_1}
 
 ```shell
 $ virtctl create vm --user myuser --access-cred=src:my-keys
 ```
 
-This command will generate the following access credentials and cloud-init user
-data:
+此命令会生成下面的访问凭据和 cloud-init 用户数据：
 
 ```
 [...]
@@ -243,93 +187,81 @@ volumes:
     name: cloudinitdisk
 ```
 
-## Adding a sysprep volume
+## 添加 sysprep 卷 {#adding-a-sysprep-volume}
 
-A [sysprep volume](startup_scripts.md#sysprep-examples) can be added to
-created virtual machines by passing the `--volume-sysprep` flag to the `virtctl
-create vm` command.
+可以通过传入 `--volume-sysprep` 标志，向所创建的虚拟机添加 [sysprep 卷](startup_scripts.md#sysprep-examples)，该标志传给 `virtctl
+create vm` 命令。
 
-The flag supports adding a sysprep volume from both a `ConfigMap` or a
-`Secret`.
+该标志支持从 `ConfigMap` 或 `Secret` 添加 sysprep 卷。
 
-See the examples on how to do it.
+请参阅示例了解具体做法。
 
-## Short examples
+## 简短示例 {#short-examples}
 
-Create a manifest for a VirtualMachine with a random name:
+为具有随机名称的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm
 ```
 
-Create a manifest for a VirtualMachine with a specified name and RunStrategy
-Always:
+为具有指定名称且 RunStrategy 为 Always 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --name=my-vm --run-strategy=Always
 ```
 
-Create a manifest for a VirtualMachine with a specified
-VirtualMachineClusterInstancetype:
+为指定了 VirtualMachineClusterInstancetype 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --instancetype=my-instancetype
 ```
 
-Create a manifest for a VirtualMachine with a specified
-VirtualMachineInstancetype (namespaced):
+为指定了 VirtualMachineInstancetype（命名空间作用域）的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --instancetype=virtualmachineinstancetype/my-instancetype
 ```
 
-Create a manifest for a VirtualMachine with a specified
-VirtualMachineClusterPreference:
+为指定了 VirtualMachineClusterPreference 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --preference=my-preference
 ```
 
-Create a manifest for a VirtualMachine with a specified
-VirtualMachinePreference (namespaced):
+为指定了 VirtualMachinePreference（命名空间作用域）的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --preference=virtualmachinepreference/my-preference
 ```
 
-Create a manifest for a VirtualMachine with specified memory and an ephemeral
-containerdisk volume:
+为指定了内存以及一个临时 containerdisk 卷的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --memory=1Gi \
   --volume-containerdisk=src:my.registry/my-image:my-tag
 ```
 
-Create a manifest for a VirtualMachine with a cloned DataSource in namespace and
-specified size:
+为在命名空间中克隆了 DataSource 并指定了大小的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --volume-import=type:ds,src:my-ns/my-ds,size:50Gi
 ```
 
-Create a manifest for a VirtualMachine with a cloned DataSource and inferred
-instance type and preference:
+为克隆了 DataSource 并推断实例类型和偏好的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --volume-import=type:ds,src:my-annotated-ds \
   --infer-instancetype --infer-preference
 ```
 
-Create a manifest for a VirtualMachine with multiple volumes and specified boot
-order:
+为具有多个卷并指定了启动顺序的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --volume-containerdisk=src:my.registry/my-image:my-tag \
   --volume-import=type:ds,src:my-ds,bootorder:1
 ```
 
-Create a manifest for a VirtualMachine with multiple volumes and inferred
-instance type and preference with specified volumes:
+为具有多个卷、并从指定卷推断实例类型和偏好的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --volume-import=type:ds,src:my-annotated-ds \
@@ -337,96 +269,84 @@ virtctl create vm --volume-import=type:ds,src:my-annotated-ds \
   --infer-preference=my-annotated-pvc
 ```
 
-Create a manifest for a VirtualMachine with a cloned PVC:
+为克隆了 PVC 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --volume-import=type:pvc,src:my-ns/my-pvc
 ```
 
-Create a manifest for a VirtualMachine using a PVC without cloning it:
+为使用 PVC 但不克隆它的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --volume-pvc=src:my-pvc
 ```
 
-Create a manifest for a VirtualMachine with a clone DataSource and a blank
-volume:
+为带有克隆 DataSource 和空白卷的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --volume-import=type:ds,src:my-ns/my-ds \
   --volume-import=type:blank,size:50Gi
 ```
 
-Create a manifest for a VirtualMachine with a specified
-VirtualMachineCluster{Instancetype,Preference} and cloned DataSource:
+为指定了 VirtualMachineCluster{Instancetype,Preference} 并克隆了 DataSource 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --instancetype=my-instancetype --preference=my-preference \
   --volume-import=type:ds,src:my-ds
 ```
 
-Create a manifest for a VirtualMachine with a specified
-VirtualMachineCluster{Instancetype,Preference} and two cloned DataSources (flag
-can be provided multiple times):
+为指定了 VirtualMachineCluster{Instancetype,Preference} 以及两个克隆 DataSource 的 VirtualMachine 创建清单（该标志可以提供多次）：
 
 ```shell
 virtctl create vm --instancetype=my-instancetype --preference=my-preference \
   --volume-import=type:ds,src:my-ds1 --volume-import=type:ds,src:my-ds2
 ```
 
-Create a manifest for a VirtualMachine with a specified
-VirtualMachineCluster{Instancetype,Preference} and directly used PVC:
+为指定了 VirtualMachineCluster{Instancetype,Preference} 并直接使用 PVC 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --instancetype=my-instancetype --preference=my-preference \
   --volume-pvc=my-pvc
 ```
 
-Create a manifest for a VirtualMachine with a specified DataVolumeTemplate:
+为指定了 DataVolumeTemplate 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm \
   --volume-import=type:pvc,name:my-pvc,namespace:default,size:256Mi
 ```
 
-Create a manifest for a VirtualMachine with a generated cloud-init config
-setting the user and adding an ssh authorized key:
+为生成了 cloud-init 配置、用于设置用户并添加一条 ssh 授权密钥的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --user=cloud-user --ssh-key="ssh-ed25519 AAAA...."
 ```
 
-Create a manifest for a VirtualMachine with a generated cloud-init config
-setting the user and setting the password from a file:
+为生成了 cloud-init 配置、用于设置用户并从文件设置密码的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --user=cloud-user --password-file=/path/to/file
 ```
 
-Create a manifest for a VirtualMachine with SSH public keys injected into the VM
-from a secret called my-keys to the user also specified in the cloud-init
-config:
+为这样的 VirtualMachine 创建清单：把 SSH 公钥从名为 my-keys 的 secret 注入 VM，并注入到同样在 cloud-init 配置中指定的用户：
 
 ```shell
 virtctl create vm --user=cloud-user --access-cred=type:ssh,src:my-keys
 ```
 
-Create a manifest for a VirtualMachine with SSH public keys injected into the VM
-from a secret called my-keys to a user specified as param:
+为这样的 VirtualMachine 创建清单：把 SSH 公钥从名为 my-keys 的 secret 注入 VM，并注入到作为参数指定的用户：
 
 ```shell
 virtctl create vm --access-cred=type:ssh,src:my-keys,user:myuser
 ```
 
-Create a manifest for a VirtualMachine with password injected into the VM from a
-secret called my-pws:
+为把密码从名为 my-pws 的 secret 注入 VM 的 VirtualMachine 创建清单：
 
 ```shell
 virtctl create vm --access-cred=type:password,src:my-pws
 ```
 
-Create a manifest for a VirtualMachine with a Containerdisk and a Sysprep
-volume (source ConfigMap needs to exist):
+为带有 Containerdisk 和 Sysprep 卷的 VirtualMachine 创建清单（源 ConfigMap 需要已经存在）：
 
 ```shell
 virtctl create vm --memory=1Gi \
@@ -434,23 +354,22 @@ virtctl create vm --memory=1Gi \
   --volume-sysprep=src:my-cm
 ```
 
-## Complex examples
+## 复杂示例 {#complex-examples}
 
-These examples show how `virtctl create vm` can be used in more complex
-scenarios.
+这些示例展示 `virtctl create vm` 如何用于更复杂的场景。
 
-### First example
+### 第一个示例 {#first-example}
 
-Creating a VirtualMachine with the following settings:
+创建具有下列设置的 VirtualMachine：
 
-- Run strategy: `Manual`
-- Termination grace period: `123` seconds
-- Instancetype: `u1.small`
-- Prefernce: `fedora`
-- Using the `quay.io/containerdisks/fedora` containerdisk as first volume
-- Adding a second blank volume with a size of `1Gi`
-- The main user is named `myuser`
-- Logins with the main user are possible with the specified authorized key
+- 运行策略：`Manual`
+- 终止宽限期：`123` 秒
+- 实例类型：`u1.small`
+- 偏好：`fedora`
+- 使用 `quay.io/containerdisks/fedora` containerdisk 作为第一个卷
+- 添加大小为 `1Gi` 的第二个空白卷
+- 主用户名为 `myuser`
+- 可以使用所指定的授权密钥以主用户登录
 
 ```shell
 virtctl create vm --run-strategy=Manual --termination-grace-period=123 \
@@ -460,18 +379,16 @@ virtctl create vm --run-strategy=Manual --termination-grace-period=123 \
   --user=myuser --ssh-key='ssh-ed25519 AAAA...'
 ```
 
-### Second example
+### 第二个示例 {#second-example}
 
-Creating a VirtualMachine with the following settings and using a secret
-for configuring access credentials:
+创建具有下列设置、并使用 secret 来配置访问凭据的 VirtualMachine：
 
-- Instancetype: `u1.small`
-- Prefernce: `fedora`
-- Using the `quay.io/containerdisks/fedora` containerdisk as first volume
-- Adding a second blank volume with a size of `1Gi`
-- The main user is named `myuser`
-- Logins with the main user are possible with the specified authorized key
-  in the access credentials
+- 实例类型：`u1.small`
+- 偏好：`fedora`
+- 使用 `quay.io/containerdisks/fedora` containerdisk 作为第一个卷
+- 添加大小为 `1Gi` 的第二个空白卷
+- 主用户名为 `myuser`
+- 可以使用访问凭据中所指定的授权密钥以主用户登录
 
 ```shell
 # First create the secret with the public key:

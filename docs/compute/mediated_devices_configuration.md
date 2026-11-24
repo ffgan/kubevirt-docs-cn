@@ -1,22 +1,20 @@
-# Mediated devices and virtual GPUs
-## Configuring mediated devices and virtual GPUs
+# 中介设备与虚拟 GPU {#mediated-devices-and-virtual-gpus}
+## 配置中介设备与虚拟 GPU {#configuring-mediated-devices-and-virtual-gpus}
 
-KubeVirt aims to facilitate the configuration of mediated devices on large clusters.
-Administrators can use the `mediatedDevicesConfiguration` API in the KubeVirt CR to
-create or remove mediated devices in a declarative way, by providing a list of the desired mediated device types that they expect to be configured in the cluster.
+KubeVirt 旨在便于在大型集群上配置中介设备。
+管理员可以使用 KubeVirt CR 中的 `mediatedDevicesConfiguration` API，通过提供他们期望在集群中配置的中介设备类型列表，以声明式方式创建或移除中介设备。
 
-You can also include the `nodeMediatedDeviceTypes` option to provide a more specific configuration that targets a specific node or a group of nodes directly with a node selector.
-The `nodeMediatedDeviceTypes` option must be used in combination with `mediatedDeviceTypes`
-in order to override the global configuration set in the `mediatedDeviceTypes` section.
+你还可以加入 `nodeMediatedDeviceTypes` 选项，借助节点选择器直接针对特定节点或一组节点提供更具体的配置。
+`nodeMediatedDeviceTypes` 选项必须与 `mediatedDeviceTypes` 结合使用，才能覆盖在 `mediatedDeviceTypes` 部分中设置的全局配置。
 
-KubeVirt will use the provided configuration to automatically create the relevant mdev/vGPU devices on nodes that can support it.
+KubeVirt 将使用所提供的配置，在能够支持这些设备的节点上自动创建相应的 mdev/vGPU 设备。
 
-Currently, a single mdev type per card will be configured.
-The maximum amount of instances of the selected mdev type will be configured per card.
+目前，每张卡只会配置一种 mdev 类型。
+每张卡将配置所选 mdev 类型的最大实例数。
 
-> Note: Some vendors, such as NVIDIA, require a driver to be installed on the nodes to provide mediated devices, including vGPUs.
+> 注意：某些厂商（例如 NVIDIA）要求在节点上安装驱动程序，才能提供中介设备，包括 vGPU。
 
-Example snippet of a KubeVirt CR configuration that includes both `nodeMediatedDeviceTypes` and `mediatedDeviceTypes`:
+同时包含 `nodeMediatedDeviceTypes` 和 `mediatedDeviceTypes` 的 KubeVirt CR 配置示例片段：
 ```yaml
 spec:
   configuration:
@@ -31,12 +29,12 @@ spec:
         - nvidia-234
 ```
 
-## Configuration scenarios
-### Example: Large cluster with multiple cards on each node
+## 配置场景 {#configuration-scenarios}
+### 示例：每个节点上有多张卡的大型集群 {#example-large-cluster-with-multiple-cards-on-each-node}
 
-On nodes with multiple cards that can support similar vGPU types, the relevant desired types will be created in a round-robin manner.
+在拥有多张卡、且这些卡可以支持相似 vGPU 类型的节点上，相关的期望类型将以轮询方式创建。
 
-For example, considering the following KubeVirt CR configuration:
+例如，考虑下面的 KubeVirt CR 配置：
 
 ```yaml
 spec:
@@ -49,37 +47,37 @@ spec:
       - nvidia-108
 ```
 
-This cluster has nodes with two different PCIe cards:
+此集群中的节点拥有两种不同的 PCIe 卡：
 
-1. Nodes with 3 Tesla T4 cards, where each card can support multiple devices types:
+1. 拥有 3 张 Tesla T4 卡的节点，每张卡可以支持多种设备类型：
     * nvidia-222
     * nvidia-223
     * nvidia-228
     * ...
 
-2. Nodes with 2 Tesla V100 cards, where each card can support multiple device types:
+2. 拥有 2 张 Tesla V100 卡的节点，每张卡可以支持多种设备类型：
     * nvidia-105
     * nvidia-108
     * nvidia-217
     * nvidia-299
     * ...
 
-KubeVirt will then create the following devices:
+KubeVirt 随后将创建以下设备：
 
-1. Nodes with 3 Tesla T4 cards will be configured with:
-    * 16 vGPUs of type nvidia-222 on card 1
-    * 2 vGPUs of type nvidia-228 on card 2
-    * 16 vGPUs of type nvidia-222 on card 3
-2. Nodes with 2 Tesla V100 cards will be configured with:
-    * 16 vGPUs of type nvidia-105 on card 1
-    * 2 vGPUs of type nvidia-108 on card 2
+1. 拥有 3 张 Tesla T4 卡的节点将配置为：
+    * 卡 1 上 16 个类型为 nvidia-222 的 vGPU
+    * 卡 2 上 2 个类型为 nvidia-228 的 vGPU
+    * 卡 3 上 16 个类型为 nvidia-222 的 vGPU
+2. 拥有 2 张 Tesla V100 卡的节点将配置为：
+    * 卡 1 上 16 个类型为 nvidia-105 的 vGPU
+    * 卡 2 上 2 个类型为 nvidia-108 的 vGPU
 
 
-### Example: Single card on a node, multiple desired vGPU types are supported
+### 示例：节点上只有一张卡，且支持多种期望的 vGPU 类型 {#example-single-card-on-a-node-multiple-desired-vgpu-types-are-supported}
 
-When nodes only have a single card, the first supported type from the list will be configured.
+当节点只有一张卡时，将配置列表中第一个受支持的类型。
 
-For example, consider the following list of desired types, where nvidia-223 and nvidia-224 are supported:
+例如，考虑下面的期望类型列表，其中 nvidia-223 和 nvidia-224 受支持：
 
 ```yaml
 spec:
@@ -89,15 +87,15 @@ spec:
       - nvidia-223
       - nvidia-224
 ```
-In this case, nvidia-223 will be configured on the node because it is the first supported type in the list.
+在这种情况下，将在该节点上配置 nvidia-223，因为它是列表中第一个受支持的类型。
 
-## Overriding configuration on a specific node
+## 覆盖特定节点上的配置 {#overriding-configuration-on-a-specific-node}
 
-To override the global configuration set by `mediatedDeviceTypes`, include the `nodeMediatedDeviceTypes` option, specifying the node selector and the `mediatedDeviceTypes` that you want to override for that node.
+要覆盖由 `mediatedDeviceTypes` 设置的全局配置，请加入 `nodeMediatedDeviceTypes` 选项，指定节点选择器以及你要为该节点覆盖的 `mediatedDeviceTypes`。
 
-### Example: Overriding the configuration for a specific node in a large cluster with multiple cards on each node
+### 示例：在每个节点有多张卡的大型集群中，覆盖特定节点的配置 {#example-overriding-the-configuration-for-a-specific-node-in-a-large-cluster-with-multiple-cards-on-each-node}
 
-In this example, the KubeVirt CR includes the `nodeMediatedDeviceTypes` option to override the global configuration specifically for node 2, which will only use the nvidia-234 type.
+在此示例中，KubeVirt CR 包含 `nodeMediatedDeviceTypes` 选项，专门针对节点 2 覆盖全局配置，该节点将只使用 nvidia-234 类型。
 
 ```yaml
 spec:
@@ -114,32 +112,32 @@ spec:
       - nvidia-234
 ```
 
-The cluster has two nodes that both have 3 Tesla T4 cards.
+该集群有两个节点，两者都拥有 3 张 Tesla T4 卡。
 
-* Each card can support a long list of types, including:
+* 每张卡都可以支持一长串类型，其中包括：
     * nvidia-222
     * nvidia-223
     * nvidia-224
     * nvidia-230
     * ...
 
-KubeVirt will then create the following devices:
+KubeVirt 随后将创建以下设备：
 
-1. Node 1
-    * type nvidia-230 on card 1
-    * type nvidia-223 on card 2
-2. Node 2
-    * type nvidia-234 on card 1 and card 2
+1. 节点 1
+    * 卡 1 上的类型为 nvidia-230
+    * 卡 2 上的类型为 nvidia-223
+2. 节点 2
+    * 卡 1 和卡 2 上的类型为 nvidia-234
 
-Node 1 has been configured in a round-robin manner based on the global configuration but node 2 only uses the nvidia-234 that was specified for it.
+节点 1 已根据全局配置以轮询方式完成配置，但节点 2 只使用为它指定的 nvidia-234。
 
-## Updating and Removing vGPU types
+## 更新和移除 vGPU 类型 {#updating-and-removing-vgpu-types}
 
-Changes made to the `mediatedDeviceTypes` section of the KubeVirt CR will trigger a re-evaluation of the configured mdevs/vGPU types on the cluster nodes.
+对 KubeVirt CR 的 `mediatedDeviceTypes` 部分所做的更改，将触发对集群节点上已配置 mdev/vGPU 类型的重新评估。
 
-Any change to the node labels that match the `nodeMediatedDeviceTypes` nodeSelector in the KubeVirt CR will trigger a similar re-evaluation.
+对与 KubeVirt CR 中 `nodeMediatedDeviceTypes` 的 nodeSelector 相匹配的节点标签所做的任何更改，都会触发类似的重新评估。
 
-Consequently, mediated devices will be reconfigured or entirely removed based on the updated configuration.
+因此，中介设备将根据更新后的配置被重新配置，或被完全移除。
 
-## Assigning vGPU/MDEV to a Virtual Machine
-See the [Host Devices Assignment](../compute/host-devices.md) to learn how to consume the newly created mediated devices/vGPUs.
+## 将 vGPU/MDEV 分配给虚拟机 {#assigning-vgpumdev-to-a-virtual-machine}
+请参阅[主机设备分配](../compute/host-devices.md)，了解如何使用新创建的中介设备/vGPU。

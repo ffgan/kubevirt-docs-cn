@@ -1,19 +1,15 @@
-# Node assignment
+# 节点分配 {#node-assignment}
 
-You can constrain the VM to only run on specific nodes or to prefer
-running on specific nodes:
+你可以将 VM 约束为仅在特定节点上运行，或者优先在特定节点上运行：
 
 -   **nodeSelector**
--   **Affinity and anti-affinity**
--   **Taints and Tolerations**
+-   **亲和性与反亲和性**
+-   **污点与容忍**
 
 
-## nodeSelector
+## nodeSelector {#nodeselector}
 
-Setting `spec.nodeSelector` requirements, constrains the scheduler to
-only schedule VMs on nodes, which contain the specified labels. In the
-following example the vmi contains the labels `cpu: slow` and
-`storage: fast`:
+设置 `spec.nodeSelector` 要求会约束调度器，使其仅将 VM 调度到包含指定标签的节点上。在以下示例中，该 VMI 包含标签 `cpu: slow` 和 `storage: fast`：
 
 ```yaml
 metadata:
@@ -38,21 +34,14 @@ spec:
         claimName: mypvc
 ```
 
-Thus the scheduler will only schedule the vmi to nodes which contain
-these labels in their metadata. It works exactly like the Pods
-`nodeSelector`. See the [Pod nodeSelector
-Documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector)
-for more examples.
+因此，调度器只会将该 VMI 调度到元数据中包含这些标签的节点。它的工作方式与 Pod 的 `nodeSelector` 完全相同。更多示例请参见 [Pod nodeSelector 文档](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector)。
 
 
-## Affinity and anti-affinity
+## 亲和性与反亲和性 {#affinity-and-anti-affinity}
 
-The `spec.affinity` field allows specifying hard- and soft-affinity for
-VMs. It is possible to write matching rules against workloads (VMs and
-Pods) and Nodes. Since VMs are a workload type based on Pods,
-Pod-affinity affects VMs as well.
+`spec.affinity` 字段允许为 VM 指定硬亲和性与软亲和性。可以针对工作负载（VM 和 Pod）以及节点编写匹配规则。由于 VM 是基于 Pod 的一种工作负载类型，Pod 亲和性同样会影响 VM。
 
-An example for `podAffinity` and `podAntiAffinity` may look like this:
+`podAffinity` 和 `podAntiAffinity` 的示例可能如下所示：
 
 ```yaml
 metadata:
@@ -98,30 +87,20 @@ spec:
         claimName: mypvc
 ```
 
-Affinity and anti-affinity works exactly like the Pods `affinity`. This
-includes `podAffinity`, `podAntiAffinity`, `nodeAffinity` and
-`nodeAntiAffinity`. See the [Pod affinity and anti-affinity
-Documentation](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity)
-for more examples and details.
+亲和性与反亲和性的工作方式与 Pod 的 `affinity` 完全相同。这包括 `podAffinity`、`podAntiAffinity`、`nodeAffinity` 和 `nodeAntiAffinity`。更多示例和细节请参见 [Pod 亲和性与反亲和性文档](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity)。
 
 
-## Taints and Tolerations
+## 污点与容忍 {#taints-and-tolerations}
 
-Affinity as described above, is a property of VMs that attracts them to
-a set of nodes (either as a preference or a hard requirement). Taints
-are the opposite - they allow a node to repel a set of VMs.
+如上所述，亲和性是 VM 的一种属性，它将 VM 吸引到一组节点（作为偏好或硬性要求）。污点则相反——它们允许节点排斥一组 VM。
 
-Taints and tolerations work together to ensure that VMs are not
-scheduled onto inappropriate nodes. One or more taints are applied to a
-node; this marks that the node should not accept any VMs that do not
-tolerate the taints. Tolerations are applied to VMs, and allow (but do
-not require) the VMs to schedule onto nodes with matching taints.
+污点与容忍协同工作，以确保 VM 不会被调度到不合适的节点上。一个或多个污点会应用到节点上；这表示该节点不应接受任何不容忍这些污点的 VM。容忍应用到 VM 上，允许（但不要求）VM 调度到具有匹配污点的节点上。
 
-You add a taint to a node using kubectl taint. For example,
+你可以使用 kubectl taint 为节点添加污点。例如，
 
     kubectl taint nodes node1 key=value:NoSchedule
 
-An example for `tolerations` may look like this:
+`tolerations` 的示例可能如下所示：
 
 ```yaml
 metadata:
@@ -146,14 +125,9 @@ spec:
     value: "value"
     effect: "NoSchedule"
 ```
-## Node balancing with Descheduler
+## 使用 Descheduler 进行节点均衡 {#node-balancing-with-descheduler}
 
-In some cases we might need to rebalance the cluster on current scheduling policy
-and load conditions. [Descheduler](https://github.com/kubernetes-sigs/descheduler)
-can find pods, which violates e.g. scheduling decisions and evict them based on descheduler
-policies. Kubevirt VMs are handled as pods with local storage, so by default,
-descheduler will not evict them. But it can be easily overridden by adding special
-annotation to the VMI template in the VM:
+在某些情况下，我们可能需要根据当前的调度策略和负载状况重新均衡集群。[Descheduler](https://github.com/kubernetes-sigs/descheduler) 可以找到违反调度决策等情况的 Pod，并根据 descheduler 策略驱逐它们。KubeVirt VM 被当作带有本地存储的 Pod 处理，因此默认情况下，descheduler 不会驱逐它们。但可以通过向 VM 中的 VMI 模板添加特殊注解来轻松覆盖这一行为：
 
 ```console
 spec:
@@ -163,16 +137,10 @@ spec:
         descheduler.alpha.kubernetes.io/evict: true
 ```
 
-This annotation will cause, that the descheduler will be able to evict the VM's pod which can then be
-scheduled by scheduler on different nodes. A VirtualMachine will never restart or re-create a
-VirtualMachineInstance until the current instance of the VirtualMachineInstance is deleted from the cluster.
+此注解会使 descheduler 能够驱逐该 VM 的 Pod，随后调度器可以将它调度到不同的节点上。在当前 VirtualMachineInstance 实例从集群中删除之前，VirtualMachine 绝不会重启或重新创建 VirtualMachineInstance。
 
-## Live update
+## 实时更新 {#live-update}
 
-When the [VM rollout strategy](../user_workloads/vm_rollout_strategies.md) is set to `LiveUpdate`, changes to a VM's
-node selector or affinities will dynamically propagate to the VMI (unless the `RestartRequired` condition is set).
-Changes to tolerations will not dynamically propagate, and will trigger a `RestartRequired` condition if changed on a
-running VM.
+当 [VM 滚动更新策略](../user_workloads/vm_rollout_strategies.md) 设置为 `LiveUpdate` 时，对 VM 的节点选择器或亲和性的更改将动态传播到 VMI（除非设置了 `RestartRequired` 条件）。对容忍的更改不会动态传播，如果在正在运行的 VM 上更改，则会触发 `RestartRequired` 条件。
 
-Modifications of the node selector / affinities will only take effect on next [migration](live_migration.md), the change
-alone will not trigger one.
+对节点选择器/亲和性的修改只会在下一次[迁移](live_migration.md)时生效，仅此更改本身不会触发迁移。

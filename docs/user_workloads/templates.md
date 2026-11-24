@@ -1,65 +1,64 @@
-# Templates
+# 模板 {#templates}
 
 !!! Note
-    By deploying KubeVirt on top of OpenShift the user can benefit from the [OpenShift Template](https://docs.openshift.com/container-platform/4.10/virt/vm_templates/virt-creating-vm-template.html) functionality.
+    在 OpenShift 之上部署 KubeVirt 后，用户可以使用 [OpenShift 模板](https://docs.openshift.com/container-platform/4.10/virt/vm_templates/virt-creating-vm-template.html) 功能。
 
 !!! Note
-    Starting with KubeVirt v1.8.0, the native [VirtualMachine Templates](vm_templates.md) feature
-    replaces this legacy OpenShift-based templating mechanism. New deployments should use
-    [VirtualMachine Templates](vm_templates.md) instead.
+    从 KubeVirt v1.8.0 开始，原生的 [VirtualMachine 模板](vm_templates.md) 功能
+    取代了这一基于 OpenShift 的旧式模板机制。新部署应改用
+    [VirtualMachine 模板](vm_templates.md)。
 
-## Virtual machine templates
+## 虚拟机模板 {#virtual-machine-templates}
 
-### What is a virtual machine template?
+### 什么是虚拟机模板？ {#what-is-a-virtual-machine-template}
 
-The KubeVirt projects provides a set of
-[templates](https://docs.okd.io/latest/openshift_images/using-templates.html) to
-create VMs to handle common usage scenarios. These templates provide a
-combination of some key factors that could be further customized and
-processed to have a Virtual Machine object. The key factors which define
-a template are
+KubeVirt 项目提供了一组
+[模板](https://docs.okd.io/latest/openshift_images/using-templates.html)，用于
+创建 VM 以应对常见使用场景。这些模板把若干关键因素组合在一起，
+可以进一步自定义并处理，从而得到一个 Virtual Machine 对象。定义
+模板的关键因素包括
 
--   Workload Most Virtual Machine should be **server** or **desktop** to have maximum
-    flexibility; the **highperformance** workload trades some of this
-    flexibility to provide better performances.
+-   工作负载 大多数虚拟机应为 **server** 或 **desktop**，以获得最大的
+    灵活性；**highperformance** 工作负载会牺牲其中一部分
+    灵活性，以提供更好的性能。
 
--   Guest Operating System (OS) This allow to ensure that the emulated
-    hardware is compatible with the guest OS. Furthermore, it allows to
-    maximize the stability of the VM, and allows performance
-    optimizations.
+-   客户机操作系统（OS） 这可以确保模拟
+    硬件与客户机操作系统兼容。此外，它还可以
+    最大限度地提高 VM 的稳定性，并允许进行性能
+    优化。
 
--   Size (flavor) Defines the amount of resources (CPU, memory) to
-    allocate to the VM.
+-   规格（flavor） 定义分配给
+    VM 的资源量（CPU、内存）。
 
-More documentation is available in the [common templates
-subproject](https://github.com/kubevirt/common-templates)
+更多文档见 [通用模板
+子项目](https://github.com/kubevirt/common-templates)
 
-### Accessing the virtual machine templates
+### 访问虚拟机模板 {#accessing-the-virtual-machine-templates}
 
-If you installed KubeVirt using a supported method you should find the
-common templates preinstalled in the cluster. Should you want to upgrade
-the templates, or install them from scratch, you can use one of the
-[supported
-releases](https://github.com/kubevirt/common-templates/releases)
+如果使用受支持的方法安装了 KubeVirt，集群中应该已经
+预装了通用模板。如果希望升级
+这些模板，或从头安装它们，可以使用某个
+[受支持的
+发行版](https://github.com/kubevirt/common-templates/releases)
 
-To install the templates:
+安装模板：
 
 ```console
     $ export VERSION=$(curl -s https://api.github.com/repos/kubevirt/common-templates/releases | grep tag_name | grep -v -- '-rc' | head -1 | awk -F': ' '{print $2}' | sed 's/,//' | xargs)
     $ oc create -f https://github.com/kubevirt/common-templates/releases/download/$VERSION/common-templates-$VERSION.yaml
 ```
 
-#### Editable fields
+#### 可编辑字段 {#editable-fields}
 
-You can edit the fields of the templates which define the amount of
-resources which the VMs will receive.
+你可以编辑模板中那些决定 VM 将获得多少
+资源的字段。
 
-Each template can list a different set of fields that are to be
-considered editable. The fields are used as hints for the user
-interface, and also for other components in the cluster.
+每个模板都可以列出一组不同的、应被视为
+可编辑的字段。这些字段用作用户
+界面的提示，也供集群中的其他组件使用。
 
-The editable fields are taken from annotations in the template. Here is
-a snippet presenting a couple of most commonly found editable fields:
+可编辑字段取自模板中的注解。下面的
+片段展示了最常见的几个可编辑字段：
 
 ```console
     metadata:
@@ -71,11 +70,11 @@ a snippet presenting a couple of most commonly found editable fields:
           /objects[0].spec.template.spec.domain.resources.requests.memory
 ```
 
-Each entry in the editable field list must be a
-[jsonpath](https://kubernetes.io/docs/reference/kubectl/jsonpath/). The
-jsonpath root is the objects: element of the template. The actually
-editable field is the last entry (the "leaf") of the path. For example,
-the following minimal snippet highlights the fields which you can edit:
+可编辑字段列表中的每一项都必须是
+[jsonpath](https://kubernetes.io/docs/reference/kubectl/jsonpath/)。
+jsonpath 的根是模板的 objects: 元素。实际
+可编辑的字段是路径的最后一项（“叶子”）。例如，
+下面这段最简片段标出了你可以编辑的字段：
 
 ```console
     objects:
@@ -96,12 +95,12 @@ the following minimal snippet highlights the fields which you can edit:
                     VALUE # this is editable
 ```
 
-### Relationship between templates and VMs
+### 模板与 VM 的关系 {#relationship-between-templates-and-vms}
 
-Once processed the templates produce VM objects to be used in the cluster. The VMs
-produced from templates will have a `vm.kubevirt.io/template` label,
-whose value will be the name of the parent template, for example
-`fedora-desktop-medium`:
+模板经过处理后会生成可在集群中使用的 VM 对象。由模板
+生成的 VM 会带有 `vm.kubevirt.io/template` 标签，
+其值是父模板的名称，例如
+`fedora-desktop-medium`：
 
 ```console
       metadata:
@@ -109,9 +108,9 @@ whose value will be the name of the parent template, for example
           vm.kubevirt.io/template: fedora-desktop-medium
 ```
 
-In addition, these VMs can include an optional label
-`vm.kubevirt.io/template-namespace`, whose value will be the namespace
-of the parent template, for example:
+此外，这些 VM 还可以包含一个可选标签
+`vm.kubevirt.io/template-namespace`，其值是父模板所在的命名空间，
+例如：
 
 ```console
       metadata:
@@ -119,18 +118,18 @@ of the parent template, for example:
           vm.kubevirt.io/template-namespace: openshift
 ```
 
-If this label is not defined, the template is expected to belong to the
-same namespace as the VM.
+如果未定义该标签，则预期模板与该 VM 属于
+同一命名空间。
 
-This make it possible to query for all the VMs built from any template.
+这样就可以查询由任意模板构建的所有 VM。
 
-Example:
+示例：
 
 ```console
     oc process -o yaml -f dist/templates/rhel8-server-tiny.yaml NAME=rheltinyvm SRC_PVC_NAME=rhel SRC_PVC_NAMESPACE=kubevirt
 ```
 
-And the output:
+以及输出：
 
 ```yaml
 apiVersion: v1
@@ -219,27 +218,26 @@ kind: List
 metadata: {}
 ```
 
-You can add the VM from the template to the cluster in one go
+你可以一次性把由模板生成的 VM 加入集群
 
 ```console
     oc process rhel8-server-tiny NAME=rheltinyvm SRC_PVC_NAME=rhel SRC_PVC_NAMESPACE=kubevirt | oc apply -f -
 ```
 
-Please note that after the generation step VM and template objects have no relationship with each other besides the aforementioned label.  Changes in templates do not automatically affect VMs or vice versa.
+请注意，在生成步骤之后，VM 对象与模板对象之间除了上述标签之外没有任何关系。模板中的更改不会自动影响 VM，反之亦然。
 
-### common template customization
+### 通用模板自定义 {#common-template-customization}
 
-The templates provided by the kubevirt project provide a set of
-conventions and annotations that augment the basic feature of the
-[openshift
-templates](https://docs.okd.io/latest/openshift_images/using-templates.html). You can
-customize your kubevirt-provided templates editing these annotations, or
-you can add them to your existing templates to make them consumable by
-the kubevirt services.
+kubevirt 项目提供的模板包含一组
+约定与注解，用于增强
+[OpenShift
+模板](https://docs.okd.io/latest/openshift_images/using-templates.html) 的基本功能。你可以
+通过编辑这些注解来自定义 kubevirt 提供的模板，也可以
+把它们添加到现有模板中，使
+kubevirt 服务能够使用这些模板。
 
-Here's a description of the kubevirt annotations. Unless otherwise
-specified, the following keys are meant to be top-level entries of the
-template metadata, like
+下面说明 kubevirt 注解。除非另有
+说明，以下键应作为模板 metadata 的顶层条目，例如
 
 ```yaml
 apiVersion: v1
@@ -250,9 +248,9 @@ metadata:
     openshift.io/display-name: "Generic demo template"
 ```
 
-All the following annotations are prefixed with
-`defaults.template.kubevirt.io`, which is omitted below for brevity. So
-the actual annotations you should use will look like
+以下所有注解都以
+`defaults.template.kubevirt.io` 为前缀，下文为简洁起见省略了该前缀。因此
+你实际应使用的注解看起来会像这样
 
 ```yaml
 apiVersion: v1
@@ -266,15 +264,14 @@ metadata:
     defaults.template.kubevirt.io/network: default-network
 ```
 
-Unless otherwise specified, all annotations are meant to be safe
-defaults, both for performance and compatibility, and hints for the
-CNV-aware UI and tooling.
+除非另有说明，所有注解都旨在作为兼顾性能与兼容性的安全
+默认值，同时也是感知 CNV 的 UI 与工具所用的提示。
 
-#### disk
+#### disk {#disk}
 
-See the section `references` below.
+请参见下方的 `references` 一节。
 
-Example:
+示例：
 
 ```yaml
 apiVersion: v1
@@ -285,11 +282,11 @@ metadata:
     defaults.template.kubevirt.io/disk: rhel-disk
 ```
 
-#### nic
+#### nic {#nic}
 
-See the section `references` below.
+请参见下方的 `references` 一节。
 
-Example:
+示例：
 
 ```yaml
 apiVersion: v1
@@ -300,11 +297,11 @@ metadata:
     defaults.template.kubevirt.io/nic: my-nic
 ```
 
-#### volume
+#### volume {#volume}
 
-See the section `references` below.
+请参见下方的 `references` 一节。
 
-Example:
+示例：
 
 ```yaml
 apiVersion: v1
@@ -315,11 +312,11 @@ metadata:
     defaults.template.kubevirt.io/volume: custom-volume
 ```
 
-#### network
+#### network {#network}
 
-See the section `references` below.
+请参见下方的 `references` 一节。
 
-Example:
+示例：
 
 ```yaml
 apiVersion: v1
@@ -330,19 +327,18 @@ metadata:
     defaults.template.kubevirt.io/network: fast-net
 ```
 
-#### references
+#### references {#references}
 
-The default values for network, nic, volume, disk are meant to be the
-**name** of a section later in the document that the UI will find and
-consume to find the default values for the corresponding types. For
-example, considering the annotation
-`defaults.template.kubevirt.io/disk: my-disk`: we assume that later in
-the document it exists an element called `my-disk` that the UI can use
-to find the data it needs. The names actually don't matter as long as
-they are legal for kubernetes and consistent with the content of the
-document.
+network、nic、volume、disk 的默认值应当是文档后文某个小节的
+**名称**，UI 会找到并
+使用该小节，以取得对应类型的默认值。
+例如，对于注解
+`defaults.template.kubevirt.io/disk: my-disk`：我们假定文档后文
+存在一个名为 `my-disk` 的元素，UI 可以用它
+找到所需的数据。只要这些名称对 Kubernetes 合法，并且与文档
+内容一致，名称本身并不重要。
 
-#### complete example
+#### 完整示例 {#complete-example}
 
 `demo-template.yaml`
 
@@ -385,7 +381,7 @@ kind: list
 metadata: {}
 ```
 
-once processed becomes:
+处理之后会变成：
 `demo-vm.yaml`
 
 ```yaml
@@ -427,47 +423,46 @@ spec:
         name: rhel-default-nic
 ```
 
-## Virtual machine creation
+## 虚拟机创建 {#virtual-machine-creation}
 
-### Overview
+### 概述 {#overview}
 
-The KubeVirt projects provides a set of
-[templates](https://github.com/kubevirt/kubevirt/tree/main/examples) to
-create VMs to handle common usage scenarios. These templates provide a
-combination of some key factors that could be further customized and
-processed to have a Virtual Machine object.
+KubeVirt 项目提供了一组
+[模板](https://github.com/kubevirt/kubevirt/tree/main/examples)，用于
+创建 VM 以应对常见使用场景。这些模板把若干关键因素组合在一起，
+可以进一步自定义并处理，从而得到一个 Virtual Machine 对象。
 
-The key factors which define a template are - Workload Most Virtual
-Machine should be **server** or **desktop** to have maximum flexibility;
-the **highperformance** workload trades some of this flexibility to
-provide better performances. - Guest Operating System (OS) This allow to
-ensure that the emulated hardware is compatible with the guest OS.
-Furthermore, it allows to maximize the stability of the VM, and allows
-performance optimizations. - Size (flavor) Defines the amount of
-resources (CPU, memory) to allocate to the VM.
+定义模板的关键因素包括 - 工作负载 大多数虚拟
+机应为 **server** 或 **desktop**，以获得最大的灵活性；
+**highperformance** 工作负载会牺牲其中一部分灵活性，以
+提供更好的性能。- 客户机操作系统（OS） 这可以
+确保模拟硬件与客户机操作系统兼容。
+此外，它还可以最大限度地提高 VM 的稳定性，并允许进行
+性能优化。- 规格（flavor） 定义分配给 VM 的
+资源量（CPU、内存）。
 
-### Openshift Console
+### OpenShift 控制台 {#openshift-console}
 
-VMs can be created through [OpenShift Cluster Console UI ](https://github.com/openshift/console).
-This UI supports creation VM using templates and templates
-features - flavors and workload profiles. To create VM from template, choose
-WorkLoads in the left panel >> choose Virtualization >> press to the "Create Virtual Machine"
-blue button >> choose "Create from wizard". Next, you have to see
-"Create Virtual Machine" window
+虚拟机可以通过 [OpenShift 集群控制台 UI](https://github.com/openshift/console) 创建。
+此 UI 支持使用模板以及模板的各项
+功能（flavor 与工作负载配置）来创建 VM。要从模板创建 VM，请在
+左侧面板中选择 WorkLoads >> 选择 Virtualization >> 点击蓝色的 “Create Virtual Machine”
+按钮 >> 选择 “Create from wizard”。接下来，你会看到
+“Create Virtual Machine” 窗口
 
-### Common-templates
+### 通用模板 {#common-templates}
 
-There is the [common-templates](https://github.com/kubevirt/common-templates/) subproject. It provides official prepared and useful templates. You can also create templates by hand. You can find an example below, in the "Example template" section.
+这里有 [common-templates](https://github.com/kubevirt/common-templates/) 子项目。它提供官方准备好的实用模板。你也可以手工创建模板。示例见下方“示例模板”一节。
 
-### Example template
+### 示例模板 {#example-template}
 
-In order to create a virtual machine via OpenShift CLI, you need to
-provide a template defining the corresponding object and its metadata.
+要通过 OpenShift CLI 创建虚拟机，你需要
+提供一个模板，用以定义相应的对象及其 metadata。
 
-**NOTE** Only `VirtualMachine` object is currently supported.
+**注意** 目前仅支持 `VirtualMachine` 对象。
 
-Here is an example template that defines an instance of the
-`VirtualMachine` object:
+下面是一个定义
+`VirtualMachine` 对象实例的示例模板：
 
 ```yaml
 apiVersion: template.openshift.io/v1
@@ -612,18 +607,18 @@ parameters:
   name: CLOUD_USER_PASSWORD
 ```
 
-Note that the template above defines free parameters (`NAME`,
-`SRC_PVC_NAME`, `SRC_PVC_NAMESPACE`, `CLOUD_USER_PASSWORD`) and the `NAME`
-parameter does not have specified default value.
+请注意，上面的模板定义了自由参数（`NAME`、
+`SRC_PVC_NAME`、`SRC_PVC_NAMESPACE`、`CLOUD_USER_PASSWORD`），并且 `NAME`
+参数没有指定默认值。
 
-An OpenShift template has to be converted into the JSON file via
-`oc process` command, that also allows you to set the template
-parameters.
+OpenShift 模板必须通过
+`oc process` 命令转换为 JSON 文件，该命令也允许你设置模板
+参数。
 
-A complete example can be found in the [KubeVirt
-repository](https://raw.githubusercontent.com/kubevirt/kubevirt/main/examples/vm-template-fedora.yaml).
+完整示例见 [KubeVirt
+仓库](https://raw.githubusercontent.com/kubevirt/kubevirt/main/examples/vm-template-fedora.yaml)。
 
-!> You need to be logged in by `oc login` command.
+!> 你需要先通过 `oc login` 命令登录。
 
 ```console
 $ oc process -f cluster/vmi-template-fedora.yaml\
@@ -638,8 +633,8 @@ $ oc process -f cluster/vmi-template-fedora.yaml\
         {
 ```
 
-The JSON file is usually applied directly by piping the processed output
-to `oc create` command.
+JSON 文件通常直接应用，做法是把处理后的输出
+通过管道传给 `oc create` 命令。
 
 ```console
 $ oc process -f cluster/examples/vm-template-fedora.yaml \
@@ -650,12 +645,11 @@ $ oc process -f cluster/examples/vm-template-fedora.yaml \
 virtualmachine.kubevirt.io/testvm created
 ```
 
-The command above results in creating a Kubernetes object according to
-the specification given by the template \\(in this example it is an
-instance of the VirtualMachine object\\).
+上述命令会根据
+模板给出的规范创建一个 Kubernetes 对象\\(在本例中，它是
+VirtualMachine 对象的一个实例\\)。
 
-It's possible to get list of available parameters using the following
-command:
+可以使用以下命令获取可用参数的列表：
 
 ```console
 $ oc process -f dist/templates/fedora-desktop-large.yaml --parameters
@@ -666,29 +660,29 @@ SRC_PVC_NAMESPACE     Namespace of the source PVC                               
 CLOUD_USER_PASSWORD   Randomized password for the cloud-init user fedora   expression          [a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}
 ```
 
-## Starting virtual machine from the created object
+## 从已创建的对象启动虚拟机 {#starting-virtual-machine-from-the-created-object}
 
-The created object is now a regular VirtualMachine object and from now
-it can be controlled by accessing Kubernetes API resources. The
-preferred way how to do this from within the OpenShift environment is to
-use `oc patch` command.
+创建出的对象现在是一个常规的 VirtualMachine 对象，此后
+可以通过访问 Kubernetes API 资源来控制它。在 OpenShift 环境中，
+首选做法是
+使用 `oc patch` 命令。
 
 ```console
 $ oc patch virtualmachine testvm --type merge -p '{"spec":{"runStrategy":"Always"}}'
 virtualmachine.kubevirt.io/testvm patched
 ```
 
-Do not forget about virtctl tool. Using it in the real cases instead of
-using kubernetes API can be more convenient. Example:
+不要忘记 virtctl 工具。在实际场景中使用它，比起
+直接使用 Kubernetes API，可能会更方便。示例：
 
 ```console
 $ virtctl start testvm
 VM testvm was scheduled to start
 ```
 
-As soon as VM starts, Kubernetes creates new type of object -
-VirtualMachineInstance. It has similar name to VirtualMachine. Example
-(not full output, it's too big):
+VM 一旦启动，Kubernetes 就会创建一种新类型的对象
+VirtualMachineInstance。它的名称与 VirtualMachine 相似。示例
+（并非完整输出，内容太长）：
 
 ```console
 $ kubectl describe vm testvm
@@ -701,19 +695,19 @@ API Version:  kubevirt.io/v1
 Kind:         VirtualMachine
 ```
 
-## Cloud-init script and parameters
+## Cloud-init 脚本与参数 {#cloud-init-script-and-parameters}
 
-Kubevirt VM templates, just like kubevirt VM/VMI yaml configs, supports
-[cloud-init scripts](https://cloudinit.readthedocs.io/en/latest/)
+KubeVirt 的 VM 模板与 KubeVirt 的 VM/VMI yaml 配置一样，支持
+[cloud-init 脚本](https://cloudinit.readthedocs.io/en/latest/)
 
-## **Hack** - use pre-downloaded image
+## **变通做法** - 使用预先下载的镜像 {#hack-use-pre-downloaded-image}
 
-Kubevirt VM templates, just like kubevirt VM/VMI yaml configs, can use
-pre-downloaded VM image, which can be a useful feature especially in the
-debug/development/testing cases. No special parameters required in the
-VM template or VM/VMI yaml config. The main idea is to create Kubernetes
-PersistentVolume and PersistentVolumeClaim corresponding to existing
-image in the file system. Example:
+KubeVirt 的 VM 模板与 KubeVirt 的 VM/VMI yaml 配置一样，可以使用
+预先下载的 VM 镜像，这在
+调试/开发/测试场景中尤其有用。VM 模板或 VM/VMI yaml 配置中
+不需要特殊参数。主要思路是创建与文件系统中
+已有镜像相对应的 Kubernetes
+PersistentVolume 和 PersistentVolumeClaim。示例：
 
 ```yaml
 ---
@@ -746,11 +740,11 @@ spec:
 
 ```
 
-## Using DataVolumes
+## 使用 DataVolume {#using-datavolumes}
 
-Kubevirt VM templates are using dataVolumeTemplates.
-Before using dataVolumes, CDI has to be installed in
-cluster. After that, source Datavolume can be created.
+KubeVirt 的 VM 模板使用 dataVolumeTemplates。
+在使用 dataVolume 之前，必须先在
+集群中安装 CDI。之后可以创建源 DataVolume。
 
 ```yaml
 ---
@@ -769,7 +763,7 @@ spec:
         storage: 30Gi
 ```
 
-After import is completed, VM can be created:
+导入完成后，可以创建 VM：
 ```console
 $ oc process -f cluster/examples/vm-template-fedora.yaml \
     -p NAME=testvmi \
@@ -779,5 +773,5 @@ $ oc process -f cluster/examples/vm-template-fedora.yaml \
 virtualmachine.kubevirt.io/testvm created
 ```
 
-## Additional information
-You can follow [Virtual Machine Lifecycle Guide](../user_workloads/lifecycle.md) for further reference.
+## 更多信息 {#additional-information}
+你可以参阅 [虚拟机生命周期指南](../user_workloads/lifecycle.md) 以获取进一步的参考。

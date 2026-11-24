@@ -1,6 +1,6 @@
-# Usage of libguestfs-tools and virtctl guestfs
+# libguestfs-tools 与 virtctl guestfs 的用法 {#usage-of-libguestfs-tools-and-virtctl-guestfs}
 
-[Libguestfs tools](https://libguestfs.org/) are a set of utilities for accessing and modifying VM disk images. The command `virtctl guestfs` helps to deploy an interactive container with the libguestfs-tools and the PVC attached to it. This command is particularly useful if the users need to modify, inspect or debug VM disks on a PVC.
+[Libguestfs 工具](https://libguestfs.org/)是一套用于访问和修改 VM 磁盘镜像的实用程序。`virtctl guestfs` 命令有助于部署一个交互式容器，其中包含 libguestfs-tools，并挂接 PVC。如果用户需要修改、检查或调试 PVC 上的 VM 磁盘，此命令特别有用。
 ```bash
 $ virtctl guestfs -h
 Create a pod with libguestfs-tools, mount the pvc and attach a shell to it. The pvc is mounted under the /disks directory inside the pod for filesystem-based pvcs, or as /dev/vda for block-based pvcs
@@ -21,20 +21,20 @@ Flags:
 Use "virtctl options" for a list of global command-line options (applies to all commands).
 ```
 
-By default `virtctl guestfs` sets up `kvm` for the interactive container. This considerably speeds up the execution of the libguestfs-tools since they use QEMU. If the cluster doesn't have any kvm supporting nodes, the user must disable kvm by setting the option `--kvm=false`. If not set, the libguestfs-tools pod will remain pending because it cannot be scheduled on any node.
+默认情况下，`virtctl guestfs` 会为交互式容器设置 `kvm`。由于 libguestfs-tools 使用 QEMU，这会显著加快它们的执行速度。如果集群中没有任何支持 kvm 的节点，用户必须通过设置选项 `--kvm=false` 来禁用 kvm。如果未设置，libguestfs-tools Pod 将保持 Pending，因为它无法被调度到任何节点。
 
-The command automatically uses the image exposed by KubeVirt under the http endpoint `/apis/subresources.kubevirt.io/<kubevirt-version>/guestfs`, but it can be configured to use a custom image by using the option `--image`. Users can also overwrite the pull policy of the image by setting the option `pull-policy`.
+该命令会自动使用 KubeVirt 在 http 端点 `/apis/subresources.kubevirt.io/<kubevirt-version>/guestfs` 下暴露的镜像，但可以通过选项 `--image` 将其配置为使用自定义镜像。用户还可以通过设置选项 `pull-policy` 来覆盖镜像的拉取策略。
 
-The command checks if a PVC is used by another pod in which case it will fail. However, once libguestfs-tools has started, the setup doesn't prevent a new pod starting and using the same PVC. The user needs to verify that there are no active virtctl guestfs pods before starting the VM which accesses the same PVC.
+该命令会检查 PVC 是否正被另一个 Pod 使用，如果是，则命令会失败。然而，一旦 libguestfs-tools 已经启动，此设置并不会阻止新的 Pod 启动并使用同一个 PVC。在启动访问同一 PVC 的 VM 之前，用户需要确认没有活动的 virtctl guestfs Pod。
 
-Currently, `virtctl guestfs` supports only a single PVC. Future versions might support multiple PVCs attached to the interactive pod.
+目前，`virtctl guestfs` 只支持单个 PVC。未来版本可能会支持向交互式 Pod 挂接多个 PVC。
 
-## Examples and use-cases
-Generally, the user can take advantage of the `virtctl guestfs` command for all typical usage of libguestfs-tools. It is strongly recommended to consult the [official documentation](https://libguestfs.org/guestfs-recipes.1.html). This command simply aims to help in configuring the correct containerized environment in the Kubernetes cluster where KubeVirt is installed.
+## 示例与用例 {#examples-and-use-cases}
+一般来说，用户可以利用 `virtctl guestfs` 命令完成 libguestfs-tools 的所有典型用法。强烈建议查阅[官方文档](https://libguestfs.org/guestfs-recipes.1.html)。此命令的目的只是帮助在安装了 KubeVirt 的 Kubernetes 集群中配置正确的容器化环境。
 
-For all the examples, the user has to start the interactive container by referencing the PVC in the `virtctl guestfs` command. This will deploy the interactive pod and attach the stdin and stdout. 
+对于所有示例，用户都必须在 `virtctl guestfs` 命令中引用 PVC 来启动交互式容器。这将部署交互式 Pod，并挂接 stdin 和 stdout。
 
-Example:
+示例：
 
 ```bash
 $ virtctl guestfs pvc-test
@@ -44,9 +44,9 @@ Waiting for container libguestfs still in pending, reason: ContainerCreating, me
 Waiting for container libguestfs still in pending, reason: ContainerCreating, message:  
 bash-5.0#
 ```
-Once the libguestfs-tools pod has been deployed, the user can access the disk and execute the desired commands. Later, once the user has completed the operations on the disk, simply `exit` the container and the pod be will automatically terminated.
+一旦 libguestfs-tools Pod 部署完成，用户就可以访问磁盘并执行所需的命令。之后，当用户完成磁盘上的操作后，只需 `exit` 该容器，Pod 就会被自动终止。
  
-1. Inspect the disk filesystem to retrive the version of the OS on the disk:
+1. 检查磁盘文件系统，以获取磁盘上操作系统的版本：
 ```bash
 bash-5.0# virt-cat -a disk.img /etc/os-release 
 NAME=Fedora
@@ -71,7 +71,7 @@ PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
 VARIANT="Cloud Edition"
 VARIANT_ID=cloud
 ```
-2. Add users (for example after the disk has been imported using [CDI](https://github.com/kubevirt/containerized-data-importer))
+2. 添加用户（例如在使用 [CDI](https://github.com/kubevirt/containerized-data-importer) 导入磁盘之后）
 ```bash
 bash-5.0# virt-customize -a disk.img --run-command 'useradd -m test-user -s /bin/bash' --password  'test-user:password:test-password'
 [   0.0] Examining the guest ...
@@ -81,7 +81,7 @@ bash-5.0# virt-customize -a disk.img --run-command 'useradd -m test-user -s /bin
 [   4.3] Setting passwords
 [   5.3] Finishing off
 ```
-3. Run virt-rescue and repair a broken partition or initrd (for example by running dracut)
+3. 运行 virt-rescue，并修复损坏的分区或 initrd（例如通过运行 dracut）
 ```bash
 bash-5.0# virt-rescue -a disk.img
 [...]
@@ -134,7 +134,7 @@ vmlinuz-0-rescue-8afb5b540fab48728e48e4196a3a48ee
 ><rescue> exit
 ```
 
-4. Install an OS from scratch
+4. 从头安装操作系统
 ```bash
 bash-5.0# virt-builder centos-8.2 -o disk.img --root-password password:password-test
 [   1.5] Downloading: http://builder.libguestfs.org/centos-8.2.xz
@@ -152,7 +152,7 @@ bash-5.0# virt-builder centos-8.2 -o disk.img --root-password password:password-
                     Free space: 4.0G (74%)
 
 ```
-5. Identify the partition and filesystem on the disk
+5. 识别磁盘上的分区和文件系统
 ````bash
 bash-5.0# virt-filesystems -a disk.img --partitions --filesystem --long
 Name       Type        VFS   Label  MBR  Size        Parent
@@ -163,5 +163,5 @@ Name       Type        VFS   Label  MBR  Size        Parent
 /dev/sda3  partition   -     -      -    644874240   /dev/sda
 /dev/sda4  partition   -     -      -    4720689152  /dev/sda
 ````
-## Limitations
-Currently, it is not possible to resize the xfs filesystem.
+## 限制 {#limitations}
+目前无法调整 xfs 文件系统的大小。

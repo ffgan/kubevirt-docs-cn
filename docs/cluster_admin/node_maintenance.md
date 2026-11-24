@@ -1,79 +1,78 @@
-# Node maintenance
+# 节点维护 {#node-maintenance}
 
-Before removing a kubernetes node from the cluster, users will want to
-ensure that VirtualMachineInstances have been gracefully terminated
-before powering down the node. Since all VirtualMachineInstances are
-backed by a Pod, the recommended method of evicting
-VirtualMachineInstances is to use the **kubectl drain** command, or in
-the case of OKD the **oc adm drain** command.
+在从集群中移除 Kubernetes 节点之前，用户会希望
+确保 VirtualMachineInstance 已优雅终止，
+然后再关闭该节点的电源。由于所有 VirtualMachineInstance
+都由 Pod 支撑，驱逐
+VirtualMachineInstance 的推荐方法是使用 **kubectl drain** 命令，在
+OKD 的情况下则使用 **oc adm drain** 命令。
 
-## Evict all VMs from a Node
+## 从节点上驱逐所有 VM {#evict-all-vms-from-a-node}
 
-Select the node you'd like to evict VirtualMachineInstances from by
-identifying the node from the list of cluster nodes.
+通过在集群节点列表中确认节点，
+选择你希望从中驱逐 VirtualMachineInstance 的节点。
 
 `kubectl get nodes`
 
-The following command will gracefully terminate all VMs on a specific
-node. Replace `<node-name>` with the name of the node where the eviction should occur.
+以下命令将优雅终止特定
+节点上的所有 VM。将 `<node-name>` 替换为应当发生驱逐的节点名称。
 
 `kubectl drain <node-name> --delete-local-data --ignore-daemonsets=true --force --pod-selector=kubevirt.io=virt-launcher`
 
-Below is a break down of why each argument passed to the drain command
-is required.
+下面说明传给 drain 命令的每个参数
+为何是必需的。
 
--   `kubectl drain <node-name>` is selecting a specific node as a target
-    for the eviction
+-   `kubectl drain <node-name>` 会选择特定节点作为
+    驱逐目标
 
--   `--delete-local-data` is a required flag that is necessary for
-    removing any pod that utilizes an emptyDir volume. The
-    VirtualMachineInstance Pod does use emptyDir volumes, however the
-    data in those volumes are ephemeral which means it is safe to delete
-    after termination.
+-   `--delete-local-data` 是必需标志，用于
+    移除任何使用 emptyDir 卷的 Pod。
+    VirtualMachineInstance Pod 确实使用 emptyDir 卷，不过
+    这些卷中的数据是临时的，这意味着终止后
+    可以安全删除。
 
--   `--ignore-daemonsets=true` is a required flag because every node
-    running a VirtualMachineInstance will also be running our helper
-    DaemonSet called virt-handler. DaemonSets are not allowed to be
-    evicted using **kubectl drain**. By default, if this command
-    encounters a DaemonSet on the target node, the command will fail.
-    This flag tells the command it is safe to proceed with the eviction
-    and to just ignore DaemonSets.
+-   `--ignore-daemonsets=true` 是必需标志，因为每个
+    运行 VirtualMachineInstance 的节点也会运行名为 virt-handler 的辅助
+    DaemonSet。不允许使用 **kubectl drain** 驱逐 DaemonSet。默认情况下，如果此命令
+    在目标节点上遇到 DaemonSet，命令将会失败。
+    此标志告诉命令可以安全地继续驱逐，
+    并忽略 DaemonSet。
 
--   `--force` is a required flag because VirtualMachineInstance pods are
-    not owned by a ReplicaSet or DaemonSet controller. This means
-    kubectl can't guarantee that the pods being terminated on the target
-    node will get re-scheduled replacements placed else where in the
-    cluster after the pods are evicted. KubeVirt has its own controllers
-    which manage the underlying VirtualMachineInstance pods. Each
-    controller behaves differently to a VirtualMachineInstance being
-    evicted. That behavior is outlined further down in this document.
+-   `--force` 是必需标志，因为 VirtualMachineInstance Pod
+    并不由 ReplicaSet 或 DaemonSet 控制器拥有。这意味着
+    kubectl 无法保证目标节点上被终止的 Pod
+    在被驱逐后，会在集群的其他位置
+    得到重新调度的替代 Pod。KubeVirt 有自己的控制器
+    来管理底层的 VirtualMachineInstance Pod。每个
+    控制器对被驱逐的 VirtualMachineInstance
+    的行为各不相同。该行为在本文档后面进一步说明。
 
--   `--pod-selector=kubevirt.io=virt-launcher` means only
-    VirtualMachineInstance pods managed by KubeVirt will be removed from
-    the node.
+-   `--pod-selector=kubevirt.io=virt-launcher` 表示只会从
+    该节点移除由 KubeVirt 管理的
+    VirtualMachineInstance Pod。
 
-## Evict all VMs and Pods from a Node
+## 从节点上驱逐所有 VM 和 Pod {#evict-all-vms-and-pods-from-a-node}
 
-By removing the `-pod-selector` argument from the previous command, we
-can issue the eviction of all Pods on a node. This command ensures Pods
-associated with VMs as well as all other Pods are evicted from the
-target node.
+从前一条命令中去掉 `-pod-selector` 参数，
+就可以对该节点上的所有 Pod 发起驱逐。此命令确保与 VM
+关联的 Pod 以及所有其他 Pod 都会从
+目标节点上被驱逐。
 
 `kubectl drain <node name> --delete-local-data --ignore-daemonsets=true --force`
 
-## Evacuate VMIs via Live Migration from a Node
+## 通过实时迁移从节点上疏散 VMI {#evacuate-vmis-via-live-migration-from-a-node}
 
-If the `LiveMigration`
-[feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-is enabled, it is possible to
-specify an `evictionStrategy` on VMIs which will react with live-migrations on
-specific taints on nodes. The following snippet on a VMI or the VMI templates in
-a VM ensures that the VMI is migrated during node eviction:
+如果启用了 `LiveMigration`
+[功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)，
+就可以在 VMI 上指定 `evictionStrategy`，使其在节点出现
+特定污点时以实时迁移作为响应。VMI 上或 VM 中 VMI 模板上的
+以下片段可确保在节点驱逐期间迁移该 VMI：
 
     spec:
       evictionStrategy: LiveMigrate
 
-Here a full VMI:
+
+下面是一个完整的 VMI：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -106,73 +105,76 @@ spec:
         password: fedora
         chpasswd: { expire: False }
 ```
-Behind the scenes a **PodDisruptionBudget** is created for each VMI
-which has an **evictionStrategy** defined. This ensures that evictions
-are be blocked on these VMIs and that we can guarantee that a VMI will
-be migrated instead of shut off.
 
-**Note** Prior to v0.34 the drain process with live migrations was detached from
-the `kubectl drain` itself and required in addition specifying a special taint
-on the nodes: `kubectl taint nodes foo kubevirt.io/drain=draining:NoSchedule`.
-This is no longer needed. The taint will still be respected if provided but is
-**obsolete**.
+在幕后，会为每个定义了 **evictionStrategy** 的 VMI
+创建一个 **PodDisruptionBudget**。这确保
+这些 VMI 上的驱逐会被阻止，从而我们可以保证 VMI
+将被迁移，而不是被关闭。
 
-## Re-enabling a Node after Eviction
+**注意** 在 v0.34 之前，带实时迁移的排空过程与
+`kubectl drain` 本身是分离的，并且还需要在节点上额外指定一个特殊污点：
+`kubectl taint nodes foo kubevirt.io/drain=draining:NoSchedule`。
+现在不再需要这样做。如果提供了该污点，它仍会被遵守，但已经
+**过时**。
 
-The **kubectl drain** will result in the target node being marked as
-unschedulable. This means the node will not be eligible for running new
-VirtualMachineInstances or Pods.
+## 驱逐后重新启用节点 {#re-enabling-a-node-after-eviction}
 
-If it is decided that the target node should become schedulable again,
-the following command must be run.
+**kubectl drain** 会使目标节点被标记为
+不可调度。这意味着该节点将不能运行新的
+VirtualMachineInstance 或 Pod。
+
+如果决定目标节点应当重新变为可调度，
+则必须运行以下命令。
 
 `kubectl uncordon <node name>`
 
-or in the case of OKD.
+或者在 OKD 的情况下。
 
 `oc adm uncordon <node name>`
 
-## Shutting down a Node after Eviction
+## 驱逐后关闭节点 {#shutting-down-a-node-after-eviction}
 
-From KubeVirt's perspective, a node is safe to shutdown once all
-VirtualMachineInstances have been evicted from the node. In a multi-use
-cluster where VirtualMachineInstances are being scheduled alongside
-other containerized workloads, it is up to the cluster admin to ensure
-all other pods have been safely evicted before powering down the node.
+从 KubeVirt 的角度来看，一旦所有
+VirtualMachineInstance 都已从该节点上被驱逐，就可以安全关闭该节点。在
+VirtualMachineInstance 与
+其他容器化工作负载一起调度的多用途
+集群中，集群管理员需要负责确保
+在关闭节点电源之前，所有其他 Pod 都已安全驱逐。
 
-## VirtualMachine Evictions
+## VirtualMachine 驱逐 {#virtualmachine-evictions}
 
-The eviction of any VirtualMachineInstance that is owned by a
-VirtualMachine set to **running=true** will result in the
-VirtualMachineInstance being re-scheduled to another node.
+驱逐任何由设置为 **running=true** 的
+VirtualMachine 所拥有的 VirtualMachineInstance，都会导致
+该 VirtualMachineInstance 被重新调度到另一个节点。
 
-The VirtualMachineInstance in this case will be forced to power down and
-restart on another node. In the future once KubeVirt introduces live
-migration support, the VM will be able to seamlessly migrate to another
-node during eviction.
+在这种情况下，VirtualMachineInstance 将被强制关机，并
+在另一个节点上重新启动。将来一旦 KubeVirt 引入实时
+迁移支持，VM 就能在驱逐期间无缝迁移到另一个
+节点。
 
-### VirtualMachineInstanceReplicaSet Eviction Behavior
+### VirtualMachineInstanceReplicaSet 的驱逐行为 {#virtualmachineinstancereplicaset-eviction-behavior}
 
-The eviction of VirtualMachineInstances owned by a
-VirtualMachineInstanceReplicaSet will result in the
-VirtualMachineInstanceReplicaSet scheduling replacements for the evicted
-VirtualMachineInstances on other nodes in the cluster.
+驱逐由
+VirtualMachineInstanceReplicaSet 拥有的 VirtualMachineInstance，会导致
+VirtualMachineInstanceReplicaSet 在集群中的其他节点上为被驱逐的
+VirtualMachineInstance 调度替代实例。
 
-### VirtualMachineInstance Eviction Behavior
+### VirtualMachineInstance 的驱逐行为 {#virtualmachineinstance-eviction-behavior}
 
-VirtualMachineInstances not backed by either a
-VirtualMachineInstanceReplicaSet or an VirtualMachine object will not be
-re-scheduled after eviction.
+既没有
+VirtualMachineInstanceReplicaSet、也没有 VirtualMachine 对象支撑的
+VirtualMachineInstance，在驱逐后不会被
+重新调度。
 
-## Custom PodDisruptionBudgets for grouped VM workloads
+## 为分组 VM 工作负载自定义 PodDisruptionBudget {#custom-poddisruptionbudgets-for-grouped-vm-workloads}
 
-When you define your own `PodDisruptionBudget` (PDB) to protect a group of VMs —
-for example the `virt-launcher` pods backing a `VirtualMachinePool` — use
-`spec.minAvailable`, not `spec.maxUnavailable`.
+当你定义自己的 `PodDisruptionBudget`（PDB）来保护一组 VM 时——
+例如 `virt-launcher` 这类支撑 `VirtualMachinePool` 的 Pod——请使用
+`spec.minAvailable`，而不要使用 `spec.maxUnavailable`。
 
-### Why `maxUnavailable` does not work
+### 为什么 `maxUnavailable` 不起作用 {#why-maxunavailable-does-not-work}
 
-A `virt-launcher` pod is owned directly by a `VirtualMachineInstance` (VMI):
+`virt-launcher` Pod 由 `VirtualMachineInstance`（VMI）直接拥有：
 
 ```
 virt-launcher Pod  →  VirtualMachineInstance   (direct owner)
@@ -180,11 +182,12 @@ virt-launcher Pod  →  VirtualMachineInstance   (direct owner)
                    →  VirtualMachinePool
 ```
 
-To honor `maxUnavailable`, the Kubernetes disruption controller must know the
-expected number of pods, which it obtains by calling the `/scale` subresource on
-the pod's direct owner — the `VirtualMachineInstance`. A VMI is a single,
-non-replicated instance and does not implement `/scale`, so the controller cannot
-compute the expected count:
+
+为了遵守 `maxUnavailable`，Kubernetes 干扰控制器必须知道
+预期的 Pod 数量，它通过调用 `/scale` 子资源来获取该数量，调用对象是
+Pod 的直接所有者——`VirtualMachineInstance`。VMI 是单个、
+非副本实例，并且不实现 `/scale`，因此控制器无法
+计算预期数量：
 
 ```
 Warning  CalculateExpectedPodCountFailed
@@ -192,27 +195,28 @@ Warning  CalculateExpectedPodCountFailed
   virtualmachineinstances.kubevirt.io does not implement the scale subresource
 ```
 
-The PDB then reports `status.expectedPods: 0`, `status.disruptionsAllowed: 0`, and
-`DisruptionAllowed: False` — which blocks **every** drain or voluntary eviction, no
-matter how many VMs are healthy.
 
-Conversely, `spec.minAvailable` does not use the `/scale` subresource; it counts
-the currently healthy matching pods directly and works correctly with KubeVirt
-workloads.
+随后 PDB 会报告 `status.expectedPods: 0`、`status.disruptionsAllowed: 0` 以及
+`DisruptionAllowed: False`——这会阻止**每一次**排空或自愿驱逐，无论
+有多少 VM 处于健康状态。
+
+相反，`spec.minAvailable` 不使用 `/scale` 子资源；它直接统计
+当前健康的匹配 Pod，并且可以与 KubeVirt
+工作负载正确配合。
 
 !!! note
-    This limitation is tracked in
-    [kubevirt/kubevirt#18063](https://github.com/kubevirt/kubevirt/issues/18063). A
-    long-term, platform-level fix is being pursued upstream in
+    此限制跟踪于
+    [kubevirt/kubevirt#18063](https://github.com/kubevirt/kubevirt/issues/18063)。上游正在推进一项
+    长期的平台级修复，见
     [kubernetes/kubernetes#139582](https://github.com/kubernetes/kubernetes/issues/139582)
-    (teaching the disruption controller to traverse the owner chain to a scalable
-    ancestor). Until that lands, prefer `minAvailable` as described below.
+    （让干扰控制器沿所有者链遍历到可扩缩的
+    祖先对象）。在该修复落地之前，请优先使用下文所述的 `minAvailable`。
 
-### Recommended configuration
+### 推荐配置 {#recommended-configuration}
 
-Set `minAvailable` to the minimum number of instances your workload must keep
-running during a disruption — the availability floor your application needs —
-expressed as an **absolute integer**:
+将 `minAvailable` 设置为工作负载在干扰期间必须保持
+运行的最小实例数——即应用程序所需的可用性下限——
+并以**绝对整数**表示：
 
 ```yaml
 apiVersion: policy/v1
@@ -226,32 +230,34 @@ spec:
       kubevirt.io/vmpool: my-pool   # match the virt-launcher pods of the pool
 ```
 
-Choose the value from your application's real availability requirement, not as a
-mechanical `replicas - 1`. A fixed `N-1` does not track the pool as it scales:
-after an upscale it permits far more concurrent disruptions than intended, and
-after a downscale it can block evictions entirely. Pick the actual minimum
-capacity you need to preserve, and revisit it if you significantly resize the pool.
+
+该值应来自应用程序真实的可用性要求，而不是
+机械地取 `replicas - 1`。固定的 `N-1` 不会随池的扩缩而变化：
+扩容之后它允许的并发干扰会远超预期，
+缩容之后它可能完全阻止驱逐。请选取你需要保留的实际最小
+容量，并在显著调整池大小时重新审视该值。
 
 !!! warning
-    Use an **absolute integer**, not a percentage. A percentage `minAvailable`
-    (e.g. `minAvailable: 75%`) makes the disruption controller resolve the total
-    replica count via the `/scale` subresource — which a `VirtualMachineInstance`
-    does not implement — so it fails the same way as `maxUnavailable`. Only an
-    integer `minAvailable` counts healthy pods directly and avoids the scale lookup.
+    请使用**绝对整数**，不要使用百分比。百分比形式的 `minAvailable`
+    （例如 `minAvailable: 75%`）会使干扰控制器通过 `/scale` 子资源解析总
+    副本数——而 `VirtualMachineInstance`
+    并未实现该子资源——因此它会以与 `maxUnavailable` 相同的方式失败。只有
+    整数形式的 `minAvailable` 才会直接统计健康 Pod，并避免 scale 查找。
 
-Avoid `maxUnavailable` for VirtualMachineInstance-backed pods:
+避免对由 VirtualMachineInstance 支撑的 Pod 使用 `maxUnavailable`：
 
 ```yaml
 spec:
   maxUnavailable: 1          # results in disruptionsAllowed: 0 (see above)
 ```
 
-!!! note
-    You can use `spec.maxUnavailable` on the `VirtualMachinePool` object itself as
-    it is read directly by the VMPool controller. The limitation above applies only
-    to a `PodDisruptionBudget`'s `maxUnavailable` field.
 
-### Verifying
+!!! note
+    可以使用 `spec.maxUnavailable`，把它配置在 `VirtualMachinePool` 对象本身上，因为
+    它由 VMPool 控制器直接读取。上述限制仅适用于
+    `PodDisruptionBudget` 的 `maxUnavailable` 字段。
+
+### 验证 {#verifying}
 
 ```console
 $ kubectl get pdb vmpool-pdb -o wide
@@ -259,6 +265,7 @@ NAME         MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
 vmpool-pdb   1               N/A               1                     2m
 ```
 
-`ALLOWED DISRUPTIONS` should be `>= 1`. If you see `0` together with a
-`CalculateExpectedPodCountFailed` event, the PDB is using `maxUnavailable` — switch
-it to `minAvailable`.
+
+`ALLOWED DISRUPTIONS` 应当为 `>= 1`。如果你看到 `0`，并且伴随
+`CalculateExpectedPodCountFailed` 事件，则说明该 PDB 使用了 `maxUnavailable`——请将其
+改为 `minAvailable`。

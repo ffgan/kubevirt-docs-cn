@@ -1,105 +1,79 @@
-# Network Binding Plugins
+# 网络绑定插件 {#network-binding-plugins}
 
-A modular plugin which integrates with Kubevirt to implement a
-network binding.
+一种与 KubeVirt 集成以实现网络绑定的模块化插件。
 
-> **Limited Support**: Kubevirt provides regular support for the network
-> binding plugin infrastructure for plugin authors.
-> However, individual network plugin bindings are subject to limited,
-> best-effort support from the Kubevirt community.
+> **有限支持**：KubeVirt 为插件作者提供网络绑定插件基础设施的常规支持。不过，各个网络插件绑定只能获得 KubeVirt 社区有限的、尽力而为的支持。
 >
-> Clusters with Kubevirt deployments that utilize a network binding
-> plugin should contact the plugin vendor for support on any issue that
-> may be encountered, be it network or other issue.
+> 部署了 KubeVirt 且使用网络绑定插件的集群，如果遇到任何问题（无论是网络问题还是其他问题），应联系插件供应商寻求支持。
 >
-> In order to request support from the Kubevirt core project and its
-> community, please use a setup without any network binding plugin.
-> The [plugin examples](#plugins) listed below are an exception to this
-> rule, as they **are** maintained by the Kubevirt network core
-> maintainers.
+> 若要向 KubeVirt 核心项目及其社区请求支持，请使用不包含任何网络绑定插件的环境。下面列出的[插件示例](#plugins)是此规则的例外，因为它们**确实**由 KubeVirt 网络核心维护者维护。
 
-## Overview
+## 概述 {#overview}
 
-### Network Connectivity
-In order for a VM to have access to external network(s), several layers
-need to be defined and configured, depending on the connectivity characteristics
-needs.
+### 网络连通性 {#network-connectivity}
 
-These layers include:
+为了让 VM 能够访问外部网络，需要按连通性方面的要求，定义并配置若干层次。
 
-- Host connectivity: Network provider.
-- Host to Pod connectivity: CNI.
-- Pod to domain connectivity: Network Binding.
+这些层次包括：
 
-This guide focuses on the Network Binding portion.
+- 宿主机连通性：网络提供商。
+- 宿主机到 Pod 的连通性：CNI。
+- Pod 到域的连通性：网络绑定。
 
-> **Note**: A binding plugin can also configure a network interface backed by
-> Kubernetes Dynamic Resource Allocation (DRA). See
-> [Connecting VMs to DRA-backed Networks](dra_networking.md).
+本指南重点介绍网络绑定这一部分。
 
-### Network Binding
-The network binding defines how the domain (VM) network interface is wired
-in the VM pod through the domain to the guest.
+> **注意**：绑定插件也可以配置由 Kubernetes 动态资源分配（DRA）支持的网络接口。请参阅[将 VM 连接到由 DRA 支持的网络](dra_networking.md)。
 
-The network binding includes:
+### 网络绑定 {#network-binding}
 
-- Domain vNIC configuration.
-- Pod network configuration (optional).
-- Services to deliver network details to the guest (optional).
-  E.g. DHCP server to pass the IP configuration to the guest.
+网络绑定定义域（VM）网络接口在 VM Pod 中如何经由域连接到客户机。
 
-### Plugins
-The network bindings have been part of Kubevirt core API and codebase.
-With the increase of the number of network bindings added and
-frequent requests to tweak and change the existing network bindings,
-a decision has been made to create a network binding plugin infrastructure.
+网络绑定包括：
 
-The plugin infrastructure provides means to compose a network binding plugin
-and integrate it into Kubevirt in a modular manner.
+- 域 vNIC 配置。
+- Pod 网络配置（可选）。
+- 向客户机传递网络详情的服务（可选）。例如，用 DHCP 服务器把 IP 配置传递给客户机。
 
-Kubevirt is providing several network binding plugins as references.
-The following plugins are available:
+### 插件 {#plugins}
+
+网络绑定一直是 KubeVirt 核心 API 和代码库的一部分。随着加入的网络绑定越来越多，并且频繁出现调整和更改现有网络绑定的请求，因此决定创建一套网络绑定插件基础设施。
+
+该插件基础设施提供了组装网络绑定插件、并以模块化方式将其集成到 KubeVirt 中的手段。
+
+KubeVirt 提供了若干网络绑定插件作为参考。可用的插件如下：
 
 - [passt](../network/net_binding_plugins/passt.md)
 - [macvtap](../network/net_binding_plugins/macvtap.md)
 - [slirp](../network/net_binding_plugins/slirp.md)
 
-## Definition & Flow
-A network binding plugin configuration consist of the following steps:
+## 定义与流程 {#definition-flow}
 
-- Deploy network binding optional components:
+网络绑定插件的配置包含以下步骤：
 
-  - Binding CNI plugin.
-  - Binding NetworkAttachmentDefinition manifest.
-  - Access to the sidecar image.
+- 部署网络绑定的可选组件：
 
-- Register network binding.
-- Assign VM network interface binding.
+  - 绑定 CNI 插件。
+  - 绑定 NetworkAttachmentDefinition 清单。
+  - 能够访问边车镜像。
 
-### Deployment
-Depending on the plugin, some components need to be deployed in the cluster.
-Not all network binding plugins require all these components, therefore
-these steps are optional.
+- 注册网络绑定。
+- 指定 VM 网络接口绑定。
 
-- Binding CNI plugin: When it is required to change the pod network stack
-  (and a core domain-attachment is not a fit), a custom CNI plugin is
-  composed to serve the network binding plugin.
+### 部署 {#deployment}
 
-  This binary needs to be deployed on each node of the cluster, like any
-  other CNI plugin.
+根据插件的不同，集群中可能需要部署一些组件。并非所有网络绑定插件都需要全部这些组件，因此这些步骤是可选的。
 
-  The binary can be built from source or consumed from an existing artifact.
+- 绑定 CNI 插件：当需要更改 Pod 网络栈（且核心域附加方式不适用）时，会组装一个自定义 CNI 插件来服务于该网络绑定插件。
 
-> **Note**: The location of the CNI plugins binaries depends on the platform
-> used and its configuration. A frequently used path for such binaries is
-> `/opt/cni/bin/`.
+  该二进制文件需要部署到集群的每个节点上，与其他任何 CNI 插件一样。
 
-- Binding NetworkAttachmentDefinition: It references the binding CNI plugin,
-  with optional configuration settings.
-  The manifest needs to be deployed on the cluster at a namespace which
-  is accessible by the VM and its pod.
+  该二进制文件可以从源码构建，也可以直接使用现有制品。
 
-Example:
+> **注意**：CNI 插件二进制文件的位置取决于所使用的平台及其配置。这类二进制文件的常用路径是 `/opt/cni/bin/`。
+
+- 绑定 NetworkAttachmentDefinition：它引用绑定 CNI 插件，并可带有可选的配置设置。该清单需要部署到集群中 VM 及其 Pod 可以访问的命名空间。
+
+示例：
 ```yaml
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
@@ -117,93 +91,65 @@ spec:
   }'
 ```
 
-> **Note**: It is possible to deploy the NetworkAttachmentDefinition
-> on the `default` namespace, where all other namespaces can access it.
-> Nevertheless, it is recommended (for security reasons) to define the
-> NetworkAttachmentDefinition in the same namespace the VM resides.
+> **注意**：可以把 NetworkAttachmentDefinition 部署在 `default` 命名空间中，其他所有命名空间都可以访问它。不过，出于安全原因，建议在 VM 所在的同一命名空间中定义 NetworkAttachmentDefinition。
 
-- [Multus](https://github.com/k8snetworkplumbingwg/multus-cni): In order
-  for the network binding CNI and the NetworkAttachmentDefinition to operate,
-  there is a need to have Multus deployed on the cluster.
-  For more information, check the
-  [Quickstart Intallation Guide](https://github.com/k8snetworkplumbingwg/multus-cni#quickstart-installation-guide).
+- [Multus](https://github.com/k8snetworkplumbingwg/multus-cni)：为了让网络绑定 CNI 和 NetworkAttachmentDefinition 能够工作，集群中需要部署 Multus。更多信息请查看[快速入门安装指南](https://github.com/k8snetworkplumbingwg/multus-cni#quickstart-installation-guide)。
 
-- Sidecar image: When a core domain-attachment is not a fit, a sidecar is
-  used to configure the vNIC domain configuration.
-  In a more complex scenarios, the sidecar also runs services like DHCP to
-  deliver IP information to the guest.
+- 边车镜像：当核心域附加方式不适用时，使用边车来配置 vNIC 的域配置。在更复杂的场景中，边车还会运行 DHCP 之类的服务，以便向客户机传递 IP 信息。
 
-  The sidecar image is built and usually pushed to an image registry for
-  consumption. Therefore, the cluster needs to have access to the image.
-  
-  The image can be built from source and pushed to an accessible registry
-  or used from a given registry that already contains it.
+  边车镜像构建完成后，通常会被推送到镜像仓库供使用。因此，集群需要能够访问该镜像。
 
-### Register
-In order to use a network binding plugin, the cluster admin needs to register
-the binding.
-Registration includes the addition of the binding name with all its parameters
-to the Kubevirt CR.
+  可以从源码构建该镜像并推送到可访问的仓库，也可以使用已经包含该镜像的指定仓库。
 
-The following (optional) parameters are currently supported:
+### 注册 {#register}
+
+要使用网络绑定插件，集群管理员需要注册该绑定。注册包括把绑定名称及其全部参数添加到 KubeVirt CR 中。
+
+当前支持以下（可选）参数：
 
 - [networkAttachmentDefinition](#networkattachmentdefinition)
 - [sidecarImage](#sidecarimage)
 - [domainAttachmentType](#domainattachmenttype)
 - [migration](#migration)
 
-#### networkAttachmentDefinition
-From: v1.1.0
+#### networkAttachmentDefinition {#networkattachmentdefinition}
 
-Use the <namespace/object-name> format to specify
-the [NetworkAttachementDefinition](https://github.com/k8snetworkplumbingwg/multi-net-spec/blob/master/v1.0/%5Bv1%5D%20Kubernetes%20Network%20Custom%20Resource%20Definition%20De-facto%20Standard.md)
-that defines the CNI plugin and the configuration the binding plugin uses.
-Used when the binding plugin needs to change the pod network namespace.
+自：v1.1.0
 
-#### sidecarImage
-From: v1.1.0
+使用 <namespace/object-name> 格式，指定定义了绑定插件所使用的 CNI 插件及配置的 [NetworkAttachementDefinition](https://github.com/k8snetworkplumbingwg/multi-net-spec/blob/master/v1.0/%5Bv1%5D%20Kubernetes%20Network%20Custom%20Resource%20Definition%20De-facto%20Standard.md)。当绑定插件需要更改 Pod 网络命名空间时使用。
 
-Specify a container image in a registry.
-Used when the binding plugin needs to modify the domain vNIC configuration
-or when a service needs to be executed (e.g. DHCP server). 
+#### sidecarImage {#sidecarimage}
 
-#### domainAttachmentType
-From: v1.1.1
+自：v1.1.0
 
-The Domain Attachment type is a pre-defined core kubevirt method to attach
-an interface to the domain.
+指定仓库中的一个容器镜像。当绑定插件需要修改域 vNIC 配置，或需要执行某个服务（例如 DHCP 服务器）时使用。
 
-Specify the name of a core domain attachment type.
-A possible alternative to a sidecar, to configure the domain vNIC.
+#### domainAttachmentType {#domainattachmenttype}
 
-Supported types:
+自：v1.1.1
 
-- `tap` (from v1.1.1): The domain configuration is set to use an existing
-  tap device. It also supports existing `macvtap` devices.
-- `managedTap`: (From 1.4) The domain configuration is set to use a tap device. 
-  The tap device is wired to the pod interface through a bridge
-  (similar to the core bridge binding) and all are created per need. 
-  No IPAM support is provided with this type.
+域附加类型是 KubeVirt 预定义的、用于把接口附加到域的核心方法。
 
-When both the `domainAttachmentType` and `sidecarImage` are specified,
-the domain will first be configured according to the `domainAttachmentType`
-and then the `sidecarImage` may modify it.
+指定一种核心域附加类型的名称。它可以作为边车的一种替代方案，用来配置域 vNIC。
 
-#### migration
-From: v1.2.0
+支持的类型：
 
-Specify whether the network binding plugin supports migration.
-It is possible to specify a migration method.
-Supported migration method types:
-- `link-refresh` (from v1.2.0): after migration, the guest nic will be deactivated and then activated again.
-   It can be useful to renew the DHCP lease.
+- `tap`（自 v1.1.1 起）：域配置被设置为使用已有的 tap 设备。它也支持已有的 `macvtap` 设备。
+- `managedTap`：（自 1.4 起）域配置被设置为使用 tap 设备。该 tap 设备通过网桥连接到 Pod 接口（类似于核心 bridge 绑定），并且全部按需创建。此类型不提供 IPAM 支持。
 
-> **Note**: In some deployments the Kubevirt CR is controlled by an external
-> controller (e.g. [HCO](https://github.com/kubevirt/hyperconverged-cluster-operator)).
-> In such cases, make sure to configure the wrapper operator/controller so the
-> changes will get preserved.
+当同时指定 `domainAttachmentType` 和 `sidecarImage` 时，会先按照 `domainAttachmentType` 配置域，然后 `sidecarImage` 可以再修改它。
 
-Example (the `passt` binding):
+#### migration {#migration}
+
+自：v1.2.0
+
+指定网络绑定插件是否支持迁移。可以指定一种迁移方法。支持的迁移方法类型：
+
+- `link-refresh`（自 v1.2.0 起）：迁移之后，客户机网卡会先被停用，然后再被激活。这可以用于续订 DHCP 租约。
+
+> **注意**：在某些部署中，KubeVirt CR 由外部控制器控制（例如 [HCO](https://github.com/kubevirt/hyperconverged-cluster-operator)）。在这种情况下，请配置外层 Operator/控制器，以便这些更改得以保留。
+
+示例（`passt` 绑定）：
 ```
 kubectl patch kubevirts -n kubevirt kubevirt --type=json -p='[{"op": "add", "path": "/spec/configuration/network",   "value": {
             "binding": {
@@ -218,22 +164,19 @@ kubectl patch kubevirts -n kubevirt kubevirt --type=json -p='[{"op": "add", "pat
         }}]'
 ```
 
-#### Compute Resource Overhead
-From: v1.3.0
+#### 计算资源开销 {#compute-resource-overhead}
 
-Some plugins may need additional resources to be added to the compute container of the virt-launcher pod.
+自：v1.3.0
 
-It is possible to specify compute resource overhead that will be added to the `compute` container of virt-launcher pods
-derived from virtual machines using the plugin.
+某些插件可能需要向 virt-launcher Pod 的 compute 容器追加额外资源。
 
-> **Note**: At the moment, only memory overhead requests are supported.
+可以指定计算资源开销，这些开销会被加到由使用该插件的虚拟机派生出的 virt-launcher Pod 的 `compute` 容器上。
 
-> **Note**: In some deployments the Kubevirt CR is controlled by an external
-> controller (e.g. [HCO](https://github.com/kubevirt/hyperconverged-cluster-operator)).
-> In such cases, make sure to configure the wrapper operator/controller so the
-> changes will get preserved.
+> **注意**：目前仅支持内存开销请求。
 
-Example (the `passt` binding):
+> **注意**：在某些部署中，KubeVirt CR 由外部控制器控制（例如 [HCO](https://github.com/kubevirt/hyperconverged-cluster-operator)）。在这种情况下，请配置外层 Operator/控制器，以便这些更改得以保留。
+
+示例（`passt` 绑定）：
 ```shell
 kubectl patch kubevirts -n kubevirt kubevirt --type=json -p='[{"op": "add", "path": "/spec/configuration/network",   "value": {
             "binding": {
@@ -253,14 +196,13 @@ kubectl patch kubevirts -n kubevirt kubevirt --type=json -p='[{"op": "add", "pat
         }}]'
 ```
 
-Every compute container in a virt-launcher pod derived from a VM using the passt network binding plugin, will have an additional `500Mi` memory overhead.
+由使用 passt 网络绑定插件的 VM 派生出的 virt-launcher Pod 中的每个 compute 容器，都会额外增加 `500Mi` 内存开销。
 
-### VM Network Interface
-When configuring the VM/VMI network interface, the binding plugin name
-can be specified. If it exists in the Kubevirt CR, it will be used
-to setup the network interface.
+### VM 网络接口 {#vm-network-interface}
 
-Example (`passt` binding):
+配置 VM/VMI 网络接口时，可以指定绑定插件名称。如果该名称存在于 KubeVirt CR 中，就会用它来设置网络接口。
+
+示例（`passt` 绑定）：
 ```yaml
 ---
 apiVersion: kubevirt.io/v1

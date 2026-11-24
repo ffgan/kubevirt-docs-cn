@@ -1,42 +1,41 @@
-# Installation
+# 安装 {#installation}
 
-KubeVirt is a virtualization add-on to Kubernetes and this guide assumes
-that a Kubernetes cluster is already installed.
+KubeVirt 是 Kubernetes 的虚拟化附加组件，本指南假定
+Kubernetes 集群已经安装完成。
 
-If installed on OKD, the web console is extended for management of
-virtual machines.
+如果安装在 OKD 上，Web 控制台会被扩展，用于管理
+虚拟机。
 
-## Requirements
+## 要求 {#requirements}
 
-A few requirements need to be met before you can begin:
+开始之前需要满足以下几项要求：
 
--   [Kubernetes](https://kubernetes.io) cluster or derivative
-    (such as [OpenShift](https://github.com/openshift/origin))
-    based on a one of the latest three Kubernetes releases that are
-    out at the time the KubeVirt release is made.
--   Kubernetes apiserver must have `--allow-privileged=true` in order to run KubeVirt's privileged DaemonSet.
--   `kubectl` client utility
+-   [Kubernetes](https://kubernetes.io) 集群或衍生发行版
+    （例如 [OpenShift](https://github.com/openshift/origin)），
+    基于 KubeVirt 发布时已经推出的最近三个 Kubernetes 版本之一。
+-   Kubernetes apiserver 必须设置 `--allow-privileged=true`，以便运行 KubeVirt 的特权 DaemonSet。
+-   `kubectl` 客户端工具
 
-### Container Runtime Support
+### 容器运行时支持 {#container-runtime-support}
 
-KubeVirt is currently supported on the following container runtimes:
+KubeVirt 目前支持以下容器运行时：
 
 -   containerd
--   crio (with runv)
+-   crio（配合 runv）
 
-Other container runtimes, which do not use virtualization features,
-should work too. However, the mentioned ones are the main target.
+其他不使用虚拟化特性的容器运行时
+应当也能工作。不过，上面提到的那些是主要目标。
 
-### Integration with AppArmor
+### 与 AppArmor 集成 {#integration-with-apparmor}
 
-In most of the scenarios, KubeVirt can run normally on systems with
-AppArmor. However, there are several known use cases that may require
-additional user interaction.
+在大多数场景中，KubeVirt 可以在启用
+AppArmor 的系统上正常运行。不过，有几种已知用例可能需要
+用户进行额外操作。
 
--   On a system with AppArmor enabled, the locally installed profiles
-    may block the execution of the KubeVirt privileged containers. That
-    usually results in initialization failure of the `virt-handler`
-    pod:
+-   在启用 AppArmor 的系统上，本地安装的配置文件
+    可能会阻止 KubeVirt 特权容器执行。这
+    通常会导致 `virt-handler`
+    Pod 初始化失败：
 
         $ kubectl get pods -n kubevirt
         NAME                               READY   STATUS       RESTARTS         AGE
@@ -59,19 +58,20 @@ additional user interaction.
         May 18 16:44:20 debian kernel: audit: type=1400 audit(1652888660.539:39): apparmor="DENIED" operation="exec" profile="libvirtd" name="/usr/libexec/qemu-kvm" pid=6316 comm="rpc-worker" requested_mask="x" denied_mask="x" fsuid=107 ouid=0
         ...
 
-    Here, the host AppArmor profile for `libvirtd` does not allow the
-    execution of the `/usr/libexec/qemu-kvm` binary. In the future
-    this will hopefully work out of the box
-    ([tracking issue](https://github.com/kubevirt/kubevirt/issues/8744)),
-    but until then there are a couple of possible workarounds.
 
-    The first (and simplest) one is to remove the libvirt package
-    from the host: assuming the host is a dedicated Kubernetes node,
-    you likely won't need it anyway.
+    这里，宿主机上 `libvirtd` 的 AppArmor 配置文件不允许
+    执行 `/usr/libexec/qemu-kvm` 二进制文件。将来
+    这有望开箱即用
+    （[跟踪问题](https://github.com/kubevirt/kubevirt/issues/8744)），
+    但在此之前有几种可行的变通办法。
 
-    If you actually need libvirt to be present on the host, then you
-    can add the following rule to the AppArmor profile for libvirtd
-    (usually `/etc/apparmor.d/usr.sbin.libvirtd`):
+    第一种（也是最简单的）是从宿主机上移除 libvirt 软件包：
+    假定该宿主机是专用的 Kubernetes 节点，
+    你很可能本来就不需要它。
+
+    如果你确实需要宿主机上存在 libvirt，则可以向 libvirtd 的
+    AppArmor 配置文件
+    （通常为 `/etc/apparmor.d/usr.sbin.libvirtd`）添加以下规则：
 
         # vim /etc/apparmor.d/usr.sbin.libvirtd
         ...
@@ -79,21 +79,23 @@ additional user interaction.
         ...
         # apparmor_parser -r /etc/apparmor.d/usr.sbin.libvirtd # or systemctl reload apparmor.service
 
--   The default AppArmor profile used by the container runtimes usually
-    denies `mount` call for the workloads. That may prevent from
-    running VMs with [VirtIO-FS](../storage/disks_and_volumes.md#virtio-fs).
-    This is a [known issue](https://github.com/kubevirt/kubevirt/issues/4290).
-    The current workaround is to run such a VM as `unconfined` by adding the
-    following annotation to the VM or VMI object:
+
+-   容器运行时使用的默认 AppArmor 配置文件通常
+    会拒绝工作负载的 `mount` 调用。这可能会阻止
+    运行带有 [VirtIO-FS](../storage/disks_and_volumes.md#virtio-fs) 的 VM。
+    这是一个[已知问题](https://github.com/kubevirt/kubevirt/issues/4290)。
+    当前的变通办法是，通过向 VM 或 VMI 对象添加
+    以下注解，以 `unconfined` 方式运行此类 VM：
 
         annotations:
           container.apparmor.security.beta.kubernetes.io/compute: unconfined
 
-### Validate Hardware Virtualization Support
 
-Hardware with virtualization support is recommended. You can use
-virt-host-validate to ensure that your hosts are capable of running
-virtualization workloads:
+### 验证硬件虚拟化支持 {#validate-hardware-virtualization-support}
+
+建议使用支持虚拟化的硬件。你可以使用
+virt-host-validate 来确认宿主机能够运行
+虚拟化工作负载：
 
     $ virt-host-validate qemu
       QEMU: Checking for hardware virtualization                                 : PASS
@@ -103,37 +105,38 @@ virtualization workloads:
       QEMU: Checking if device /dev/net/tun exists                               : PASS
     ...
 
-### Host Kernel and Userland Compatibility
 
-The `virt-launcher` container ships an Enterprise Linux (CentOS Stream / RHEL)
-based libvirt and QEMU userland. Running this userland on a host kernel that
-diverges significantly from the one it was built against — in particular a
-newer, non-Enterprise-Linux kernel — is not recommended.
+### 宿主机内核与用户态兼容性 {#host-kernel-and-userland-compatibility}
 
-The KVM and vhost interfaces exposed by the host kernel are used to negotiate
-virtual device features (for example virtio-net offloads). A host kernel that
-offers a different set of features than the bundled userland expects can lead to
-device feature-negotiation mismatches. These may only surface later, for example
-as live migration failures where the destination QEMU rejects device state that
-was negotiated on the source
-(see [kubevirt/kubevirt#16386](https://github.com/kubevirt/kubevirt/issues/16386)).
+`virt-launcher` 容器附带基于企业级 Linux（CentOS Stream / RHEL）
+的 libvirt 和 QEMU 用户态。不建议在与构建该用户态时所针对的内核
+差异很大的宿主机内核上运行此用户态——尤其是
+更新的、非企业级 Linux 内核。
 
-For the most predictable behaviour, run your nodes on a host kernel aligned with
-the Enterprise Linux userland bundled in `virt-launcher` (for example a current
-CentOS Stream or RHEL release).
+宿主机内核暴露的 KVM 和 vhost 接口用于协商
+虚拟设备特性（例如 virtio-net 卸载）。如果宿主机内核
+提供的特性集合与捆绑用户态所期望的不同，可能导致
+设备特性协商不匹配。这些问题可能稍后才显现，例如
+表现为实时迁移失败：目标端 QEMU 拒绝在源端
+协商得到的设备状态
+（参见 [kubevirt/kubevirt#16386](https://github.com/kubevirt/kubevirt/issues/16386)）。
 
-### SELinux support
+为获得最可预期的行为，请在与 `virt-launcher` 中捆绑的
+企业级 Linux 用户态相匹配的宿主机内核上运行节点（例如当前的
+CentOS Stream 或 RHEL 版本）。
 
-SELinux-enabled nodes need [Container-selinux](https://github.com/containers/container-selinux) installed. The minimum version is documented inside the kubevirt/kubevirt repository, in docs/getting-started.md, under "SELinux support".
+### SELinux 支持 {#selinux-support}
 
-For (older) release branches that don't specify a container-selinux version, version 2.170.0 or newer is recommended.
+启用 SELinux 的节点需要安装 [Container-selinux](https://github.com/containers/container-selinux)。最低版本记录在 kubevirt/kubevirt 仓库内的 docs/getting-started.md 中，“SELinux support”一节。
 
-## Installing KubeVirt on Kubernetes
+对于未指定 container-selinux 版本的（较旧）发行分支，建议使用 2.170.0 或更新版本。
 
-KubeVirt can be installed using the KubeVirt operator, which manages the
-lifecycle of all the KubeVirt core components. Below is an example of
-how to install KubeVirt's latest official release. It supports to deploy KubeVirt
-on both x86_64 and Arm64 platforms.
+## 在 Kubernetes 上安装 KubeVirt {#installing-kubevirt-on-kubernetes}
+
+可以使用 KubeVirt operator 安装 KubeVirt，它管理
+所有 KubeVirt 核心组件的生命周期。下面是安装
+KubeVirt 最新正式版本的示例。它支持在
+x86_64 和 Arm64 平台上部署 KubeVirt。
 
     # Point at latest release
     $ export RELEASE=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
@@ -144,13 +147,15 @@ on both x86_64 and Arm64 platforms.
     # wait until all KubeVirt components are up
     $ kubectl -n kubevirt wait kv kubevirt --for condition=Available
 
-If hardware virtualization is not available, then a
-[software emulation fallback](https://github.com/kubevirt/kubevirt/blob/main/docs/software-emulation.md)
-can be enabled using by setting in the KubeVirt CR `spec.configuration.developerConfiguration.useEmulation` to `true` as follows:
+
+如果没有硬件虚拟化，则可以按如下方式启用
+[软件模拟回退](https://github.com/kubevirt/kubevirt/blob/main/docs/software-emulation.md)，
+即在 KubeVirt CR 中将 `spec.configuration.developerConfiguration.useEmulation` 设置为 `true`：
 
     $ kubectl edit -n kubevirt kubevirt kubevirt
 
-Add the following to the `kubevirt.yaml` file
+
+将以下内容添加到 `kubevirt.yaml` 文件中
 
 ```yaml
 spec:
@@ -160,16 +165,17 @@ spec:
             useEmulation: true
 ```
 
-> Note: Prior to release v0.20.0 the condition for the `kubectl wait`
-> command was named "Ready" instead of "Available"
 
-> Note: Prior to KubeVirt 0.34.2 a ConfigMap called `kubevirt-config` in the
-> install-namespace was used to configure KubeVirt. Since 0.34.2 this method is
-> deprecated. The configmap still has precedence over `configuration` on the
-> CR exists, but it will not receive future updates and you should migrate any
-> custom configurations to `spec.configuration` on the KubeVirt CR.
+> 注意：在 v0.20.0 版本之前，`kubectl wait`
+> 命令所用的状况名为 "Ready"，而不是 "Available"
 
-All new components will be deployed under the `kubevirt` namespace:
+> 注意：在 KubeVirt 0.34.2 之前，安装命名空间中名为 `kubevirt-config` 的 ConfigMap
+> 用于配置 KubeVirt。自 0.34.2 起，此方法已
+> 弃用。该 ConfigMap 仍然优先于 CR 上存在的 `configuration`，
+> 但它不会再接收后续更新，你应当把任何
+> 自定义配置迁移到 KubeVirt CR 的 `spec.configuration`。
+
+所有新组件都将部署在 `kubevirt` 命名空间下：
 
     kubectl get pods -n kubevirt
     NAME                                           READY     STATUS        RESTARTS   AGE
@@ -178,34 +184,34 @@ All new components will be deployed under the `kubevirt` namespace:
     virt-handler-vwdjx                             1/1       Running       0          1m
     ...
 
-## Installing KubeVirt on OKD
 
-The following
-[SCC](https://docs.openshift.com/container-platform/4.10/authentication/managing-security-context-constraints.html)
-needs to be added prior KubeVirt deployment:
+## 在 OKD 上安装 KubeVirt {#installing-kubevirt-on-okd}
+
+部署 KubeVirt 之前需要添加以下
+[SCC](https://docs.openshift.com/container-platform/4.10/authentication/managing-security-context-constraints.html)：
 
     $ oc adm policy add-scc-to-user privileged -n kubevirt -z kubevirt-operator
 
-Once privileges are granted, the KubeVirt can be deployed as described above.
 
-### Web user interface on OKD
+授予权限后，即可按上述方式部署 KubeVirt。
 
-No additional steps are required to extend OKD's web console for KubeVirt.
+### OKD 上的 Web 用户界面 {#web-user-interface-on-okd}
 
-The virtualization extension is automatically enabled when KubeVirt deployment is detected.
+无需额外步骤即可为 KubeVirt 扩展 OKD 的 Web 控制台。
 
-### From Service Catalog as an APB
+检测到 KubeVirt 部署后，虚拟化扩展会自动启用。
 
-You can find KubeVirt in the OKD Service Catalog and install it from
-there. In order to do that please follow the documentation in the
+### 通过服务目录以 APB 形式安装 {#from-service-catalog-as-an-apb}
+
+你可以在 OKD 服务目录中找到 KubeVirt，并从
+那里安装。为此，请遵循
 [KubeVirt APB
-repository](https://github.com/ansibleplaybookbundle/kubevirt-apb).
+仓库](https://github.com/ansibleplaybookbundle/kubevirt-apb)中的文档。
 
-## Installing KubeVirt on k3OS
+## 在 k3OS 上安装 KubeVirt {#installing-kubevirt-on-k3os}
 
-The following
-[configuration](https://github.com/rancher/k3os#configuration)
-needs to be added to all nodes prior KubeVirt deployment:
+部署 KubeVirt 之前，需要向所有节点添加以下
+[配置](https://github.com/rancher/k3os#configuration)：
 
 ```yaml
 k3os:
@@ -214,67 +220,72 @@ k3os:
   - vhost_net
 ```
 
-Once nodes are restarted with this configuration, the KubeVirt can be deployed as described above.
 
-## Installing the Daily Developer Builds
+节点使用此配置重启后，即可按上述方式部署 KubeVirt。
+
+## 安装每日开发者构建 {#installing-the-daily-developer-builds}
 
 <!-- markdown-link-check-disable -->
-KubeVirt releases daily a developer build from the current main branch. One can see
-when the last release happened by looking at our
-[nightly-build-jobs](https://prow.ci.kubevirt.io/?job=periodic-kubevirt-push-nightly-build-*).
+KubeVirt 每天从当前 main 分支发布一次开发者构建。可以通过查看我们的
+[nightly-build-jobs](https://prow.ci.kubevirt.io/?job=periodic-kubevirt-push-nightly-build-*)
+了解最近一次发布发生的时间。
 <!-- markdown-link-check-enable -->
 
-To install the latest developer build, run the following commands:
+要安装最新的开发者构建，请运行以下命令：
 
     $ LATEST=$(curl -L https://storage.googleapis.com/kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/latest)
     $ kubectl apply --server-side -f https://storage.googleapis.com/kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/${LATEST}/kubevirt-operator.yaml
     $ kubectl apply --server-side -f https://storage.googleapis.com/kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/${LATEST}/kubevirt-cr.yaml
 
-To find out which commit this build is based on, run:
+
+要查明此构建基于哪一次提交，请运行：
 
     $ LATEST=$(curl -L https://storage.googleapis.com/kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/latest)
     $ curl https://storage.googleapis.com/kubevirt-prow/devel/nightly/release/kubevirt/kubevirt/${LATEST}/commit
     d358cf085b5a86cc4fa516215f8b757a4e61def2
 
-## Deploying from Source
 
-See the [Developer Getting Started
-Guide](https://github.com/kubevirt/kubevirt/blob/main/docs/getting-started.md)
-to understand how to build and deploy KubeVirt from source.
+## 从源码部署 {#deploying-from-source}
 
-## Installing network plugins (optional)
+参阅[开发者入门
+指南](https://github.com/kubevirt/kubevirt/blob/main/docs/getting-started.md)，
+了解如何从源码构建并部署 KubeVirt。
 
-KubeVirt alone does not bring any additional network plugins, it just
-allows user to utilize them. If you want to attach your VMs to multiple
-networks (Multus CNI) or have full control over L2 (OVS CNI), you need
-to deploy respective network plugins. For more information, refer to
-[OVS CNI installation
-guide](https://github.com/kubevirt/ovs-cni/blob/main/docs/deployment-on-arbitrary-cluster.md).
+## 安装网络插件（可选） {#installing-network-plugins-optional}
 
-> Note: KubeVirt Ansible [network
+KubeVirt 本身不附带任何额外的网络插件，它只是
+允许用户使用这些插件。如果要把 VM 连接到多个
+网络（Multus CNI），或完全控制 L2（OVS CNI），则需要
+部署相应的网络插件。更多信息请参阅
+[OVS CNI 安装
+指南](https://github.com/kubevirt/ovs-cni/blob/main/docs/deployment-on-arbitrary-cluster.md)。
+
+> 注意：KubeVirt Ansible [网络
 > playbook](https://github.com/kubevirt/kubevirt-ansible/tree/master/playbooks#network)
-> installs these plugins by default.
+> 默认会安装这些插件。
 
-## Restricting KubeVirt components node placement
+## 限制 KubeVirt 组件的节点放置 {#restricting-kubevirt-components-node-placement}
 
-You can restrict the placement of the KubeVirt components across your
-cluster nodes by editing the KubeVirt CR:
+你可以通过编辑 KubeVirt CR，限制 KubeVirt 组件在
+集群节点上的放置：
 
-- The placement of the KubeVirt control plane components (virt-controller, virt-api)
-  is governed by the `.spec.infra.nodePlacement` field in the KubeVirt CR.
-- The placement of the virt-handler DaemonSet pods (and consequently, the placement of the
-  VM workloads scheduled to the cluster) is governed by the `.spec.workloads.nodePlacement`
-  field in the KubeVirt CR.
+- KubeVirt 控制平面组件（virt-controller、virt-api）的放置
+  由 KubeVirt CR 中的 `.spec.infra.nodePlacement` 字段控制。
+- virt-handler DaemonSet Pod 的放置（因而也包括调度到该集群的
+  VM 工作负载的放置）由 KubeVirt CR 中的 `.spec.workloads.nodePlacement`
+  字段控制。
 
-For each of these `.nodePlacement` objects, the `.affinity`, `.nodeSelector` and `.tolerations` sub-fields can be configured.
-See the description in the [API reference](http://kubevirt.io/api-reference/master/definitions.html#_v1_componentconfig)
-for further information about using these fields.
+对于每个此类 `.nodePlacement` 对象，可以配置 `.affinity`、`.nodeSelector` 和 `.tolerations` 子字段。
+有关使用这些字段的更多信息，请参阅
+[API 参考](http://kubevirt.io/api-reference/master/definitions.html#_v1_componentconfig)
+中的说明。
 
-For example, to restrict the virt-controller and virt-api pods to only run on the control-plane nodes:
+例如，将 virt-controller 和 virt-api Pod 限制为只在控制平面节点上运行：
 
     kubectl patch -n kubevirt kubevirt kubevirt --type merge --patch '{"spec": {"infra": {"nodePlacement": {"nodeSelector": {"node-role.kubernetes.io/control-plane": ""}}}}}'
 
-To restrict the virt-handler pods to only run on nodes with the "region=primary" label:
+
+将 virt-handler Pod 限制为只在带有 "region=primary" 标签的节点上运行：
 
     kubectl patch -n kubevirt kubevirt kubevirt --type merge --patch '{"spec": {"workloads": {"nodePlacement": {"nodeSelector": {"region": "primary"}}}}}'
 

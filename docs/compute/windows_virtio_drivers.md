@@ -1,133 +1,94 @@
-# Windows virtio drivers
+# Windows virtio 驱动程序 {#windows-virtio-drivers}
 
-Purpose of this document is to explain how to install virtio drivers for
-Microsoft Windows running in a fully virtualized guest.
+本文档旨在说明如何为在完全虚拟化的客户机中运行的 Microsoft Windows 安装 virtio 驱动程序。
 
-## Do I need virtio drivers?
+## 我需要 virtio 驱动程序吗？ {#do-i-need-virtio-drivers}
 
-Yes. Without the virtio drivers, you cannot use paravirtualized hardware properly. It would either not work, or will have a severe performance penalty.
+需要。没有 virtio 驱动程序，你就无法正确使用半虚拟化硬件。它要么无法工作，要么会有严重的性能损失。
 
-For more information about VirtIO and paravirtualization, see [VirtIO and paravirtualization](https://wiki.libvirt.org/page/Virtio)
+有关 VirtIO 和半虚拟化的更多信息，请参见 [VirtIO 与半虚拟化](https://wiki.libvirt.org/page/Virtio)
 
-For more details on configuring your VirtIO driver please refer to [Installing VirtIO driver on a new Windows virtual machine](https://docs.openshift.com/container-platform/4.10/virt/virtual_machines/virt-installing-virtio-drivers-on-new-windows-vm.html) and [Installing VirtIO driver on an existing Windows virtual machine](https://docs.openshift.com/container-platform/4.10/virt/virtual_machines/virt-installing-virtio-drivers-on-existing-windows-vm.html).
+有关配置 VirtIO 驱动程序的更多细节，请参阅[在新的 Windows 虚拟机上安装 VirtIO 驱动程序](https://docs.openshift.com/container-platform/4.10/virt/virtual_machines/virt-installing-virtio-drivers-on-new-windows-vm.html)和[在现有 Windows 虚拟机上安装 VirtIO 驱动程序](https://docs.openshift.com/container-platform/4.10/virt/virtual_machines/virt-installing-virtio-drivers-on-existing-windows-vm.html)。
 
 
-## Which drivers I need to install?
+## 我需要安装哪些驱动程序？ {#which-drivers-i-need-to-install}
 
-There are usually up to 8 possible devices that are required to run
-Windows smoothly in a virtualized environment. KubeVirt currently
-supports only:
+要在虚拟化环境中流畅地运行 Windows，通常最多需要 8 种可能的设备。KubeVirt 目前仅支持：
 
-- **viostor**, the block driver, applies to SCSI Controller in the
-    Other devices group.
+- **viostor**，块驱动程序，适用于“其他设备”组中的 SCSI 控制器。
 
-- **viorng**, the entropy source driver, applies to PCI Device in the
-    Other devices group.
+- **viorng**，熵源驱动程序，适用于“其他设备”组中的 PCI 设备。
 
-- **NetKVM**, the network driver, applies to Ethernet Controller in
-    the Other devices group. Available only if a virtio NIC is
-    configured.
+- **NetKVM**，网络驱动程序，适用于“其他设备”组中的以太网控制器。仅当配置了 virtio NIC 时才可用。
 
-Other virtio drivers, that exists and might be supported in the future:
+其他已经存在、将来可能受支持的 virtio 驱动程序：
 
-- Balloon, the balloon driver, applies to PCI Device in the Other
-    devices group
+- Balloon，气球驱动程序，适用于“其他设备”组中的 PCI 设备
 
-- vioserial, the paravirtual serial driver, applies to PCI Simple
-    Communications Controller in the Other devices group.
+- vioserial，半虚拟串行驱动程序，适用于“其他设备”组中的 PCI 简单通信控制器。
 
-- vioscsi, the SCSI block driver, applies to SCSI Controller in the
-    Other devices group.
+- vioscsi，SCSI 块驱动程序，适用于“其他设备”组中的 SCSI 控制器。
 
-- qemupciserial, the emulated PCI serial driver, applies to PCI Serial
-    Port in the Other devices group.
+- qemupciserial，模拟 PCI 串行驱动程序，适用于“其他设备”组中的 PCI 串行端口。
 
-- qxl, the paravirtual video driver, applied to Microsoft Basic
-    Display Adapter in the Display adapters group.
+- qxl，半虚拟视频驱动程序，应用于“显示适配器”组中的 Microsoft 基本显示适配器。
 
-- pvpanic, the paravirtual panic driver, applies to Unknown device in
-    the Other devices group.
+- pvpanic，半虚拟 panic 驱动程序，适用于“其他设备”组中的未知设备。
 
-> **Note**
+> **注意**
 >
-> Some drivers are required in the installation phase. When you are
-> installing Windows onto the virtio block storage you have to provide
-> an appropriate virtio driver. Namely, choose viostor driver for your
-> version of Microsoft Windows, eg. does not install XP driver when you
-> run Windows 10.
+> 有些驱动程序在安装阶段是必需的。当你把 Windows 安装到 virtio 块存储上时，必须提供合适的 virtio 驱动程序。具体来说，请为你的 Microsoft Windows 版本选择 viostor 驱动程序，例如，运行 Windows 10 时不要安装 XP 驱动程序。
 >
-> Other drivers can be installed after the successful windows
-> installation. Again, please install only drivers matching your Windows
-> version.
+> 其他驱动程序可以在 Windows 成功安装之后再安装。同样，请只安装与你的 Windows 版本匹配的驱动程序。
 
-### How to install during Windows install?
+### 如何在 Windows 安装过程中安装？ {#how-to-install-during-windows-install}
 
-To install drivers before the Windows starts its install, make sure you
-have virtio-win package attached to your VirtualMachine as SATA CD-ROM.
-In the Windows installation, choose advanced install and load driver.
-Then please navigate to loaded Virtio CD-ROM and install one of viostor
-or vioscsi, depending on whichever you have set up.
+要在 Windows 开始安装之前安装驱动程序，请确保已将 virtio-win 软件包作为 SATA CD-ROM 附加到你的 VirtualMachine。在 Windows 安装程序中，选择高级安装并加载驱动程序。然后请导航到已加载的 Virtio CD-ROM，并根据你所设置的类型安装 viostor 或 vioscsi 之一。
 
-Step by step screenshots:
+分步截图：
 
-![Windows install](../assets/virtio_custom_install_0.png)
+![Windows 安装](../assets/virtio_custom_install_0.png)
 
-![Custom install](../assets/virtio_custom_install_1.png)
+![自定义安装](../assets/virtio_custom_install_1.png)
 
-![Disk install](../assets/virtio_custom_install_2.png)
+![磁盘安装](../assets/virtio_custom_install_2.png)
 
-![Choose medium](../assets/virtio_custom_install_3.png)
+![选择介质](../assets/virtio_custom_install_3.png)
 
-![Choose driver](../assets/virtio_custom_install_4.png)
+![选择驱动程序](../assets/virtio_custom_install_4.png)
 
-![Continue install](../assets/virtio_custom_install_5.png)
+![继续安装](../assets/virtio_custom_install_5.png)
 
-### How to install after Windows install?
+### 如何在 Windows 安装之后安装？ {#how-to-install-after-windows-install}
 
-After windows install, please go to [Device
-Manager](https://support.microsoft.com/en-us/help/4026149/windows-open-device-manager).
-There you should see undetected devices in "available devices" section.
-You can install virtio drivers one by one going through this list.
+Windows 安装之后，请转到[设备管理器](https://support.microsoft.com/en-us/help/4026149/windows-open-device-manager)。在那里，你应该会在“可用设备”部分看到未被检测到的设备。你可以遍历此列表，逐个安装 virtio 驱动程序。
 
-![Unknown devices](../assets/virtio_driver_install_0.png)
+![未知设备](../assets/virtio_driver_install_0.png)
 
-![Select driver by id](../assets/virtio_driver_install_1.png)
+![按 ID 选择驱动程序](../assets/virtio_driver_install_1.png)
 
-![Install driver](../assets/virtio_driver_install_2.png)
+![安装驱动程序](../assets/virtio_driver_install_2.png)
 
-![Driver installed](../assets/virtio_driver_install_3.png)
+![驱动程序已安装](../assets/virtio_driver_install_3.png)
 
-For more details on how to choose a proper driver and how to install the
-driver, please refer to the [Windows Guest Virtual Machines on Red Hat
-Enterprise Linux 7](https://access.redhat.com/articles/2470791).
+有关如何选择合适的驱动程序以及如何安装该驱动程序的更多细节，请参阅 [Red Hat Enterprise Linux 7 上的 Windows 客户机虚拟机](https://access.redhat.com/articles/2470791)。
 
-## How to obtain virtio drivers?
+## 如何获取 virtio 驱动程序？ {#how-to-obtain-virtio-drivers}
 
-The virtio Windows drivers are distributed in a form of
-[containerDisk](../storage/disks_and_volumes.md#containerdisk),
-which can be simply mounted to the VirtualMachine. The container image,
-containing the disk is located at:
-<https://quay.io/repository/kubevirt/virtio-container-disk?tab=tags> and the image
-be pulled as any other docker container:
+适用于 Windows 的 virtio 驱动程序以 [containerDisk](../storage/disks_and_volumes.md#containerdisk) 的形式分发，可以简单地挂载到 VirtualMachine。包含该磁盘的容器镜像位于：
+<https://quay.io/repository/kubevirt/virtio-container-disk?tab=tags>，并且该镜像可以像任何其他 docker 容器一样被拉取：
 
     docker pull quay.io/kubevirt/virtio-container-disk
 
-However, pulling image manually is not required, it will be downloaded
-if not present by Kubernetes when deploying VirtualMachine.
+不过，并不需要手动拉取镜像；部署 VirtualMachine 时，如果镜像不存在，Kubernetes 会下载它。
 
-## Attaching to VirtualMachine
+## 附加到 VirtualMachine {#attaching-to-virtualmachine}
 
-KubeVirt distributes virtio drivers for Microsoft Windows in a form of
-container disk. The package contains the virtio drivers and QEMU guest
-agent. The disk was tested on Microsoft Windows Server 2012. Supported
-Windows version is XP and up.
+KubeVirt 以容器磁盘的形式分发适用于 Microsoft Windows 的 virtio 驱动程序。该软件包包含 virtio 驱动程序和 QEMU 客户机代理。该磁盘已在 Microsoft Windows Server 2012 上经过测试。支持的 Windows 版本为 XP 及更高版本。
 
-The package is intended to be used as CD-ROM attached to the virtual
-machine with Microsoft Windows. It can be used as SATA CDROM during
-install phase or to provide drivers in an existing Windows installation.
+该软件包旨在作为 CD-ROM 附加到运行 Microsoft Windows 的虚拟机上使用。它可以在安装阶段用作 SATA CDROM，也可以在现有的 Windows 安装中提供驱动程序。
 
-Attaching the virtio-win package can be done simply by adding
-ContainerDisk to you VirtualMachine.
+只需将 ContainerDisk 添加到你的 VirtualMachine，即可附加 virtio-win 软件包。
 
     spec:
       domain:
@@ -149,6 +110,4 @@ ContainerDisk to you VirtualMachine.
           image: quay.io/kubevirt/virtio-container-disk
         name: virtiocontainerdisk
 
-Once you are done installing virtio drivers, you can remove virtio
-container disk by simply removing the disk from yaml specification and
-restarting the VirtualMachine.
+安装完 virtio 驱动程序后，只需从 yaml 规格中移除该磁盘并重启 VirtualMachine，即可移除 virtio 容器磁盘。

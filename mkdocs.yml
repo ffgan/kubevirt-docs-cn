@@ -1,6 +1,6 @@
-site_name: KubeVirt user guide
+site_name: KubeVirt 用户指南
 site_url: https://kubevirt.io/user-guide
-site_description: Documentation for KubeVirt
+site_description: KubeVirt 文档
 docs_dir: docs
 site_dir: site
 
@@ -107,6 +107,7 @@ extra_css:
 
 theme:
   name: material
+  language: zh
   logo: assets/KubeVirt_icon.png
   favicon: assets/favicon32x32.png
   palette:
@@ -116,7 +117,7 @@ theme:
       accent: teal
       toggle:
         icon: material/weather-night
-        name: Switch to dark mode
+        name: 切换到深色模式
 
     # Palette toggle for dark mode
     - scheme: slate
@@ -124,7 +125,7 @@ theme:
       accent: teal
       toggle:
         icon: material/weather-sunny
-        name: Switch to light mode
+        name: 切换到浅色模式
        
   features:
     - navigation.sections  

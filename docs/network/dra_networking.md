@@ -1,48 +1,45 @@
-# Connecting VMs to DRA-backed Networks
+# 将 VM 连接到由 DRA 支持的网络 {#connecting-vms-to-dra-backed-networks}
 
-**FEATURE STATE:** v1.10.0: Beta
+**功能状态：** v1.10.0: Beta
 
-KubeVirt can connect a virtual machine to a network backed by Kubernetes [Dynamic Resource Allocation (DRA)](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/).
-A device is requested through the Kubernetes `ResourceClaim` API and allocated by the DRA driver. The VM's network declares a new `resourceClaim` source that references the claim and request (by `claimName` and `requestName`), and the VM connects to that network through an interface configured by a matching [network binding plugin](network_binding_plugins.md).
+KubeVirt 可以把虚拟机连接到由 Kubernetes [动态资源分配（DRA）](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) 支持的网络。设备通过 Kubernetes `ResourceClaim` API 请求，并由 DRA 驱动分配。VM 的网络声明一个新的 `resourceClaim` 源，该源通过 `claimName` 和 `requestName` 引用声明和请求，VM 再通过由匹配的[网络绑定插件](network_binding_plugins.md)配置的接口连接到该网络。
 
-The DRA driver and the network binding plugin interoperate through a contract defined by their authors. Choose a driver and binding plugin that are compatible, and refer to their documentation for the capabilities they support together.
-
-!!! Note
-    Both the DRA driver and the network binding plugin are external, third-party components. They are outside the scope of KubeVirt and of this guide.
+DRA 驱动与网络绑定插件通过其作者定义的契约进行互操作。请选择相互兼容的驱动和绑定插件，并参阅它们的文档，了解二者共同支持的能力。
 
 !!! Note
-    As of KubeVirt v1.10, DRA-backed networks work only with a [network binding plugin](network_binding_plugins.md). None of the core bindings support DRA.
+    DRA 驱动和网络绑定插件都是外部的第三方组件。它们不在 KubeVirt 以及本指南的范围内。
 
-## Admin vs user responsibility
+!!! Note
+    截至 KubeVirt v1.10，由 DRA 支持的网络只能与[网络绑定插件](network_binding_plugins.md)一起使用。任何核心绑定都不支持 DRA。
 
-The DRA network flow splits across two roles, and both must be in place before a DRA backed network can be used:
+## 管理员与用户的职责 {#admin-vs-user-responsibility}
 
-- **Cluster admin** prepares the cluster: enables the `NetworkDevicesWithDRA` feature gate and deploys the third-party components. See [Prerequisites](#prerequisites) for the concrete checklist.
-- **VM owner (user)** creates the `ResourceClaim`/`ResourceClaimTemplate` and the VM manifest that references it, with an interface that uses the registered binding plugin and a network with a `resourceClaim` source.
+DRA 网络流程分属两个角色，在使用由 DRA 支持的网络之前，二者都必须就绪：
 
-## Feature gate
+- **集群管理员**准备集群：启用 `NetworkDevicesWithDRA` 功能门控，并部署第三方组件。具体检查清单见[前提条件](#prerequisites)。
+- **VM 所有者（用户）**创建 `ResourceClaim`/`ResourceClaimTemplate`，以及引用它的 VM 清单；其中的接口使用已注册的绑定插件，网络使用 `resourceClaim` 源。
 
-The `resourceClaim` network source is controlled by the `NetworkDevicesWithDRA` feature gate. As of KubeVirt v1.10, the feature gate is in Beta and is enabled by default.
+## 功能门控 {#feature-gate}
 
-Some KubeVirt distributions may disable it. If it is disabled in your cluster, enable it on the KubeVirt CR as described in
-[Activating feature gates](../cluster_admin/activating_feature_gates.md).
+`resourceClaim` 网络源由 `NetworkDevicesWithDRA` 功能门控控制。截至 KubeVirt v1.10，该功能门控处于 Beta 阶段，并且默认启用。
 
-## Prerequisites
+某些 KubeVirt 发行版可能会禁用它。如果在你的集群中它处于禁用状态，请按[激活功能门控](../cluster_admin/activating_feature_gates.md)中的说明，在 KubeVirt CR 上启用它。
 
-- **The `NetworkDevicesWithDRA` feature gate enabled.**
+## 前提条件 {#prerequisites}
 
-- **Network device DRA driver.** An external DRA driver for the target network device type must be deployed in the cluster.
+- **已启用 `NetworkDevicesWithDRA` 功能门控。**
 
-- **A [DeviceClass](https://kubernetes.io/docs/reference/kubernetes-api/resource/device-class-v1/)**. A `DeviceClass` is an admin-defined category of devices. It must exist for `ResourceClaim`/`ResourceClaimTemplate` objects to reference.
+- **网络设备 DRA 驱动。** 必须在集群中部署面向目标网络设备类型的外部 DRA 驱动。
 
-- **A registered network binding plugin.** The binding plugin that configures the DRA backed interface must be registered in the KubeVirt CR. See [Network Binding Plugins](network_binding_plugins.md) for how a cluster admin registers one.
+- **一个 [DeviceClass](https://kubernetes.io/docs/reference/kubernetes-api/resource/device-class-v1/)。** `DeviceClass` 是管理员定义的一类设备。`ResourceClaim`/`ResourceClaimTemplate` 对象要引用它，它必须已经存在。
 
-## Example: connecting a VM to a DRA-backed network
+- **已注册的网络绑定插件。** 用于配置由 DRA 支持的接口的绑定插件，必须在 KubeVirt CR 中注册。集群管理员如何注册，请参阅[网络绑定插件](network_binding_plugins.md)。
 
-The example below requests a device through a `ResourceClaimTemplate`, then connects a VM to the DRA-backed network.
-It assumes a cluster admin has already registered the binding plugin `my-binding-plugin` in the KubeVirt CR
+## 示例：将 VM 连接到由 DRA 支持的网络 {#example-connecting-a-vm-to-a-dra-backed-network}
 
-First, create a `ResourceClaimTemplate` that requests a device from the DRA driver:
+下面的示例通过 `ResourceClaimTemplate` 请求一个设备，然后把 VM 连接到由 DRA 支持的网络。它假定集群管理员已经在 KubeVirt CR 中注册了绑定插件 `my-binding-plugin`。
+
+首先，创建一个向 DRA 驱动请求设备的 `ResourceClaimTemplate`：
 
 ```yaml
 apiVersion: resource.k8s.io/v1
@@ -59,9 +56,9 @@ spec:
 ```
 
 !!! Note
-    The device request fields are specific to your DRA driver. See the driver's documentation for how to define the `ResourceClaimTemplate` correctly.
+    设备请求字段取决于你的 DRA 驱动。关于如何正确定义 `ResourceClaimTemplate`，请参阅该驱动的文档。
 
-Then create a VM that references the claim template in `spec.template.spec.resourceClaims`, declares an interface that uses the binding plugin, and adds a network with a `resourceClaim` source that points at the claim and request:
+然后创建一个 VM：在 `spec.template.spec.resourceClaims` 中引用该声明模板，声明一个使用该绑定插件的接口，并添加一个带有 `resourceClaim` 源、指向该声明和请求的网络：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -87,25 +84,25 @@ spec:
         resourceClaimTemplateName: network-claim-template
 ```
 
-!!! warning "Important"
-    **These fields must reference each other:**
+!!! warning "重要"
+    **这些字段必须相互引用：**
 
-    - `spec.template.spec.resourceClaims[].resourceClaimTemplateName` must match the `metadata.name` of the `ResourceClaimTemplate` (`network-claim-template` in this example).
-    - `spec.template.spec.networks[].resourceClaim.claimName` must match `spec.template.spec.resourceClaims[].name` for the claim that backs the device (`network-claim` in this example).
-    - `spec.template.spec.networks[].resourceClaim.requestName` must match the request `name` defined in the `ResourceClaimTemplate` (`dev` in this example).
+    - `spec.template.spec.resourceClaims[].resourceClaimTemplateName` 必须与 `metadata.name` 匹配，该字段属于 `ResourceClaimTemplate`（本例中为 `network-claim-template`）。
+    - `spec.template.spec.networks[].resourceClaim.claimName` 必须与为该设备提供支持的声明所对应的 `spec.template.spec.resourceClaims[].name` 匹配（本例中为 `network-claim`）。
+    - `spec.template.spec.networks[].resourceClaim.requestName` 必须与请求 `name` 匹配，该请求定义在 `ResourceClaimTemplate` 中（本例中为 `dev`）。
 
-    The interface and the network are correlated by their shared `name` (`dra-net` in this example), exactly like any other KubeVirt interface/network pair.
+    接口与网络通过它们共享的 `name` 相关联（本例中为 `dra-net`），与其他任何 KubeVirt 接口/网络对完全一样。
 
-## Validation rules
+## 校验规则 {#validation-rules}
 
-KubeVirt validates DRA network configuration when the VM/VMI is created. Your configuration must satisfy all of the following:
+KubeVirt 在创建 VM/VMI 时校验 DRA 网络配置。你的配置必须满足以下全部条件：
 
-- An interface mapped to a `resourceClaim` network **must** use a network binding plugin.
-- Both `claimName` and `requestName` must be set (non-empty).
-- The `claimName` + `requestName` tuple must be **unique** across all networks, `hostDevices`, and `gpus` — no two entries may share the same claim and request.
-- `multus` and `resourceClaim` network sources **cannot** be mixed in the same VMI.
+- 映射到 `resourceClaim` 网络的接口**必须**使用网络绑定插件。
+- `claimName` 和 `requestName` 都必须设置（非空）。
+- `claimName` + `requestName` 元组在所有网络、`hostDevices` 和 `gpus` 中必须**唯一**，任意两个条目都不能共用同一个声明和请求。
+- 同一个 VMI 中不能混用 `multus` 和 `resourceClaim` 网络源。
 
-## Known limitations
+## 已知限制 {#known-limitations}
 
-- **Live migration** is supported only for `resourceClaimTemplate`backed claims, not for a direct `resourceClaim` reference.
-- **One device per request.** If a request allocates more than one device (`count > 1`), only the first allocated device is used.
+- **实时迁移**仅支持由 `resourceClaimTemplate` 支持的声明，不支持直接的 `resourceClaim` 引用。
+- **每个请求一个设备。** 如果一个请求分配了多个设备（`count > 1`），则只会使用第一个已分配的设备。

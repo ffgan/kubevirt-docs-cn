@@ -1,12 +1,12 @@
 nav:
   - installation.md
   - updating_and_deletion.md
-  - Activating and deactivating feature gates: activating_feature_gates.md
+  - 启用与停用功能门控: activating_feature_gates.md
   - annotations_and_labels.md
   - api_validation.md
   - authorization.md
   - confidential_computing.md
-  - customize_components.md
+  - 自定义 KubeVirt 组件: customize_components.md
   - gitops.md
   - ksm.md
   - migration_policies.md
@@ -15,7 +15,7 @@ nav:
   - scheduler.md
   - tekton_tasks.md
   - unresponsive_nodes.md
-  - ARM cluster:
+  - ARM 集群:
     - device_status_on_Arm64.md
     - feature_gate_status_on_Arm64.md
     - operations_on_Arm64.md

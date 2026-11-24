@@ -1,39 +1,20 @@
-# Node overcommit
+# 节点超分 {#node-overcommit}
 
-KubeVirt does not yet support classical Memory Overcommit Management or
-Memory Ballooning. In other words VirtualMachineInstances can't give
-back memory they have allocated. However, a few other things can be
-tweaked to reduce the memory footprint and overcommit the per-VMI memory
-overhead.
+KubeVirt 尚不支持经典的内存超分管理或内存气球。换句话说，VirtualMachineInstance 无法归还已经分配到的内存。不过，仍可以调整其他一些方面，以减小内存占用，并对每个 VMI 的内存开销进行超分。
 
-## Remove the Graphical Devices
+## 移除图形设备 {#remove-the-graphical-devices}
 
-First the safest option to reduce the memory footprint, is removing the
-graphical device from the VMI by setting
-`spec.domain.devices.autottachGraphicsDevice` to `false`. See the video
-and graphics device
-[documentation](../compute/virtual_hardware.md#video-and-graphics-device)
-for further details and examples.
+首先，减小内存占用最安全的做法，是通过将 `spec.domain.devices.autottachGraphicsDevice` 设置为 `false`，从 VMI 中移除图形设备。更多细节和示例请参阅视频与图形设备[文档](../compute/virtual_hardware.md#video-and-graphics-device)。
 
-This will save a constant amount of `16MB` per VirtualMachineInstance
-but also disable VNC access.
+这将为每个 VirtualMachineInstance 节省固定的 `16MB`，同时也会禁用 VNC 访问。
 
-## Overcommit the Guest Overhead
+## 超分客户机开销 {#overcommit-the-guest-overhead}
 
-Before you continue, make sure you make yourself comfortable with the
-[Out of Resource
-Management](https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/)
-of Kubernetes.
+在继续之前，请先熟悉 Kubernetes 的[资源不足管理](https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/)。
 
-Every VirtualMachineInstance requests slightly more memory from
-Kubernetes than what was requested by the user for the Operating System.
-The additional memory is used for the per-VMI overhead consisting of our
-infrastructure which is wrapping the actual VirtualMachineInstance
-process.
+每个 VirtualMachineInstance 向 Kubernetes 请求的内存，都略多于用户为操作系统所请求的内存。额外的内存用于每个 VMI 的开销，这些开销来自包裹实际 VirtualMachineInstance 进程的基础设施。
 
-In order to increase the VMI density on the node, it is possible to not
-request the additional overhead by setting
-`spec.domain.resources.overcommitGuestOverhead` to `true`:
+为了提高节点上的 VMI 密度，可以将 `spec.domain.resources.overcommitGuestOverhead` 设置为 `true`，从而不再请求这部分额外开销：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -50,22 +31,13 @@ spec:
 [...]
 ```
 
-This will work fine for as long as most of the VirtualMachineInstances
-will not request the whole memory. That is especially the case if you
-have short-lived VMIs. But if you have long-lived
-VirtualMachineInstances or do extremely memory intensive tasks inside
-the VirtualMachineInstance, your VMIs will use all memory they are
-granted sooner or later.
+只要大多数 VirtualMachineInstance 不会请求全部内存，这种方式就能正常工作。短生命周期的 VMI 尤其如此。但如果你有长期运行的 VirtualMachineInstance，或者在 VirtualMachineInstance 内执行极端的内存密集型任务，你的 VMI 迟早会用完所获得的全部内存。
 
-## Overcommit Guest Memory
+## 超分客户机内存 {#overcommit-guest-memory}
 
-The third option is real memory overcommit on the VMI. In this scenario
-the VMI is explicitly told that it has more memory available than what
-is requested from the cluster by setting `spec.domain.memory.guest` to a
-value higher than `spec.domain.resources.requests.memory`.
+第三种做法是对 VMI 进行真正的内存超分。在这种场景中，通过将 `spec.domain.memory.guest` 设置为高于 `spec.domain.resources.requests.memory` 的值，明确告知 VMI：它可用的内存多于向集群请求的内存。
 
-The following definition requests `1024MB` from the cluster but tells
-the VMI that it has `2048MB` of memory available:
+下面的定义向集群请求 `1024MB`，但告知 VMI 它有 `2048MB` 可用内存：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -84,16 +56,9 @@ spec:
 [...]
 ```
 
-For as long as there is enough free memory available on the node, the
-VMI can happily consume up to `2048MB`. This VMI will get the
-`Burstable` resource class assigned by Kubernetes (See [QoS classes in
-Kubernetes](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-burstable)
-for more details). The same eviction rules like for Pods apply to the
-VMI in case the node gets under memory pressure.
+只要节点上有足够的空闲内存，VMI 就可以顺利使用最多 `2048MB`。Kubernetes 会为该 VMI 分配 `Burstable` 资源类别（更多细节请参阅 [Kubernetes 中的 QoS 类别](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-burstable)）。当节点处于内存压力之下时，适用于 Pod 的相同驱逐规则也适用于该 VMI。
 
-Implicit memory overcommit is disabled by default. This means that when
-memory request is not specified, it is set to match
-`spec.domain.memory.guest`. However, it can be enabled using
+隐式内存超分默认禁用。这意味着当未指定内存 request 时，它会被设置为与 `spec.domain.memory.guest` 匹配。不过，可以使用如下配置启用
 
 ```yaml
 ...
@@ -103,149 +68,79 @@ spec:
       memoryOvercommit: 150
 ```
 
-in the `kubevirt` CR. For example, by setting
-`memoryOvercommit: "150"` we define that when memory request is not
-explicitly set, it will be implicitly set to achieve memory overcommit
-of 150%. For instance, when `spec.domain.memory.guest: 3072M`, memory
-request is set to 2048M, if omitted. Note that the actual memory request
-depends on additional configuration options like
-OvercommitGuestOverhead.
+在 `kubevirt` CR 中。例如，通过设置 `memoryOvercommit: "150"`，我们规定：当未显式设置内存 request 时，会隐式设置它，以实现 150% 的内存超分。例如，当 `spec.domain.memory.guest: 3072M` 且省略内存 request 时，内存 request 会被设置为 2048M。请注意，实际的内存 request 还取决于 OvercommitGuestOverhead 等其他配置选项。
 
-The cluster-wide `memoryOvercommit` setting is not applied to VMIs with
-dedicated CPU placement (`spec.domain.cpu.dedicatedCpuPlacement: true`).
-KubeVirt skips the implicit memory-overcommit calculation for these VMIs.
+集群范围的 `memoryOvercommit` 设置不会应用于启用了专用 CPU 放置的 VMI（`spec.domain.cpu.dedicatedCpuPlacement: true`）。KubeVirt 会跳过这些 VMI 的隐式内存超分计算。
 
-## Configuring the memory pressure behavior of nodes
+## 配置节点的内存压力行为 {#configuring-the-memory-pressure-behavior-of-nodes}
 
-If the node gets under memory pressure, depending on the `kubelet`
-configuration the virtual machines may get killed by the OOM handler or
-by the `kubelet` itself. It is possible to tweak that behaviour based on
-the requirements of your VirtualMachineInstances by:
+如果节点处于内存压力之下，根据 `kubelet` 的配置，虚拟机可能会被 OOM 处理程序或 `kubelet` 本身杀死。可以根据 VirtualMachineInstance 的需求，通过以下方式调整该行为：
 
-* Configuring [Soft Eviction
-    Thresholds](https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/#soft-eviction-thresholds)
-* Configuring [Hard Eviction
-    Thresholds](https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/#hard-eviction-thresholds)
-* Requesting the right QoS class for VirtualMachineInstances
-* Setting `--system-reserved` and `--kubelet-reserved`
-* Enabling KSM
-* Enabling swap
+* 配置[软驱逐阈值](https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/#soft-eviction-thresholds)
+* 配置[硬驱逐阈值](https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/#hard-eviction-thresholds)
+* 为 VirtualMachineInstance 请求合适的 QoS 类别
+* 设置 `--system-reserved` 和 `--kubelet-reserved`
+* 启用 KSM
+* 启用交换空间
 
-### Configuring Soft Eviction Thresholds
+### 配置软驱逐阈值 {#configuring-soft-eviction-thresholds}
 
-> Note: Soft Eviction will effectively shutdown VirtualMachineInstances.
-> They are not paused, hibernated or migrated. Further, Soft Eviction is
-> disabled by default.
+> 注意：软驱逐实际上会关闭 VirtualMachineInstance。
+> 它们不会被暂停、休眠或迁移。此外，软驱逐
+> 默认处于禁用状态。
 
-If configured, VirtualMachineInstances get evicted once the available
-memory falls below the threshold specified via `--eviction-soft` and the
-VirtualmachineInstance is given the chance to perform a shutdown of the
-VMI within a timespan specified via `--eviction-max-pod-grace-period`.
-The flag `--eviction-soft-grace-period` specifies for how long a soft
-eviction condition must be held before soft evictions are triggered.
+如果已配置，一旦可用内存低于通过 `--eviction-soft` 指定的阈值，VirtualMachineInstance 就会被驱逐，并且该 VirtualMachineInstance 有机会在通过 `--eviction-max-pod-grace-period` 指定的时间范围内执行 VMI 的关闭。标志 `--eviction-soft-grace-period` 指定软驱逐条件必须持续多久，才会触发软驱逐。
 
-If set properly according to the demands of the VMIs, overcommitting
-should only lead to soft evictions in rare cases for some VMIs. They may
-even get re-scheduled to the same node with less initial memory demand.
-For some workload types, this can be perfectly fine and lead to better
-overall memory-utilization.
+如果按照 VMI 的需求正确设置，超分应当只在少数情况下导致某些 VMI 发生软驱逐。它们甚至可能以更低的初始内存需求被重新调度到同一节点。对于某些工作负载类型，这完全可以接受，并能带来更好的整体内存利用率。
 
-### Configuring Hard Eviction Thresholds
+### 配置硬驱逐阈值 {#configuring-hard-eviction-thresholds}
 
-> Note: If unspecified, the kubelet will do hard evictions for Pods once
-> `memory.available` falls below `100Mi`.
+> 注意：如果未指定，一旦 `memory.available` 低于 `100Mi`，kubelet 就会对 Pod 执行硬驱逐。
 
-Limits set via `--eviction-hard` will lead to immediate eviction of
-VirtualMachineInstances or Pods. This stops VMIs without a grace period
-and is comparable with power-loss on a real computer.
+通过 `--eviction-hard` 设置的限制会导致 VirtualMachineInstance 或 Pod 被立即驱逐。这会在没有宽限期的情况下停止 VMI，相当于真实计算机上的断电。
 
-If the hard limit is hit, VMIs may from time to time simply be killed.
-They may be re-scheduled to the same node immediately again, since they
-start with less memory consumption again. This can be a simple option,
-if the memory threshold is only very seldom hit and the work performed
-by the VMIs is reproducible or it can be resumed from some checkpoints.
+如果触及硬限制，VMI 有时会直接被杀死。由于它们再次启动时内存消耗更低，可能会立刻被重新调度回同一节点。如果内存阈值极少被触及，并且 VMI 执行的工作可以复现，或者可以从某些检查点恢复，那么这可以是一种简单的选择。
 
-## Requesting the right QoS Class for VirtualMachineInstances
+## 为 VirtualMachineInstance 请求合适的 QoS 类别 {#requesting-the-right-qos-class-for-virtualmachineinstances}
 
-Different QoS classes get [assigned to Pods and
-VirtualMachineInstances](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy)
-based on the `requests.memory` and `limits.memory`. KubeVirt right now
-supports the QoS classes `Burstable` and `Guaranteed`. `Burstable` VMIs
-are evicted before `Guaranteed` VMIs.
+不同的 QoS 类别会根据 `requests.memory` 和 `limits.memory` [分配给 Pod 和 VirtualMachineInstance](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy)。KubeVirt 目前支持的 QoS 类别为 `Burstable` 和 `Guaranteed`。`Burstable` VMI 会先于 `Guaranteed` VMI 被驱逐。
 
-This allows creating two classes of VMIs:
+这样就可以创建两类 VMI：
 
-* One type can have equal `requests.memory` and `limits.memory` set
-    and therefore gets the `Guaranteed` class assigned. This one will
-    not get evicted and should never run into memory issues, but is more
-    demanding.
-* One type can have no `limits.memory` or a `limits.memory` which is
-    greater than `requests.memory` and therefore gets the `Burstable`
-    class assigned. These VMIs will be evicted first.
+* 一类可以设置相等的 `requests.memory` 和 `limits.memory`，因此会被分配 `Guaranteed` 类别。这类不会被驱逐，也不应遇到内存问题，但资源要求更高。
+* 另一类可以不设置 `limits.memory`，或者其 `limits.memory` 大于 `requests.memory`，因此会被分配 `Burstable` 类别。这些 VMI 会首先被驱逐。
 
-## Setting `--system-reserved` and `--kubelet-reserved`
+## 设置 `--system-reserved` 和 `--kubelet-reserved` {#setting-system-reserved-and-kubelet-reserved}
 
-It may be important to reserve some memory for other daemons (not DaemonSets)
-which are running on the same node (ssh, dhcp servers, etc). The reservation
-can be done with the `--system reserved` switch. Further for the Kubelet and
-Docker a special flag called `--kubelet-reserved` exists.
+为同一节点上运行的其他守护进程（不是 DaemonSet）保留一些内存可能很重要（例如 ssh、dhcp 服务器等）。可以使用 `--system reserved` 开关完成此预留。另外，针对 kubelet 和 Docker，还存在一个名为 `--kubelet-reserved` 的特殊标志。
 
-## Enabling KSM
+## 启用 KSM {#enabling-ksm}
 
-The [KSM](https://www.linux-kvm.org/page/KSM) (Kernel same-page merging)
-daemon can be started on the node. Depending on its tuning parameters it
-can more or less aggressively try to merge identical pages between
-applications and VirtualMachineInstances. The more aggressive it is
-configured the more CPU it will use itself, so the memory overcommit
-advantages comes with a slight CPU performance hit.
+可以在节点上启动 [KSM](https://www.linux-kvm.org/page/KSM)（内核同页合并）守护进程。根据其调优参数，它可以或多或少激进地尝试在应用程序与 VirtualMachineInstance 之间合并相同的页面。配置得越激进，它自身占用的 CPU 就越多，因此内存超分带来的好处会伴随轻微的 CPU 性能损失。
 
-Config file tuning allows changes to scanning frequency (how often will
-KSM activate) and aggressiveness (how many pages per second will it
-scan).
+配置文件调优可以更改扫描频率（KSM 多久激活一次）和激进程度（它每秒扫描多少个页面）。
 
-## Enabling Swap
+## 启用交换空间 {#enabling-swap}
 
-> Note: This will definitely make sure that your VirtualMachines can't
-> crash or get evicted from the node but it comes with the cost of
-> pretty unpredictable performance once the node runs out of memory and
-> the kubelet may not detect that it should evict Pods to increase the
-> performance again.
+> 注意：这确实可以确保你的虚拟机不会崩溃，也不会被从节点上驱逐，但一旦节点内存耗尽，性能会变得相当不可预测，而且 kubelet 可能检测不到应当驱逐 Pod 以再次提升性能。
 
-Enabling swap is in general [not
-recommended](https://github.com/kubernetes/kubernetes/issues/53533) on
-Kubernetes right now. However, it can be useful in combination with KSM,
-since KSM merges identical pages over time. Swap allows the VMIs to
-successfully allocate memory which will then effectively never be used
-because of the later de-duplication done by KSM.
+目前，在 Kubernetes 上启用交换空间通常[不推荐](https://github.com/kubernetes/kubernetes/issues/53533)。不过，它与 KSM 结合时会有用，因为 KSM 会随着时间合并相同的页面。交换空间让 VMI 能够成功分配内存，而这些内存随后实际上不会被使用，因为 KSM 之后会进行去重。
 
-## Node CPU allocation ratio
+## 节点 CPU 分配比 {#node-cpu-allocation-ratio}
 
-KubeVirt runs Virtual Machines in a Kubernetes Pod. This pod requests a certain
-amount of CPU time from the host. On the other hand, the Virtual Machine is
-being created with a certain amount of vCPUs. The number of vCPUs may not
-necessarily correlate to the number of requested CPUs by the POD. 
-Depending on the [QOS](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/) of the POD, vCPUs can be scheduled on a variable amount
-of physical CPUs; this depends on the available CPU resources on a node. When
-there are fewer available CPUs on the node as the requested vCPU, vCPU will be
-over committed.
+KubeVirt 在 Kubernetes Pod 中运行虚拟机。该 Pod 向宿主机请求一定量的 CPU 时间。另一方面，虚拟机在创建时带有一定数量的 vCPU。vCPU 的数量不一定与 Pod 所请求的 CPU 数量对应。根据 Pod 的 [QOS](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/)，vCPU 可以被调度到数量可变的物理 CPU 上；这取决于节点上的可用 CPU 资源。当节点上可用的 CPU 少于所请求的 vCPU 时，vCPU 就会被超分。
 
-By default, each pod requests 100mil of CPU time. The CPU requested on the pod
-sets the cgroups cpu.shares which serves as a priority for the scheduler to
-provide CPU time for vCPUs in this POD.
-As the number of vCPUs increases, this will reduce the amount of CPU time each
-vCPU may get when competing with other processes on the node or other Virtual
-Machine Instances with a lower amount of vCPUs.
+默认情况下，每个 Pod 请求 100 毫核的 CPU 时间。Pod 上请求的 CPU 会设置 cgroups 的 cpu.shares，调度器以此作为优先级，为该 Pod 中的 vCPU 提供 CPU 时间。
+随着 vCPU 数量增加，在与节点上的其他进程，或与 vCPU 数量更少的其他虚拟机实例竞争时，每个 vCPU 可能获得的 CPU 时间会减少。
 
-The `cpuAllocationRatio` comes to normalize the amount of CPU time the POD will
-request based on the number of vCPUs.
-For example, POD CPU request = number of vCPUs * 1/cpuAllocationRatio
-When cpuAllocationRatio is set to 1, a full amount of vCPUs will be requested
-for the POD.
+`cpuAllocationRatio` 用来根据 vCPU 数量，规范化 Pod 将要请求的 CPU 时间。
+例如，Pod 的 CPU request = vCPU 数量 * 1/cpuAllocationRatio。
+当 cpuAllocationRatio 设置为 1 时，会为该 Pod 请求全部数量的 vCPU。
 
-> Note: In Kubernetes, one full core is 1000 of CPU time
-> [More Information](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/)
+> 注意：在 Kubernetes 中，一个完整的核是 1000 单位的 CPU 时间
+> [更多信息](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/)
 
-Administrators can change this ratio by updating the KubeVirt CR
+管理员可以通过更新 KubeVirt CR 来更改此比率
 
 ```yaml
 ...
@@ -254,4 +149,3 @@ spec:
     developerConfiguration:
       cpuAllocationRatio: 10
 ```
-

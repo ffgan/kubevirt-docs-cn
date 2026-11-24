@@ -1,42 +1,30 @@
-# Annotations and labels
+# 注解与标签 {#annotations-and-labels}
 
-KubeVirt builds on and exposes a number of labels and annotations that
-either are used for internal implementation needs or expose useful
-information to API users. This page documents the labels and annotations
-that may be useful for regular API consumers. This page intentionally
-does *not* list labels and annotations that are merely part of internal
-implementation.
+KubeVirt 构建并公开了若干标签和注解，它们要么用于内部实现需求，要么向 API 用户公开有用信息。本页记录对常规 API 使用者可能有用的标签和注解。本页有意*不*列出仅属于内部实现的标签和注解。
 
-**Note:** Annotations and labels that are not specific to KubeVirt are
-also documented
-[here](https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/).
+**注意：**并非 KubeVirt 专有的注解和标签也记录在
+[此处](https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/)。
 
-## kubevirt.io
+## kubevirt.io {#kubevirtio}
 
-Example: `kubevirt.io=virt-launcher`
+示例：`kubevirt.io=virt-launcher`
 
-Used on: Pod
+用于：Pod
 
-This label marks resources that belong to KubeVirt. An optional value
-may indicate which specific KubeVirt component a resource belongs to.
-This label may be used to list all resources that belong to KubeVirt,
-for example, to uninstall it from a cluster.
+此标签标记属于 KubeVirt 的资源。可选值可以表明资源属于哪个具体的 KubeVirt 组件。此标签可用于列出属于 KubeVirt 的全部资源，例如从集群中卸载它。
 
-### kubevirt.io/schedulable
+### kubevirt.io/schedulable {#kubevirtioschedulable}
 
-Example: `kubevirt.io/schedulable=true`
+示例：`kubevirt.io/schedulable=true`
 
-Used on: Node
+用于：节点
 
-This label declares whether a particular node is available for
-scheduling virtual machine instances on it.
+此标签声明某个节点是否可用于在其上调度虚拟机实例。
 
-### kubevirt.io/heartbeat
+### kubevirt.io/heartbeat {#kubevirtioheartbeat}
 
-Example: `kubevirt.io/heartbeat=2018-07-03T20:07:25Z`
+示例：`kubevirt.io/heartbeat=2018-07-03T20:07:25Z`
 
-Used on: Node
+用于：节点
 
-This annotation is regularly updated by virt-handler to help determine
-if a particular node is alive and hence should be available for new
-virtual machine instance scheduling.
+此注解由 virt-handler 定期更新，用于帮助判断某个节点是否存活，从而决定它是否可用于新的虚拟机实例调度。

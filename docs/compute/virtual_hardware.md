@@ -1,19 +1,12 @@
-# Virtual hardware
+# 虚拟硬件 {#virtual-hardware}
 
-Fine-tuning different aspects of the hardware which are not device
-related (BIOS, mainboard, etc.) is sometimes necessary to allow guest
-operating systems to properly boot and reboot.
+微调与设备无关的硬件的不同方面（BIOS、主板等）有时是必要的，这样才能让客户机操作系统正常启动和重启。
 
-## Machine Type
+## 机器类型 {#machine-type}
 
-QEMU is able to work with two different classes of chipsets for x86\_64,
-so called machine types. The x86\_64 chipsets are i440fx (also called
-pc) and q35. They are versioned based on qemu-system-${ARCH},
-following the format `pc-${machine_type}-${qemu_version}`,
-e.g.`pc-i440fx-2.10` and `pc-q35-2.10`.
+QEMU 能够使用两类 x86\_64 芯片组，即所谓的机器类型。x86\_64 芯片组是 i440fx（也称为 pc）和 q35。它们按照 qemu-system-${ARCH} 进行版本划分，格式为 `pc-${machine_type}-${qemu_version}`，例如 `pc-i440fx-2.10` 和 `pc-q35-2.10`。
 
-KubeVirt defaults to QEMU's newest q35 machine type. If a custom machine
-type is desired, it is configurable through the following structure:
+KubeVirt 默认使用 QEMU 最新的 q35 机器类型。如果需要自定义机器类型，可以通过以下结构进行配置：
 
 ```yaml
 metadata:
@@ -35,15 +28,14 @@ spec:
       persistentVolumeClaim:
         claimName: myclaim
 ```
-Comparison of the machine types' internals can be found [at QEMU
-wiki](https://wiki.qemu.org/Features/Q35).
 
-### BIOS/UEFI
+这两种机器类型内部结构的比较可以在 [QEMU wiki](https://wiki.qemu.org/Features/Q35) 找到。
 
-All virtual machines use BIOS by default for booting.
+### BIOS/UEFI {#biosuefi}
 
-It is possible to utilize UEFI/OVMF by setting a value via
-`spec.firmware.bootloader`:
+所有虚拟机默认都使用 BIOS 启动。
+
+可以通过 `spec.firmware.bootloader` 设置一个值来使用 UEFI/OVMF：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -68,17 +60,13 @@ spec:
         efi: {}
 ```
 
-Enabling EFI automatically enables [Secure Boot](https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-secure-boot),
-unless the `secureBoot` field under `efi` is set to `false`.  
-Secure Boot itself requires the [SMM](https://en.wikipedia.org/wiki/System_Management_Mode)
-CPU feature to be enabled as above, which does not happen automatically,
-for security reasons.
+启用 EFI 会自动启用[安全启动](https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-secure-boot)，除非把 `secureBoot` 字段（位于 `efi` 之下）设置为 `false`。
 
-### SMBIOS Firmware
+安全启动本身要求像上面那样启用 [SMM](https://en.wikipedia.org/wiki/System_Management_Mode) CPU 特性。出于安全原因，这不会自动发生。
 
-In order to provide a consistent view on the virtualized hardware for
-the guest OS, the SMBIOS UUID can be set to a constant value via
-`spec.firmware.uuid`:
+### SMBIOS 固件 {#smbios-firmware}
+
+为了向客户机操作系统提供一致的虚拟化硬件视图，可以通过 `spec.firmware.uuid` 把 SMBIOS UUID 设置为一个常量：
 
 ```yaml
 metadata:
@@ -102,18 +90,15 @@ spec:
         claimName: myclaim
 ```
 
-In addition, the SMBIOS serial number can be set to a constant value via
-`spec.firmware.serial`, as demonstrated above.
+此外，可以像上面演示的那样，通过 `spec.firmware.serial` 把 SMBIOS 序列号设置为一个常量。
 
-### CPU
+### CPU {#cpu}
 
-**Note**: This is not related to scheduling decisions or resource
-assignment.
+**注意**：这与调度决策或资源分配无关。
 
-#### Topology
+#### 拓扑 {#topology}
 
-Setting the number of CPU cores is possible via `spec.domain.cpu.cores`.
-The following VM will have a CPU with `3` cores:
+可以通过 `spec.domain.cpu.cores` 设置 CPU 核心数。下面的 VM 将拥有一个具有 `3` 个核心的 CPU：
 
 ```yaml
 metadata:
@@ -136,21 +121,15 @@ spec:
         claimName: myclaim
 ```
 
-#### Labeling nodes with cpu models, cpu features and machine types
+#### 使用 CPU 模型、CPU 特性和机器类型为节点打标签 {#labeling-nodes-with-cpu-models-cpu-features-and-machine-types}
 
-KubeVirt can create node selectors based on VM cpu models, features, and
-machine types. With these node selectors, VMs will be scheduled on the
-nodes that support the matching VM cpu model, features, and machine type.
+KubeVirt 可以根据 VM 的 CPU 模型、特性和机器类型创建节点选择器。借助这些节点选择器，VM 会被调度到支持相匹配的 VM CPU 模型、特性和机器类型的节点上。
 
-To properly label the node, user can use Kubevirt Node-labeller, which creates all 
-necessary labels or create node labels by himself.
+要正确地为节点打标签，用户可以使用 KubeVirt Node-labeller，它会创建全部必要的标签，用户也可以自己创建节点标签。
 
-Kubevirt node-labeller creates 4 types of labels: cpu models, cpu features, kvm info and machine types.
-It uses libvirt to get all supported cpu models and cpu
-features on host and then Node-labeller creates labels from cpu models and machine types.
+KubeVirt node-labeller 会创建 4 类标签：CPU 模型、CPU 特性、KVM 信息和机器类型。它使用 libvirt 获取宿主机上所有受支持的 CPU 模型和 CPU 特性，然后 Node-labeller 根据 CPU 模型和机器类型创建标签。
 
-Node-labeller supports obsolete list of cpu models and minimal baseline
-cpu model for features. Both features can be set via KubeVirt CR:
+Node-labeller 支持过时 CPU 模型列表，以及用于特性的最小基线 CPU 模型。这两项都可以通过 KubeVirt CR 设置：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -167,29 +146,21 @@ spec:
 ...
 ```
 
-Obsolete cpus will not be inserted in labels. If KubeVirt CR doesn't 
-contain `obsoleteCPUModels` variable, Labeller sets default values
-("pentium, pentium2, pentium3, pentiumpro, coreduo, n270, 
-core2duo, Conroe, athlon, phenom, kvm32, kvm64, qemu32 and qemu64").
+过时的 CPU 不会被写入标签。如果 KubeVirt CR 不包含 `obsoleteCPUModels` 变量，Labeller 会设置默认值（“pentium、pentium2、pentium3、pentiumpro、coreduo、n270、core2duo、Conroe、athlon、phenom、kvm32、kvm64、qemu32 和 qemu64”）。
 
-User can change obsoleteCPUModels by adding / removing cpu model in config map.
-Kubevirt then update nodes with new labels.
+用户可以通过在配置映射中添加 / 移除 CPU 模型来更改 obsoleteCPUModels。随后 KubeVirt 会用新标签更新节点。
 
-For homogenous cluster / clusters without live migration enabled it's possible
-to disable the node labeler and avoid adding labels to the nodes by adding the 
-following annotation to the nodes:
+对于同构集群 / 没有启用实时迁移的集群，可以通过向节点添加以下注解，来禁用节点标签器，并避免向节点添加标签：
 
-`node-labeller.kubevirt.io/skip-node`.
+`node-labeller.kubevirt.io/skip-node`。
 
-#### Model
+#### 模型 {#model}
 
-**Note**: If CPU model wasn't defined, the VM will have CPU model
-closest to one that used on the node where the VM is running.
+**注意**：如果没有定义 CPU 模型，VM 将拥有最接近 VM 运行所在节点上所用模型的 CPU 模型。
 
-**Note**: CPU model is case sensitive.
+**注意**：CPU 模型区分大小写。
 
-Setting the CPU model is possible via `spec.domain.cpu.model`. The
-following VM will have a CPU with the `Conroe` model:
+可以通过 `spec.domain.cpu.model` 设置 CPU 模型。下面的 VM 将拥有 `Conroe` 模型的 CPU：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -204,19 +175,13 @@ spec:
 ...
 ```
 
-You can check list of available models
-[here](https://github.com/libvirt/libvirt/blob/master/src/cpu_map/index.xml).
+你可以在[此处](https://github.com/libvirt/libvirt/blob/master/src/cpu_map/index.xml)查看可用模型列表。
 
-When CPUNodeDiscovery feature-gate is enabled and VM has cpu model,
-Kubevirt creates node selector with format:
-`cpu-model.node.kubevirt.io/<cpuModel>`, e.g.
-`cpu-model.node.kubevirt.io/Conroe`. When VM doesn’t have cpu
-model, then no node selector is created.
+当启用 CPUNodeDiscovery 功能门控并且 VM 具有 CPU 模型时，KubeVirt 会创建格式为 `cpu-model.node.kubevirt.io/<cpuModel>` 的节点选择器，例如 `cpu-model.node.kubevirt.io/Conroe`。当 VM 没有 CPU 模型时，就不会创建节点选择器。
 
-#### Enabling default cluster cpu model
+#### 启用默认的集群 CPU 模型 {#enabling-default-cluster-cpu-model}
 
-To enable the default cpu model, user may add the `cpuModel`
-field in the KubeVirt CR.
+要启用默认 CPU 模型，用户可以在 KubeVirt CR 中添加 `cpuModel` 字段。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -231,17 +196,12 @@ spec:
 ...
 ```
 
-Default CPU model is set when vmi doesn't have any cpu model. When vmi
-has cpu model set, then vmi's cpu model is preferred. When default cpu
-model is not set and vmi's cpu model is not set too, `host-model` will
-be set. Default cpu model can be changed when kubevirt is running. When
-CPUNodeDiscovery feature gate is enabled Kubevirt creates node selector
-with default cpu model.
+当 vmi 没有任何 CPU 模型时，会设置默认 CPU 模型。当 vmi 设置了 CPU 模型时，优先使用 vmi 的 CPU 模型。当默认 CPU 模型没有设置，并且 vmi 的 CPU 模型也没有设置时，会设置 `host-model`。可以在 KubeVirt 运行期间更改默认 CPU 模型。当启用 CPUNodeDiscovery 功能门控时，KubeVirt 会用默认 CPU 模型创建节点选择器。
 
-#### CPU model special cases
+#### CPU 模型的特殊情况 {#cpu-model-special-cases}
 
-As special cases you can set `spec.domain.cpu.model` equals to: -
-`host-passthrough` to passthrough CPU from the node to the VM
+作为特殊情况，可以把 `spec.domain.cpu.model` 设置为：-
+`host-passthrough`，以便把节点上的 CPU 直通到 VM
 
     metadata:
       name: myvmi
@@ -252,7 +212,7 @@ As special cases you can set `spec.domain.cpu.model` equals to: -
           model: host-passthrough
     ...
 
--   `host-model` to get CPU on the VM close to the node one
+-   `host-model`，以便让 VM 上的 CPU 接近节点上的 CPU
 
 <!-- -->
 
@@ -265,70 +225,30 @@ As special cases you can set `spec.domain.cpu.model` equals to: -
           model: host-model
     ...
 
-See the [CPU API
-reference](https://libvirt.org/formatdomain.html#elementsCPU) for more
-details.
+更多细节请参阅 [CPU API 参考](https://libvirt.org/formatdomain.html#elementsCPU)。
 
-#### CPU model and live migration
+#### CPU 模型与实时迁移 {#cpu-model-and-live-migration}
 
-The CPU model determines CPU compatibility with potential live migration
-destinations. KubeVirt adds node selectors to the migration target pod
-based on the model:
+CPU 模型决定了与潜在实时迁移目标的 CPU 兼容性。KubeVirt 会根据该模型，向迁移目标 Pod 添加节点选择器：
 
-| CPU model | Node selectors on the migration target pod |
+| CPU 模型 | 迁移目标 Pod 上的节点选择器 |
 |---|---|
-| A named model, e.g. `Skylake-Client-v4` | `cpu-model.node.kubevirt.io/<model>` and `cpu-vendor.node.kubevirt.io/<vendor>` |
-| `host-model` | `cpu-model-migration.node.kubevirt.io/<host model of the source node>`, plus `cpu-feature.node.kubevirt.io/<feature>` for every `host-model-required-features.node.kubevirt.io/<feature>` label of the source node, plus the vendor |
-| `host-passthrough` | only `cpu-vendor.node.kubevirt.io/<vendor>` |
+| 具名模型，例如 `Skylake-Client-v4` | `cpu-model.node.kubevirt.io/<model>` 和 `cpu-vendor.node.kubevirt.io/<vendor>` |
+| `host-model` | `cpu-model-migration.node.kubevirt.io/<host model of the source node>`，外加 `cpu-feature.node.kubevirt.io/<feature>`，对应源节点的每一个 `host-model-required-features.node.kubevirt.io/<feature>` 标签，再加上厂商 |
+| `host-passthrough` | 仅 `cpu-vendor.node.kubevirt.io/<vendor>` |
 
-The labels come from the node-labeller (see
-[Labeling nodes with cpu models, cpu features and machine types](#labeling-nodes-with-cpu-models-cpu-features-and-machine-types)).
-For a `host-model` VMI that has already been migrated, KubeVirt reuses
-the CPU selectors of the current pod instead of reading the node labels
-again, so the VMI can still move back to the node it started on.
+这些标签来自 node-labeller（参见[使用 CPU 模型、CPU 特性和机器类型为节点打标签](#labeling-nodes-with-cpu-models-cpu-features-and-machine-types)）。对于已经迁移过的 `host-model` VMI，KubeVirt 会复用当前 Pod 的 CPU 选择器，而不是再次读取节点标签，因此该 VMI 仍然可以移回它启动时所在的节点。
 
-Keep the following in mind:
+请记住以下几点：
 
-- The `LiveMigratable` condition does not verify that another node satisfies
-  the VMI's CPU model and feature requirements. A VMI can report
-  `LiveMigratable: True` even when no other node meets those requirements.
-  In that case the target pod stays `Pending` with a
-  `didn't match Pod's node affinity/selector` scheduling message. For a
-  `host-model` VMI, KubeVirt also records a
-  `NoSuitableNodesForHostModelMigration` warning event on the VMI when no
-  other node has the required labels. By default, the migration fails if the
-  target pod is still unschedulable five minutes after the pod was created.
-- `host-model` is used when neither the VMI nor the cluster
-  (`spec.configuration.cpuModel`) sets a model. Two nodes can report the
-  same host model name and still differ in the required features. For
-  example, if the source node has the label
-  `host-model-required-features.node.kubevirt.io/rfds-no` and the other
-  node has no `cpu-feature.node.kubevirt.io/rfds-no` label, a `host-model`
-  VMI started on the source node cannot be migrated to that other node.
-  To identify compatible destinations, check that each candidate node has
-  labels matching the migration target pod's
-  `cpu-model-migration.node.kubevirt.io/<model>`,
-  `cpu-feature.node.kubevirt.io/<feature>`, and
-  `cpu-vendor.node.kubevirt.io/<vendor>` selectors. For a VMI that has
-  already migrated, use its current pod's CPU selectors rather than
-  deriving new requirements from its current node's host-model labels.
-- `host-passthrough` is only checked for the CPU vendor, so a migration to
-  a node with a different CPU can succeed while the guest still sees CPU
-  features that the new host does not have. Use `host-passthrough` only
-  when the source and target nodes have identical CPUs.
-- To migrate between nodes with different CPUs, set a named model that all
-  of these nodes support (they all carry the
-  `cpu-model.node.kubevirt.io/<model>` label), either per VMI or as the
-  cluster default (see
-  [Enabling default cluster cpu model](#enabling-default-cluster-cpu-model)).
-  KubeVirt does not validate the model name, so a VMI with a model that no
-  node supports stays in `Scheduling`
-  ([kubevirt/kubevirt#16854](https://github.com/kubevirt/kubevirt/issues/16854)).
+- `LiveMigratable` 状况并不会验证是否有另一个节点满足该 VMI 的 CPU 模型和特性要求。即使没有任何其他节点满足这些要求，VMI 也可以报告 `LiveMigratable: True`。在这种情况下，目标 Pod 会保持 `Pending`，并带有一条 `didn't match Pod's node affinity/selector` 调度消息。对于 `host-model` VMI，当没有其他节点拥有所需标签时，KubeVirt 还会在该 VMI 上记录一个 `NoSuitableNodesForHostModelMigration` 警告事件。默认情况下，如果目标 Pod 在创建之后五分钟仍然无法调度，迁移就会失败。
+- 当 VMI 和集群都没有设置模型时，会使用 `host-model`（集群侧对应 `spec.configuration.cpuModel`）。两个节点可以报告相同的宿主机模型名称，所需特性仍然可以不同。例如，如果源节点带有标签 `host-model-required-features.node.kubevirt.io/rfds-no`，而另一个节点没有 `cpu-feature.node.kubevirt.io/rfds-no` 标签，那么在源节点上启动的 `host-model` VMI 就不能迁移到那个节点。要识别兼容的目标，请检查每个候选节点是否拥有与迁移目标 Pod 的 `cpu-model-migration.node.kubevirt.io/<model>`、`cpu-feature.node.kubevirt.io/<feature>` 和 `cpu-vendor.node.kubevirt.io/<vendor>` 选择器相匹配的标签。对于已经迁移过的 VMI，请使用它当前 Pod 的 CPU 选择器，而不是根据它当前节点的 host-model 标签推导出新的要求。
+- `host-passthrough` 只检查 CPU 厂商，因此迁移到一块不同的 CPU 所在的节点可能成功，而客户机仍然会看到新宿主机并不具备的 CPU 特性。只有当源节点和目标节点拥有完全相同的 CPU 时，才使用 `host-passthrough`。
+- 要在 CPU 不同的节点之间迁移，请设置一个这些节点全都支持的具名模型（它们全都带有 `cpu-model.node.kubevirt.io/<model>` 标签），可以按 VMI 设置，也可以作为集群默认值（参见[启用默认的集群 CPU 模型](#enabling-default-cluster-cpu-model)）。KubeVirt 不会校验模型名称，因此如果没有任何节点支持某个模型，带有该模型的 VMI 会停留在 `Scheduling`（[kubevirt/kubevirt#16854](https://github.com/kubevirt/kubevirt/issues/16854)）。
 
-### Features
+### 特性 {#features}
 
-Setting CPU features is possible via `spec.domain.cpu.features` and can
-contain zero or more CPU features :
+可以通过 `spec.domain.cpu.features` 设置 CPU 特性，其中可以包含零个或多个 CPU 特性：
 
     metadata:
       name: myvmi
@@ -343,50 +263,35 @@ contain zero or more CPU features :
            policy: "require"
     ...
 
-**Note**: Policy attribute can either be omitted or contain one of the
-following policies: force, require, optional, disable, forbid.
+**注意**：policy 属性可以省略，也可以包含以下策略之一：force、require、optional、disable、forbid。
 
-**Note**: In case a policy is omitted for a feature, it will default to
-**require**.
+**注意**：如果某个特性省略了 policy，则默认为 **require**。
 
-Behaviour according to Policies:
+根据策略的行为：
 
--   All policies will be passed to libvirt during virtual machine
-    creation.
--   In case the feature gate "CPUNodeDiscovery" is enabled and the
-    policy is omitted or has "require" value, then the virtual machine
-    could be scheduled only on nodes that support this feature.
--   In case the feature gate "CPUNodeDiscovery" is enabled and the
-    policy has "forbid" value, then the virtual machine would **not** be
-    scheduled on nodes that support this feature.
+-   在创建虚拟机期间，所有策略都会传递给 libvirt。
+-   如果启用了功能门控 “CPUNodeDiscovery”，并且省略了 policy，或者 policy 的值为 “require”，那么虚拟机只能被调度到支持该特性的节点上。
+-   如果启用了功能门控 “CPUNodeDiscovery”，并且 policy 的值为 “forbid”，那么虚拟机**不会**被调度到支持该特性的节点上。
 
-Full description about features and policies can be found
-[here](https://libvirt.org/formatdomain.html#elementsCPU).
+关于特性和策略的完整说明可以在[此处](https://libvirt.org/formatdomain.html#elementsCPU)找到。
 
-When CPUNodeDiscovery feature-gate is enabled Kubevirt creates node
-selector from cpu features with format:
-`cpu-feature.node.kubevirt.io/<cpuFeature>`, e.g.
-`cpu-feature.node.kubevirt.io/apic`. When VM doesn’t have cpu
-feature, then no node selector is created.
+当启用 CPUNodeDiscovery 功能门控时，KubeVirt 会根据 CPU 特性创建节点选择器，格式为 `cpu-feature.node.kubevirt.io/<cpuFeature>`，例如 `cpu-feature.node.kubevirt.io/apic`。当 VM 没有 CPU 特性时，就不会创建节点选择器。
 
-### Clock
+### 时钟 {#clock}
 
-#### Guest time
+#### 客户机时间 {#guest-time}
 
-Sets the virtualized hardware clock inside the VM to a specific time.
-Available options are
+把 VM 内部的虚拟化硬件时钟设置为某个特定时间。可用选项有
 
 -   **utc**
 
 -   **timezone**
 
-See the [Clock API
-Reference](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_clock)
-for all possible configuration options.
+全部可能的配置选项请参阅[时钟 API 参考](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_clock)。
 
-#### utc
+#### utc {#utc}
 
-If `utc` is specified, the VM's clock will be set to UTC.
+如果指定了 `utc`，VM 的时钟将被设置为 UTC。
 
     metadata:
       name: myvmi
@@ -406,10 +311,9 @@ If `utc` is specified, the VM's clock will be set to UTC.
           persistentVolumeClaim:
             claimName: myclaim
 
-#### timezone
+#### timezone {#timezone}
 
-If `timezone` is specified, the VM's clock will be set to the specified
-local time.
+如果指定了 `timezone`，VM 的时钟将被设置为所指定的本地时间。
 
     metadata:
       name: myvmi
@@ -429,7 +333,7 @@ local time.
           persistentVolumeClaim:
             claimName: myclaim
 
-#### Timers
+#### 定时器 {#timers}
 
 -   **pit**
 
@@ -439,7 +343,7 @@ local time.
 
 -   **hyperv**
 
-A pretty common timer configuration for VMs looks like this:
+VM 的一种很常见的定时器配置如下所示：
 
     metadata:
       name: myvmi
@@ -468,22 +372,15 @@ A pretty common timer configuration for VMs looks like this:
           persistentVolumeClaim:
             claimName: myclaim
 
-`hpet` is disabled,`pit` and `rtc` are configured to use a specific
-`tickPolicy`. Finally, `hyperv` is made available too.
+`hpet` 被禁用，`pit` 和 `rtc` 被配置为使用特定的 `tickPolicy`。最后，`hyperv` 也被提供出来。
 
-See the [Timer API
-Reference](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_timer)
-for all possible configuration options.
+全部可能的配置选项请参阅[定时器 API 参考](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_timer)。
 
-**Note**: Timer can be part of a machine type. Thus it may be necessary
-to explicitly disable them. We may in the future decide to add them via
-cluster-level defaulting, if they are part of a QEMU machine definition.
+**注意**：定时器可以是机器类型的一部分。因此，可能有必要显式禁用它们。如果它们属于某个 QEMU 机器定义，我们将来可能会决定通过集群级默认值把它们添加进来。
 
-### Random number generator (RNG)
+### 随机数生成器（RNG） {#random-number-generator-rng}
 
-You may want to use entropy collected by your cluster nodes inside your
-guest. KubeVirt allows to add a `virtio` RNG device to a virtual machine
-as follows.
+你可能希望在客户机内部使用集群节点所收集的熵。KubeVirt 允许按如下方式向虚拟机添加一个 `virtio` RNG 设备。
 
     metadata:
       name: vmi-with-rng
@@ -492,25 +389,15 @@ as follows.
         devices:
           rng: {}
 
-For Linux guests, the `virtio-rng` kernel module should be loaded early
-in the boot process to acquire access to the entropy source. Other
-systems may require similar adjustments to work with the `virtio` RNG
-device.
+对于 Linux 客户机，应当在启动过程的早期加载 `virtio-rng` 内核模块，以便获得对熵源的访问。其他系统可能需要进行类似的调整，才能与 `virtio` RNG 设备一起工作。
 
-**Note**: Some guest operating systems or user payloads may require the
-RNG device with enough entropy and may fail to boot without it. For
-example, fresh Fedora images with newer kernels (4.16.4+) may require
-the `virtio` RNG device to be present to boot to login.
+**注意**：某些客户机操作系统或用户负载可能需要具备足够熵的 RNG 设备，没有它就可能无法启动。例如，内核较新（4.16.4 及以上）的全新 Fedora 镜像可能需要存在 `virtio` RNG 设备，才能启动到登录界面。
 
-### Video and Graphics Device
+### 视频和图形设备 {#video-and-graphics-device}
 
-By default a minimal Video and Graphics device configuration will be
-applied to the VirtualMachineInstance. The video device is `vga`
-compatible and comes with a memory size of 16 MB. This device allows
-connecting to the OS via `vnc`.
+默认情况下，会向 VirtualMachineInstance 应用一套最小化的视频和图形设备配置。视频设备与 `vga` 兼容，并带有 16 MB 的内存大小。此设备允许通过 `vnc` 连接到操作系统。
 
-It is possible to not attach the video device by setting
-`spec.domain.devices.autoattachGraphicsDevice` to `false`:
+可以通过把 `spec.domain.devices.autoattachGraphicsDevice` 设置为 `false` 来不挂接视频设备：
 
     metadata:
       name: myvmi
@@ -526,29 +413,19 @@ It is possible to not attach the video device by setting
           persistentVolumeClaim:
             claimName: myclaim
 
-VMIs without graphics and video devices are very often referenced as
-`headless` VMIs.
+没有图形设备和视频设备的 VMI 常常被称为 `headless` VMI。
 
-If using a huge amount of small VMs this can be helpful to increase the
-VMI density per node, since no memory needs to be reserved for video.
+如果使用大量小型 VM，这有助于提高每个节点的 VMI 密度，因为不需要为视频预留内存。
 
-#### Custom Video Device Types
+#### 自定义视频设备类型 {#custom-video-device-types}
 
-It is possible to configure custom video device types to override the
-default video configuration. This allows you to specify video device
-types such as `virtio`, `vga`, or `bochs` depending on your guest
-operating system requirements and performance needs.
+可以配置自定义视频设备类型，以覆盖默认的视频配置。这使你能够根据客户机操作系统的要求和性能需要，指定诸如 `virtio`、`vga` 或 `bochs` 之类的视频设备类型。
 
-> **Note**: On KubeVirt versions prior to 1.9, the `VideoConfig` feature
-> gate must be enabled manually. Refer to the
-> [feature gate activation guide](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-> for instructions.
+> **注意**：在 1.9 之前的 KubeVirt 版本上，必须手动启用 `VideoConfig` 功能门控。说明请参阅[功能门控激活指南](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)。
 
-##### Configuring Video Device Types
+##### 配置视频设备类型 {#configuring-video-device-types}
 
-You can specify the video device type
-in the VM template specification under
-`spec.template.spec.domain.devices.video`. For example:
+你可以在 VM 模板规约中的 `spec.template.spec.domain.devices.video` 下指定视频设备类型。例如：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -567,39 +444,34 @@ spec:
             memory: 2Gi
 ```
 
-**Supported video device types:**
+**支持的视频设备类型：**
 
-- **`virtio`**: Provides better performance and is recommended for modern
-  guest operating systems for which virtio drivers are available
-- **`vga`**: Standard VGA-compatible device (default on AMD/x86_64 with BIOS)
-- **`bochs`**: Similar to `vga` but more efficient (default on AMD/x86_64 with EFI)
-- **`cirrus`**: Legacy Cirrus Logic device
-- **`ramfb`**: Simple framebuffer device, useful for ARM architectures
+- **`virtio`**：性能更好，推荐用于已提供 virtio 驱动的现代客户机操作系统
+- **`vga`**：标准的 VGA 兼容设备（在使用 BIOS 的 AMD/x86_64 上为默认值）
+- **`bochs`**：与 `vga` 类似，但效率更高（在使用 EFI 的 AMD/x86_64 上为默认值）
+- **`cirrus`**：传统的 Cirrus Logic 设备
+- **`ramfb`**：简单的帧缓冲设备，适用于 ARM 架构
 
-##### Architecture-Specific Behavior
+##### 特定架构的行为 {#architecture-specific-behavior}
 
-The default video device type varies by architecture and can be
-overridden:
+默认视频设备类型因架构而异，并且可以被覆盖：
 
-| Architecture | Boot Mode | Default Type | Supported Types                             |
+| 架构 | 启动模式 | 默认类型 | 支持的类型                             |
 |--------------|-----------|--------------|---------------------------------------------|
 | AMD/x86_64   | BIOS      | `vga`        | `virtio`, `vga`, `bochs`, `cirrus`, `ramfb` |
 | AMD/x86_64   | EFI       | `bochs`      | `virtio`, `vga`, `bochs`, `cirrus`, `ramfb` |
 | ARM64        | BIOS/EFI  | `virtio`     | `virtio`, `ramfb`                           |
 | s390x        | BIOS/EFI  | `virtio`     | `virtio`                                    |
 
-##### Benefits of Custom Video Device Configuration
+##### 自定义视频设备配置的好处 {#benefits-of-custom-video-device-configuration}
 
-Using custom video device types provides several advantages:
+使用自定义视频设备类型有若干优点：
 
-- **Performance**: `virtio` video devices offer better performance compared 
-  to legacy VGA emulation
-- **Resolution flexibility**: With `virtio` you can set custom display
-  resolutions that aren't limited by VGA constraints
-- **Memory efficiency**: Some video types like `ramfb` are more memory 
-  efficient for headless or console-only operations
+- **性能**：与传统的 VGA 模拟相比，`virtio` 视频设备能提供更好的性能
+- **分辨率灵活性**：借助 `virtio`，你可以设置不受 VGA 限制的自定义显示分辨率
+- **内存效率**：`ramfb` 这类视频类型对于无头或仅控制台的操作更节省内存
 
-Example for ARM64 with explicit virtio configuration:
+显式使用 virtio 配置的 ARM64 示例：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -618,7 +490,7 @@ spec:
             memory: 4Gi
 ```
 
-Example for AMD/x86_64 overriding the default VGA video type to virtio:
+把 AMD/x86_64 的默认 VGA 视频类型覆盖为 virtio 的示例：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -637,8 +509,7 @@ spec:
             memory: 2Gi
 ```
 
-Similarly, you can override to other supported types like `bochs`,
-`cirrus`, or `ramfb`:
+同样，你可以覆盖为 `bochs`、`cirrus` 或 `ramfb` 等其他受支持的类型：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -657,16 +528,11 @@ spec:
             memory: 2Gi
 ```
 
-**Note**: When using custom video device types, ensure that your guest
-operating system has the appropriate drivers installed. For virtio-gpu
-devices, virtio graphics drivers are required for optimal performance.
-Bochs also requires a driver, but only for BIOS guests, since our EFI firmware (OVMF) includes a bochs driver.
+**注意**：使用自定义视频设备类型时，请确保客户机操作系统安装了相应的驱动。对于 virtio-gpu 设备，需要 virtio 图形驱动才能获得最佳性能。Bochs 也需要驱动，但只针对 BIOS 客户机，因为我们的 EFI 固件（OVMF）自带 bochs 驱动。
 
-### Features
+### 特性 {#features_1}
 
-KubeVirt supports a range of virtualization features which may be
-tweaked in order to allow non-Linux based operating systems to properly
-boot. Most noteworthy are
+KubeVirt 支持一系列虚拟化特性，可以进行调整，以便让非基于 Linux 的操作系统能够正常启动。最值得注意的是
 
 -   **acpi**
 
@@ -674,7 +540,7 @@ boot. Most noteworthy are
 
 -   **hyperv**
 
-A common feature configuration is shown by the following example:
+下面的示例展示了一种常见的特性配置：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -705,15 +571,11 @@ spec:
         claimname: myclaim
 ```
 
-See the [Features API
-Reference](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_features)
-for all available features and configuration options.
+全部可用的特性以及配置选项请参阅[特性 API 参考](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_features)。
 
-## Resources Requests and Limits
+## 资源请求与限制 {#resources-requests-and-limits}
 
-An optional resource request can be specified by the users to allow the
-scheduler to make a better decision in finding the most suitable Node to
-place the VM.
+用户可以指定可选的资源请求，让调度器更好地决定把 VM 放置到最合适的节点上。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -738,23 +600,15 @@ spec:
         claimname: myclaim
 ```
 
-### CPU
+### CPU {#cpu_1}
 
-Specifying CPU limits will determine the amount of *cpu* *shares* set on
-the control group the VM is running in, in other words, the amount of
-time the VM's CPUs can execute on the assigned resources when there is a
-competition for CPU resources.
+指定 CPU 限制将决定 VM 正在其中运行的控制组上所设置的 *cpu* *shares* 数量，换句话说，就是当存在 CPU 资源竞争时，VM 的 CPU 可以在已分配资源上执行的时间量。
 
-For more information please refer to [how Pods with resource limits are
-run](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#how-pods-with-resource-limits-are-run).
+更多信息请参阅[带有资源限制的 Pod 如何运行](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#how-pods-with-resource-limits-are-run)。
 
-### Hugepages
+### 大页 {#hugepages}
 
-KubeVirt give you possibility to use hugepages as backing memory for
-your VM. You will need to provide desired amount of memory
-`resources.requests.memory` and size of hugepages to use
-`memory.hugepages.pageSize`, for example for x86\_64 architecture it can
-be `2Mi`.
+KubeVirt 让你可以使用大页作为 VM 的后备内存。你需要提供期望的内存量 `resources.requests.memory`，以及要使用的大页大小 `memory.hugepages.pageSize`，例如对于 x86\_64 架构，它可以是 `2Mi`。
 
 ```yaml
 apiVersion: kubevirt.io/v1alpha1
@@ -778,26 +632,23 @@ spec:
         claimname: myclaim
 ```
 
-In the above example the VM will have `64Mi` of memory, but instead of
-regular memory it will use node hugepages of the size of `2Mi`.
+在上面的示例中，VM 将拥有 `64Mi` 内存，但它使用的不是常规内存，而是大小为 `2Mi` 的节点大页。
 
-### Limitations
+### 限制 {#limitations}
 
--   a node must have pre-allocated hugepages
+-   节点必须预先分配好大页
 
--   hugepages size cannot be bigger than requested memory
+-   大页大小不能大于所请求的内存
 
--   requested memory must be divisible by hugepages size
+-   所请求的内存必须能被大页大小整除
 
--   hugepages uses by default memfd. Memfd is supported from kernel >= 4.14. If you run on an older host (e.g centos 7.9), it is required to disable memfd with the annotation `kubevirt.io/memfd: "false"` in the VMI metadata annotation.
+-   大页默认使用 memfd。内核版本大于等于 4.14 时才支持 memfd。如果你在更旧的宿主机上运行（例如 centos 7.9），必须在 VMI metadata 注解中加入 `kubevirt.io/memfd: "false"` 来禁用 memfd。
 
-## Input Devices
+## 输入设备 {#input-devices}
 
-### Tablet
+### 数位板 {#tablet}
 
-Kubevirt supports input devices. The only type which is supported is
-`tablet`. Tablet input device supports only `virtio` and `usb` bus. Bus
-can be empty. In that case, `usb` will be selected.
+KubeVirt 支持输入设备。唯一受支持的类型是 `tablet`。数位板输入设备只支持 `virtio` 和 `usb` 总线。总线可以为空。在这种情况下，会选择 `usb`。
 
 ```yaml
 apiVersion: kubevirt.io/v1

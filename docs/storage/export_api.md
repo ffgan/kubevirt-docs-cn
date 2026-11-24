@@ -1,17 +1,17 @@
-# Export API
-It can be desirable to export a Virtual Machine and its related disks out of a cluster so you can import that Virtual Machine into another system or cluster. The Virtual Machine disks are the most prominent things you will want to export. The export API makes it possible to declaratively export Virtual Machine disks. It is also possible to export individual PVCs and their contents, for instance when you have created a memory dump from a VM or are using virtio-fs to have a Virtual Machine populate a PVC.
+# 导出 API {#export-api}
+有时需要把虚拟机及其相关磁盘导出到集群之外，以便把该虚拟机导入另一个系统或集群。虚拟机磁盘是你最需要导出的内容。导出 API 使以声明方式导出虚拟机磁盘成为可能。也可以导出单个 PVC 及其内容，例如当你从 VM 创建了内存转储，或者正在使用 virtio-fs 让虚拟机填充 PVC 时。
 
-In order not to overload the kubernetes API server the data is transferred through a dedicated export proxy server. The proxy server can then be exposed to the outside world through a service associated with an Ingress/Route or NodePort. As an alternative, the `port-forward` flag can be used with the virtctl integration to bypass the need of an Ingress/Route.
+为了不使 Kubernetes API 服务器过载，数据通过专用的导出代理服务器传输。然后可以通过与 Ingress/Route 或 NodePort 关联的服务，把该代理服务器暴露给外部。作为替代方案，可以在 virtctl 集成中使用 `port-forward` 标志，从而无需 Ingress/Route。
 
-### Export Feature Gate
+### 导出功能门控 {#export-feature-gate}
 
-VMExport support must be enabled in the feature gates to be available. The
-[feature gates](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-field in the KubeVirt CR must be expanded by adding the `VMExport` to it.
+必须在功能门控中启用 VMExport 支持，该功能才可用。必须扩展 KubeVirt CR 中的
+[功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
+字段，向其中添加 `VMExport`。
 
-### Export token
+### 导出令牌 {#export-token}
 
-In order to securely export a Virtual Machine Disk, you must create a token that is used to authorize users accessing the export endpoint. This token must be in the same namespace as the Virtual Machine. The contents of the secret can be passed as a token header or parameter to the export URL. The name of the header or argument is `x-kubevirt-export-token` with a value that matches the content of the secret. The secret can be named any valid secret in the namespace. We recommend you generate an alpha numeric token of at least 12 characters. The data key should be `token`. For example:
+为了安全地导出虚拟机磁盘，必须创建一个令牌，用于授权访问导出端点的用户。此令牌必须与虚拟机位于同一命名空间。Secret 的内容可以作为令牌头或参数传递给导出 URL。该头或参数的名称是 `x-kubevirt-export-token`，其值与 Secret 的内容匹配。该 Secret 可以使用命名空间中任何有效的 Secret 名称。建议生成至少 12 个字符的字母数字令牌。数据键应为 `token`。例如：
 
 ```yaml
 apiVersion: v1
@@ -21,8 +21,8 @@ metadata:
 stringData:
   token: 1234567890ab
 ```
-### Export Virtual Machine volumes
-After you have created the token you can now create a VMExport CR that identifies the Virtual Machine you want to export. You can create a VMExport that looks like this:
+### 导出虚拟机卷 {#export-virtual-machine-volumes}
+创建令牌之后，现在可以创建一个 VMExport CR，用于标识要导出的虚拟机。可以创建如下所示的 VMExport：
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -37,19 +37,19 @@ spec:
     name: example-vm
 ```
 
-The following volumes present in the VM will be exported:
+VM 中存在的以下卷将被导出：
 
 * PersistentVolumeClaims
 * DataVolumes
 * MemoryDump
 
-All other volume types are not exported. To avoid the export of inconsistent data, a Virtual Machine can only be exported while it is powered off. Any active VM exports will be terminated if the Virtual Machine is started. To export data from a running Virtual Machine you must first create a Virtual Machine Snapshot (see below).
+所有其他卷类型都不会被导出。为避免导出不一致的数据，虚拟机只能在关机状态下导出。如果虚拟机被启动，任何活动的 VM 导出都将被终止。要从正在运行的虚拟机导出数据，必须先创建虚拟机快照（参见下文）。
 
-If the VM contains multiple volumes that can be exported, each volume will get its own URL links. If the VM contains no volumes that can be exported, the VMExport will go into a `Skipped` phase, and no export server is started.
+如果 VM 包含多个可以导出的卷，每个卷都会有自己的 URL 链接。如果 VM 不包含可以导出的卷，VMExport 将进入 `Skipped` 阶段，并且不会启动导出服务器。
 
-### Export Virtual Machine Snapshot volumes
+### 导出虚拟机快照卷 {#export-virtual-machine-snapshot-volumes}
 
-You can create a VMExport CR that identifies the Virtual Machine Snapshot you want to export. You can create a VMExport that looks like this:
+可以创建一个 VMExport CR，用于标识要导出的虚拟机快照。可以创建如下所示的 VMExport：
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -64,16 +64,16 @@ spec:
     name: example-vmsnapshot
 ```
 
-When you create a VMExport based on a Virtual Machine Snapshot, the controller will attempt to create PVCs from the volume snapshots contained in Virtual Machine Snapshot. Once all the PVCs are ready, the export server will start and you can begin the export. If the Virtual Machine Snapshot contains multiple volumes that can be exported, each volume will get its own URL links. If the Virtual Machine snapshot contains no volumes that can be exported, the VMExport will go into a `skipped` phase, and no export server is started.
+基于虚拟机快照创建 VMExport 时，控制器会尝试从虚拟机快照中包含的卷快照创建 PVC。一旦所有 PVC 就绪，导出服务器就会启动，然后可以开始导出。如果虚拟机快照包含多个可以导出的卷，每个卷都会有自己的 URL 链接。如果虚拟机快照不包含可以导出的卷，VMExport 将进入 `skipped` 阶段，并且不会启动导出服务器。
 
-### Export VirtualMachineTemplate
+### 导出 VirtualMachineTemplate {#export-virtualmachinetemplate}
 
-Starting with KubeVirt v1.9.0, you can export a `VirtualMachineTemplate` as an
-OCI artifact. This requires the [`OCIExport`](#oci-format) and `Template`
-feature gates, and the virt-template deployment must be enabled. `Template` and
-the virt-template deployment are enabled by default. For more details on
-`VirtualMachineTemplates`, see
-[VirtualMachine Templates](../user_workloads/vm_templates.md).
+从 KubeVirt v1.9.0 开始，可以把 `VirtualMachineTemplate` 导出为
+OCI 制品。这需要 [`OCIExport`](#oci-format) 和 `Template`
+功能门控，并且必须启用 virt-template 部署。`Template` 和
+virt-template 部署默认启用。有关
+`VirtualMachineTemplates` 的更多细节，请参阅
+[VirtualMachine 模板](../user_workloads/vm_templates.md)。
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -88,13 +88,12 @@ spec:
     name: example-template
 ```
 
-The template and all associated volume data are packaged into a single OCI
-artifact. Unlike VM and snapshot exports, the per-volume download links are not
-provided.
+模板以及所有关联的卷数据会被打包成单个 OCI
+制品。与 VM 和快照导出不同，这里不提供按卷的下载链接。
 
-### Export Persistent Volume Claim
+### 导出持久卷声明 {#export-persistent-volume-claim}
 
-You can create a VMExport CR that identifies the Persistent Volume Claim (PVC) you want to export. You can create a VMExport that looks like this:
+可以创建一个 VMExport CR，用于标识要导出的持久卷声明（PVC）。可以创建如下所示的 VMExport：
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -109,15 +108,15 @@ spec:
     name: example-pvc
 ```
 
-In this example the PVC name is `example-pvc`. Note the PVC doesn't need to contain a Virtual Machine Disk, it can contain any content, but the main use case is exporting Virtual Machine Disks. After you post this yaml to the cluster, a new export server is created in the same namespace as the PVC. If the source PVC is *in use by another pod* (such as the virt-launcher pod) then the export will remain pending until the PVC is no longer in use. If the exporter server is active and another pod starts using the PVC, the exporter server will be terminated until the PVC is not in use anymore.
+在此示例中，PVC 名称是 `example-pvc`。请注意，PVC 不必包含虚拟机磁盘，它可以包含任何内容，但主要用例是导出虚拟机磁盘。把此 yaml 提交到集群后，会在与该 PVC 相同的命名空间中创建一个新的导出服务器。如果源 PVC *正被另一个 Pod 使用*（例如 virt-launcher Pod），则导出将保持待处理状态，直到该 PVC 不再被使用。如果导出器服务器处于活动状态，而另一个 Pod 开始使用该 PVC，导出器服务器将被终止，直到该 PVC 不再被使用。
 
 
-### Export status links
+### 导出状态链接 {#export-status-links}
 
-The VirtualMachineExport CR will contain a status with internal and external links to the export service. The internal links are only valid inside the cluster, and the external links are valid for external access through an Ingress or Route. The `cert` field will contain the CA that signed the certificate of the export server for internal links, or the CA that signed the Route or Ingress.
+VirtualMachineExport CR 的 status 中会包含指向导出服务的内部链接和外部链接。内部链接仅在集群内部有效，外部链接可通过 Ingress 或 Route 进行外部访问。`cert` 字段将包含为导出服务器证书签名的 CA（用于内部链接），或为 Route 或 Ingress 签名的 CA。
 
-#### KubeVirt content-type
-The following is an example of exporting a PVC that contains a KubeVirt disk image. The controller determines if the PVC contains a kubevirt disk by checking if there is a special annotation on the PVC, or if there is a DataVolume ownerReference on the PVC, or if the PVC has a volumeMode of block.
+#### KubeVirt 内容类型 {#kubevirt-content-type}
+下面是导出包含 KubeVirt 磁盘镜像的 PVC 的示例。控制器通过检查 PVC 上是否有特殊注解、PVC 上是否有 DataVolume ownerReference，或者 PVC 的 volumeMode 是否为 block，来判断 PVC 是否包含 kubevirt 磁盘。
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -171,8 +170,8 @@ status:
   phase: Ready
   serviceName: virt-export-example-export
 ```
-#### Archive content-type
-Archive content-type is automatically selected if we are unable to determine the PVC contains a KubeVirt disk. The archive will contain all the files that are in the PVC.
+#### 归档内容类型 {#archive-content-type}
+如果无法确定 PVC 包含 KubeVirt 磁盘，则会自动选择归档内容类型。归档将包含 PVC 中的所有文件。
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -227,10 +226,10 @@ status:
   serviceName: virt-export-example-export
 ```
 
-#### Manifests
-The VirtualMachine manifests can be retrieved by accessing the `manifests` in the VirtualMachineExport status. The `all` type will return the VirtualMachine manifest, any DataVolumes, and a configMap that contains the public CA certificate of the Ingress/Route of the external URL, or the CA of the export server of the internal URL. The `auth-header-secret` will be a secret that contains a Containerized Data Importer (CDI) compatible header. This header contains a text version of the export token.
+#### 清单 {#manifests}
+可以通过访问 VirtualMachineExport status 中的 `manifests` 来获取 VirtualMachine 清单。`all` 类型将返回 VirtualMachine 清单、任何 DataVolume，以及一个 configMap，其中包含外部 URL 的 Ingress/Route 的公共 CA 证书，或内部 URL 的导出服务器的 CA。`auth-header-secret` 将是一个 Secret，其中包含与容器化数据导入器（CDI）兼容的头。此头包含导出令牌的文本形式。
 
-Both internal and external links will contain a `manifests` field. If there are no external links, then there will not be any external manifests either. The virtualMachine `manifests` field is only available if the source is a `VirtualMachine` or `VirtualMachineSnapshot`. Exporting a `PersistentVolumeClaim` will not generate a Virtual Machine manifest.
+内部链接和外部链接都会包含 `manifests` 字段。如果没有外部链接，那么也不会有任何外部清单。virtualMachine 的 `manifests` 字段仅在源是 `VirtualMachine` 或 `VirtualMachineSnapshot` 时可用。导出 `PersistentVolumeClaim` 不会生成虚拟机清单。
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -275,37 +274,35 @@ status:
   serviceName: virt-export-example-export
 ```
 
-#### Format types
-There are 4 format types that are possible:
+#### 格式类型 {#format-types}
+可能有 4 种格式类型：
 
-* Raw. The unaltered raw KubeVirt disk image.
-* Gzip. The raw KubeVirt disk image but gzipped to help with transferring efficiency.
-* Dir. A directory listing, allowing you to find the files contained in the PVC.
-* Tar.gz The contents of the PVC tarred and gzipped in a single file.
+* Raw。未经改动的原始 KubeVirt 磁盘镜像。
+* Gzip。原始 KubeVirt 磁盘镜像，但经过 gzip 压缩，以提高传输效率。
+* Dir。目录列表，使你能够找到 PVC 中包含的文件。
+* Tar.gz。PVC 的内容被打包为 tar 并经 gzip 压缩后放在单个文件中。
 
-Raw and Gzip will be selected if the PVC is determined to be a KubeVirt disk. KubeVirt disks contain a single disk.img file (or are a block device). Dir will return a list of the files in the PVC, to download a specific file you can replace `/dir` in the URL with the path and file name. For instance if the PVC contains the file `/example/data.txt` you can replace `/dir` with `/example/data.txt` to download just data.txt file. Or you can use the tar.gz URL to get all the contents of the PVC in a tar file.
+如果确定 PVC 是 KubeVirt 磁盘，则会选择 Raw 和 Gzip。KubeVirt 磁盘包含单个 disk.img 文件（或者是块设备）。Dir 将返回 PVC 中的文件列表，要下载特定文件，可以把 URL 中的 `/dir` 替换为路径和文件名。例如，如果 PVC 包含文件 `/example/data.txt`，可以把 `/dir` 替换为 `/example/data.txt`，从而只下载 data.txt 文件。或者可以使用 tar.gz URL 来获取 PVC 的全部内容，结果是一个 tar 文件。
 
-#### OCI format
+#### OCI 格式 {#oci-format}
 
-Starting with KubeVirt v1.9.0, VM exports can be downloaded as OCI image layout
-TARs. This packages the VM configuration and all disk volumes into a single OCI
-artifact that can be distributed through standard container registries using
-tools like skopeo, crane, or oras.
+从 KubeVirt v1.9.0 开始，VM 导出可以下载为 OCI 镜像布局
+TAR。这会把 VM 配置和所有磁盘卷打包成单个 OCI
+制品，可以使用 skopeo、crane 或 oras 之类的工具，通过标准容器镜像仓库分发。
 
-OCI export requires the `OCIExport` feature gate to be enabled in addition to
-`VMExport`. See
-[Activating feature gates](../cluster_admin/activating_feature_gates.md) for
-details.
+OCI 导出要求启用 `OCIExport` 功能门控，此外还要启用
+`VMExport`。详情请参阅
+[激活功能门控](../cluster_admin/activating_feature_gates.md)。
 
-To download an export in OCI format, use the `--format=oci` flag:
+要下载 OCI 格式的导出，请使用 `--format=oci` 标志：
 
 ```shell
 $ virtctl vmexport download example-export --format=oci --output=example-vm.oci.tar
 ```
 
-The resulting TAR file conforms to the
-[OCI Image Layout Specification](https://github.com/opencontainers/image-spec/blob/main/image-layout.md)
-and can be pushed to a registry:
+生成的 TAR 文件符合
+[OCI 镜像布局规范](https://github.com/opencontainers/image-spec/blob/main/image-layout.md)，
+并且可以推送到镜像仓库：
 
 ```shell
 # podman unshare allows preserving UIDs in the TAR when skopeo is
@@ -313,16 +310,16 @@ and can be pushed to a registry:
 $ podman unshare skopeo copy oci-archive:example-vm.oci.tar docker://registry.example.com/vms/example-vm:latest
 ```
 
-#### Internal link certificates
-The export server certificate is valid for 7 days after which it is rotated by deleting the export server pod and associated secret and generating a new one. If for whatever reason the export server pod dies, the associated secret is also automatically deleted and a new pod and secret are generated. The VirtualMachineExport object status will be automatically updated to reflect the new certificate.
+#### 内部链接证书 {#internal-link-certificates}
+导出服务器证书的有效期为 7 天，之后会通过删除导出服务器 Pod 及相关 Secret 并生成新的证书来轮换。如果导出服务器 Pod 因任何原因终止，关联的 Secret 也会被自动删除，并生成新的 Pod 和 Secret。VirtualMachineExport 对象的 status 会自动更新，以反映新证书。
 
-#### External link certificates
-The external link certificates are associated with the Ingress/Route that points to the service created by the KubeVirt operator. The CA that signed the Ingress/Route will part of the certificates.
+#### 外部链接证书 {#external-link-certificates}
+外部链接证书与指向 KubeVirt operator 所创建服务的 Ingress/Route 相关联。签发 Ingress/Route 的 CA 将成为这些证书的一部分。
 
-### TTL (Time to live) for an Export
-For various reasons (security being one), users should be able to specify a TTL for the VMExport objects that limits the lifetime of an export.
-This is done via the `ttlDuration` field which accepts a k8s [duration](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#Duration),
-which defaults to 2 hours when not specified.
+### 导出的 TTL（生存时间） {#ttl-time-to-live-for-an-export}
+出于各种原因（安全是其中之一），用户应当能够为 VMExport 对象指定 TTL，以限制导出的生存时间。
+这通过 `ttlDuration` 字段完成，该字段接受 k8s [时长](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#Duration)，
+未指定时默认为 2 小时。
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
 kind: VirtualMachineExport
@@ -337,17 +334,17 @@ spec:
     ttlDuration: 1h
 ```
 
-### virtctl integration: vmexport
-The virtctl `vmexport` command allows users to interact with the export API in an easy-to-use way.
+### virtctl 集成：vmexport {#virtctl-integration-vmexport}
+virtctl 的 `vmexport` 命令允许用户以便于使用的方式与导出 API 交互。
 
-`vmexport` uses two mandatory arguments:
+`vmexport` 使用两个必填参数：
 
-* The vmexport **functions** (create|delete|download).
-* The VirtualMachineExport **name**.
+* vmexport **功能**（create|delete|download）。
+* VirtualMachineExport **名称**。
 
-These three **functions** are:
+这三个**功能**是：
 
-#### Create
+#### 创建 {#create}
 ```sh
 # Creates a VMExport object according to the specified flag.
 
@@ -361,13 +358,13 @@ These three **functions** are:
 $ virtctl vmexport create name [flags]
 ```
 
-#### Delete
+#### 删除 {#delete}
 ```sh
 # Deletes the specified VMExport object.
 
 $ virtctl vmexport delete name
 ```
-#### Download
+#### 下载 {#download}
 ```sh
 # Downloads a volume from the defined VMExport object.
 
@@ -382,20 +379,20 @@ $ virtctl vmexport delete name
 $ virtctl vmexport download name [flags]
 ```
 
-By default, the volume will be downloaded in compressed format. Users can specify the desired format (gzip or raw) by using the `format` flag, as shown below:
+默认情况下，卷将以压缩格式下载。用户可以使用 `format` 标志指定所需格式（gzip 或 raw），如下所示：
 
 ```sh
 # Downloads a volume from the defined VMExport object and, if necessary, decompresses it.
 $ virtctl vmexport download name --format=raw [flags]
 ```
 
-#### TTL (Time to live)
-TTL can also be added when creating a VMExport via virtctl
+#### TTL（生存时间） {#ttl-time-to-live}
+通过 virtctl 创建 VMExport 时也可以添加 TTL
 ```sh
 $ virtctl vmexport create name --ttl=1h
 ```
 
-For more information about usage and examples:
+有关用法和示例的更多信息：
 
 ```
 $ virtctl vmexport --help
@@ -462,11 +459,11 @@ Use "virtctl options" for a list of global command-line options (applies to all 
 ```
 
 
-### Use cases
+### 用例 {#use-cases}
 
-#### Clone VM from one cluster to another cluster
+#### 把 VM 从一个集群克隆到另一个集群 {#clone-vm-from-one-cluster-to-another-cluster}
 
-If you want to transfer KubeVirt disk images from a source cluster to another target cluster, you can use the VMExport in the source to expose the disks and use Containerized Data Importer (CDI) in the target cluster to import the image into the target cluster. Let's assume we have an Ingress or Route in the source cluster that exposes the export proxy with the following example domain `virt-exportproxy-example.example.com` and we have a Virtual Machine in the source cluster with one disk, which looks like this:
+如果要把 KubeVirt 磁盘镜像从源集群传输到另一个目标集群，可以在源集群中使用 VMExport 来暴露磁盘，并在目标集群中使用容器化数据导入器（CDI）把镜像导入目标集群。假设源集群中有一个 Ingress 或 Route，它以下面的示例域名 `virt-exportproxy-example.example.com` 暴露导出代理，并且源集群中有一个带一块磁盘的虚拟机，如下所示：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -513,7 +510,7 @@ spec:
         name: datavolumedisk1
 ```
 
-This is a VM that has a DataVolume (DV) `example-dv` that is populated from a container disk and we want to export that disk to the target cluster. To export this VM we have to create a token that we can use in the target cluster to get access to the export, or we can let the export controller generate one for us. For example
+这是一个 VM，它有一个从容器磁盘填充的 DataVolume（DV）`example-dv`，我们希望把该磁盘导出到目标集群。要导出此 VM，我们必须创建一个令牌，以便在目标集群中用来获取对导出的访问权限，也可以让导出控制器为我们生成一个令牌。例如
 
 ```yaml
 apiVersion: v1
@@ -523,7 +520,7 @@ metadata:
 stringData:
   token: 1234567890ab
 ```
-The value of the token is `1234567890ab` hardly a secure token, but it is an example. We can now create a VMExport that looks like this:
+该令牌的值是 `1234567890ab`，算不上安全的令牌，但这只是一个示例。现在我们可以创建如下所示的 VMExport：
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -537,7 +534,7 @@ spec:
     kind: VirtualMachine
     name: example-vm
 ```
-If the VM is not running the status of the VMExport object will get updated once the export-server pod is running to look something like this:
+如果 VM 未在运行，一旦 export-server Pod 运行起来，VMExport 对象的 status 就会被更新，看起来大致如下：
 
 ```yaml
 apiVersion: export.kubevirt.io/v1beta1
@@ -589,32 +586,32 @@ status:
   phase: Ready
   serviceName: virt-export-example-export
 ```
-Note in this example we are in the `example` namespace in the source cluster, which is why the internal links domain ends with `.example.svc`. The external links are what will be visible to outside of the source cluster, so we can use that for when we import into the target cluster.
+请注意，在此示例中，我们位于源集群的 `example` 命名空间，这就是内部链接域名以 `.example.svc` 结尾的原因。外部链接是源集群外部可见的内容，因此在导入到目标集群时可以使用它们。
 
-Now we are ready to import this disk into the target cluster. In order for CDI to import, we will need to provide appropriate yaml that contains the following:
-- CA cert (as config map)
-- The token needed to access the disk images in a CDI compatible format
-- The VM yaml
-- DataVolume yaml (optional if not part of the VM definition)
+现在我们可以把此磁盘导入目标集群了。为了让 CDI 执行导入，我们需要提供包含以下内容的适当 yaml：
+- CA 证书（作为 config map）
+- 以 CDI 兼容格式访问磁盘镜像所需的令牌
+- VM yaml
+- DataVolume yaml（如果它不属于 VM 定义的一部分，则为可选）
 
-virtctl provides an additional argument to the download command called `--manifest` that will retrieve the appropriate information from the export server, and either save it to a file with the `--output` argument or write to standard out. By default this output will not contain the header secret as it contains the token in plaintext. To get the header secret you specify the `--include-secret` argument. The default output format is `yaml` but it is possible to get `json` output as well.
+virtctl 为 download 命令提供了一个名为 `--manifest` 的附加参数，它会从导出服务器检索适当的信息，并使用 `--output` 参数将其保存到文件，或写入标准输出。默认情况下，此输出不包含头 Secret，因为其中以明文包含令牌。要获取头 Secret，请指定 `--include-secret` 参数。默认输出格式是 `yaml`，但也可以获取 `json` 输出。
 
-Assuming there is a running VirtualMachineExport called `example-export` and the same namespace exists in the target cluster. The name of the kubeconfig of the target cluster is named `kubeconfig-target`, to clone the vm into the target cluster run the following commands:
+假设有一个名为 `example-export` 的正在运行的 VirtualMachineExport，并且目标集群中存在相同的命名空间。目标集群的 kubeconfig 名称为 `kubeconfig-target`，要把该 vm 克隆到目标集群，请运行以下命令：
 
 ```bash
 $ virtctl vmexport download example-export --manifest --include-secret --output=import.yaml
 $ kubectl apply -f import.yaml --kubeconfig=kubeconfig-target
 ```
 
-The first command generates the yaml and writes it to `import.yaml`. The second command applies the generated yaml to the target cluster. It is possible to combine the two commands writing to standard `out` with the first command, and piping it into the second command. Use this option if the export token should not be written to a file anywhere. This will create the VM in the target cluster, and provides CDI in the target cluster with everything required to import the disk images.
+第一条命令生成 yaml 并将其写入 `import.yaml`。第二条命令把生成的 yaml 应用到目标集群。可以把这两条命令合并：第一条命令写入标准 `out`，再通过管道传入第二条命令。如果导出令牌不应被写入任何文件，请使用此选项。这将在目标集群中创建 VM，并为目标集群中的 CDI 提供导入磁盘镜像所需的一切。
 
-After the import completes you should be able to start the VM in the target cluster.
+导入完成后，你应当能够在目标集群中启动该 VM。
 
-#### Download a VM volume locally using virtctl vmexport
+#### 使用 virtctl vmexport 在本地下载 VM 卷 {#download-a-vm-volume-locally-using-virtctl-vmexport}
 
-Several steps from the previous section can be simplified considerably by using the `vmexport` command.
+使用 `vmexport` 命令可以大大简化上一节中的若干步骤。
 
-Again, let's assume we have an Ingress or Route in our cluster that exposes the export proxy, and that we have a Virtual Machine in the cluster with one disk like this:
+同样，假设集群中有一个 Ingress 或 Route 暴露了导出代理，并且集群中有一个带一块磁盘的虚拟机，如下所示：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -661,11 +658,11 @@ spec:
         name: datavolumedisk1
 ```
 
-Once we meet these requirements, the process of downloading the volume locally can be accomplished by different means:
+满足这些要求后，可以通过不同方式完成本地下载卷的过程：
 
-##### Performing each step separately
+##### 分别执行每个步骤 {#performing-each-step-separately}
 
-We can download the volume by performing every single step in a different command. We start by creating the export object:
+我们可以用不同的命令执行每一个步骤来下载卷。首先创建导出对象：
 
 ```bash
 # We use an arbitrary name for the VMExport object, but specify our VM name in the flag.
@@ -673,7 +670,7 @@ We can download the volume by performing every single step in a different comman
 $ virtctl vmexport create vmexportname --vm=example-vm
 ```
 
-Then, we download the volume in the specified output:
+然后，把卷下载到指定的输出：
 
 ```bash
 # Since our virtual machine only has one volume, there's no need to specify the volume name with the --volume flag.
@@ -683,15 +680,15 @@ Then, we download the volume in the specified output:
 $ virtctl vmexport download vmexportname --output=/tmp/disk.img --keep-vme
 ```
 
-Lastly, we delete the VMExport object:
+最后，删除 VMExport 对象：
 
 ```bash
 $ virtctl vmexport delete vmexportname
 ```
 
-##### Performing one single step
+##### 执行单个步骤 {#performing-one-single-step}
 
-All the previous steps can be simplified in one, single command:
+前面的所有步骤都可以简化为一条命令：
 
 ```bash
 # Since we are using a create flag (--vm) with download, the command creates the object assuming the VMExport doesn't exist.
@@ -701,4 +698,4 @@ All the previous steps can be simplified in one, single command:
 $ virtctl vmexport download vmexportname --vm=example-vm --output=/tmp/disk.img
 ```
 
-After the download finishes, we can find our disk in `/tmp/disk.img`.
+下载完成后，可以在 `/tmp/disk.img` 找到我们的磁盘。

@@ -1,39 +1,38 @@
-# Deploy common-instancetypes
+# 部署 common-instancetypes {#deploy-common-instancetypes}
 
-The [`kubevirt/common-instancetypes`](https://github.com/kubevirt/common-instancetypes) provide a set of [instancetypes and preferences](../user_workloads/instancetypes.md) to help create KubeVirt [`VirtualMachines`](http://kubevirt.io/api-reference/main/definitions.html#_v1_virtualmachine).
+[`kubevirt/common-instancetypes`](https://github.com/kubevirt/common-instancetypes) 提供一组[实例类型和偏好](../user_workloads/instancetypes.md)，用以帮助创建 KubeVirt [`VirtualMachines`](http://kubevirt.io/api-reference/main/definitions.html#_v1_virtualmachine)。
 
-Beginning with the 1.1 release of KubeVirt, cluster wide resources can be deployed directly through KubeVirt, without another operator.
-This allows deployment of a set of default instancetypes and preferences along side KubeVirt.
+从 KubeVirt 1.1 发行版开始，可以不借助另一个 operator，直接通过 KubeVirt 部署集群范围的资源。这样就可以随 KubeVirt 一并部署一组默认实例类型和偏好。
 
-With the [`v1.4.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.4.0) release of KubeVirt, common-instancetypes are now deployed by default.
+从 KubeVirt [`v1.4.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.4.0) 发行版起，common-instancetypes 现在默认会部署。
 
-## **FEATURE STATE:**
+## **功能状态：** {#feature-state}
 
 * Alpha - [`v1.1.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.1.0)
 * Beta - [`v1.2.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.2.0)
-* GA - [`v1.4.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.4.0) (Enabled by default)
+* GA - [`v1.4.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.4.0)（默认启用）
 
-## Control deployment of common-instancetypes
+## 控制 common-instancetypes 的部署 {#control-deployment-of-common-instancetypes}
 
-To explicitly enable or disable the deployment of cluster-wide common-instancetypes through the KubeVirt `virt-operator` use the `spec.configuration.commonInstancetypesDeployment.enabled` configurable.
+要通过 KubeVirt `virt-operator` 显式启用或禁用集群范围 common-instancetypes 的部署，请使用可配置项 `spec.configuration.commonInstancetypesDeployment.enabled`。
 
 ```shell
 kubectl patch -n kubevirt kv/kubevirt --type merge -p '{"spec":{"configuration":{"commonInstancetypesDeployment":{"enabled": false}}}}'
 ```
 
-## Deploy common-instancetypes manually
+## 手动部署 common-instancetypes {#deploy-common-instancetypes-manually}
 
-For customization purposes or to install namespaced resources, common-instancetypes can also be deployed by hand.
+出于定制目的，或为了安装命名空间范围的资源，也可以手动部署 common-instancetypes。
 
-To install all resources provided by the [`kubevirt/common-instancetypes`](https://github.com/kubevirt/common-instancetypes) project without further customizations, simply apply with [`kustomize`](https://kustomize.io/) enabled (-k flag):
+要安装 [`kubevirt/common-instancetypes`](https://github.com/kubevirt/common-instancetypes) 项目提供的全部资源且不做进一步定制，只需在启用 [`kustomize`](https://kustomize.io/) 的情况下 apply（-k 标志）：
 
 ```shell
 kubectl apply -k https://github.com/kubevirt/common-instancetypes.git
 ```
 
-Alternatively, targets for each of the available custom resource types (e.g. namespaced instancetypes) are available.
+另外，每种可用的自定义资源类型（例如命名空间范围的实例类型）都有对应的目标。
 
-For example, to deploy `VirtualMachineInstancetypes` run the following command:
+例如，要部署 `VirtualMachineInstancetypes`，请运行以下命令：
 
 ```shell
 kubectl apply -k https://github.com/kubevirt/common-instancetypes.git/VirtualMachineInstancetypes

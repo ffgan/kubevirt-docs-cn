@@ -1,60 +1,61 @@
-# Virtual Machines on Arm64
+# Arm64 上的虚拟机 {#virtual-machines-on-arm64}
 
-This page summaries all unsupported Virtual Machines configurations and different default setups on Arm64 platform.
+本页汇总 Arm64 平台上所有不受支持的虚拟机配置以及不同的默认设置。
 
-## Virtual hardware
+## 虚拟硬件 {#virtual-hardware}
 
-### Machine Type
+### 机器类型 {#machine-type}
 
-Currently, we only support one machine type, `virt`, which is set by default.
+目前，我们只支持一种机器类型 `virt`，并且默认即使用该类型。
 
-### BIOS/UEFI
+### BIOS/UEFI {#biosuefi}
 
-On Arm64 platform, we only support UEFI boot which is set by default. UEFI secure boot is not supported.
+在 Arm64 平台上，我们只支持默认设置的 UEFI 引导。不支持 UEFI 安全启动。
 
-### CPU
+### CPU {#cpu}
 
-#### Node-labeller
+#### Node-labeller {#node-labeller}
 
-Currently, Node-labeller is partially supported on Arm64 platform. It does not yet support parsing virsh_domcapabilities.xml and capabilities.xml, and extracting related information such as CPU features.
+目前，Node-labeller 在 Arm64 平台上部分受支持。它尚不支持解析 virsh_domcapabilities.xml 和 capabilities.xml，以及提取 CPU 特性等相关信息。
 
-#### Model
+#### 型号 {#model}
 
-`host-passthrough` is the only model that supported on Arm64. The CPU model is set by default on Arm64 platform.
+`host-passthrough` 是 Arm64 上唯一受支持的型号。在 Arm64 平台上默认设置该 CPU 型号。
 
-### Clock
+### 时钟 {#clock}
 
-`kvm` and `hyperv` timers are not supported on Arm64 platform.
+`kvm` 和 `hyperv` 计时器在 Arm64 平台上不受支持。
 
-### Video and Graphics Device
+### 视频与图形设备 {#video-and-graphics-device}
 
-We do not support vga devices but use virtio-gpu by default.
+我们不支持 vga 设备，默认使用 virtio-gpu。
 
-### Hugepages
+### 大页 {#hugepages}
 
-Hugepages are not supported on Arm64 platform.
+大页在 Arm64 平台上不受支持。
 
-### Resources Requests and Limits
+### 资源请求与限制 {#resources-requests-and-limits}
 
-CPU pinning is supported on Arm64 platform.
+Arm64 平台支持 CPU 绑定。
 
-## NUMA
+## NUMA {#numa}
 
-As Hugepages are a precondition of the NUMA feature, and Hugepages are not enabled on the Arm64 platform, the NUMA feature does not work on Arm64.
+由于大页是 NUMA 功能的前提条件，而 Arm64 平台未启用大页，因此 NUMA 功能在 Arm64 上无法工作。
 
-## Disks and Volumes
+## 磁盘与卷 {#disks-and-volumes}
 
-Arm64 only supports virtio and scsi disk bus types.
+Arm64 只支持 virtio 和 scsi 磁盘总线类型。
 
-## Interface and Networks
-### macvlan
+## 接口与网络 {#interface-and-networks}
 
-We do not support `macvlan` network because the project https://github.com/kubevirt/macvtap-cni does not support Arm64.
+### macvlan {#macvlan}
 
-### SRIOV
+我们不支持 `macvlan` 网络，因为项目 https://github.com/kubevirt/macvtap-cni 不支持 Arm64。
 
-This class of devices is not verified on the Arm64 platform.
+### SRIOV {#sriov}
 
-## Liveness and Readiness Probes
+此类设备尚未在 Arm64 平台上验证。
 
-`Watchdog` device is not supported on Arm64 platform.
+## 存活探针与就绪探针 {#liveness-and-readiness-probes}
+
+`Watchdog` 设备在 Arm64 平台上不受支持。

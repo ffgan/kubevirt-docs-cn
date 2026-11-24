@@ -1,26 +1,26 @@
-# Confidential computing
+# 机密计算 {#confidential-computing}
 
-## AMD Secure Encrypted Virtualization (SEV)
+## AMD 安全加密虚拟化（SEV） {#amd-secure-encrypted-virtualization-sev}
 
-**FEATURE STATE:**
-  - Alpha - `v0.49.0` (experimental support)
-  - Beta  - `v1.9.0` (enabled by default)
+**功能状态：**
+  - Alpha - `v0.49.0`（实验性支持）
+  - Beta  - `v1.9.0`（默认启用）
 
-[Secure Encrypted Virtualization (SEV)](https://developer.amd.com/sev/) is a feature of AMD's EPYC CPUs that allows the memory of a virtual machine to be encrypted on the fly.
+[安全加密虚拟化（SEV）](https://developer.amd.com/sev/) 是 AMD EPYC CPU 的一项特性，允许在运行过程中对虚拟机内存进行加密。
 
-KubeVirt supports running confidential VMs on AMD EPYC hardware with SEV feature.
+KubeVirt 支持在具备 SEV 特性的 AMD EPYC 硬件上运行机密 VM。
 
-### Preconditions
+### 前提条件 {#preconditions}
 
-In order to run an SEV guest the following condition must be met:
+要运行 SEV 客户机，必须满足以下条件：
 
-- Before KubeVirt v1.9: `WorkloadEncryptionSEV` [feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate) must be enabled.
-- The guest must support [UEFI boot](../compute/virtual_hardware.md#biosuefi)
-- SecureBoot must be disabled for the guest VM
+- 在 KubeVirt v1.9 之前：必须启用 `WorkloadEncryptionSEV` [功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)。
+- 客户机必须支持 [UEFI 启动](../compute/virtual_hardware.md#biosuefi)
+- 必须为客户机 VM 禁用 SecureBoot
 
-### Running an SEV guest
+### 运行 SEV 客户机 {#running-an-sev-guest}
 
-SEV memory encryption can be requested by setting the `spec.domain.launchSecurity.sev` element in the VMI definition:
+可以通过在 VMI 定义中设置 `spec.domain.launchSecurity.sev` 元素来请求 SEV 内存加密：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -62,31 +62,32 @@ spec:
     name: cloudinitdisk
 ```
 
-### Current limitations
 
-- SEV-encrypted VMs cannot contain directly-accessible host devices (that is, PCI passthrough)
-- Live Migration is not supported
-- The VMs are not attested
+### 当前限制 {#current-limitations}
 
-## AMD Secure Encrypted Virtualization - Secure Nested Paging (SEV-SNP)
+- 经过 SEV 加密的 VM 不能包含可直接访问的主机设备（即 PCI 直通）
+- 不支持实时迁移
+- 这些 VM 不会经过证明
 
-**FEATURE STATE:**
-  - Alpha - `v1.7.0` (experimental support)
-  - Beta  - `v1.9.0` (enabled by default)
+## AMD 安全加密虚拟化 - 安全嵌套分页（SEV-SNP） {#amd-secure-encrypted-virtualization-secure-nested-paging-sev-snp}
+
+**功能状态：**
+  - Alpha - `v1.7.0`（实验性支持）
+  - Beta  - `v1.9.0`（默认启用）
 
 
-KubeVirt supports running confidential VMs on AMD EPYC hardware with SEV-SNP support.
+KubeVirt 支持在具备 SEV-SNP 支持的 AMD EPYC 硬件上运行机密 VM。
 
-### Prerequisites
+### 前提条件 {#prerequisites}
 
-- Before KubeVirt v1.9: `WorkloadEncryptionSEV` [feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate) must be enabled.
-- The guest must support [UEFI boot](../compute/virtual_hardware.md#biosuefi).
-- SecureBoot must be disabled for the guest VM.
-- AMD EPYC hardware that is capable of running [SEV-SNP](https://docs.amd.com/v/u/en-US/58207-using-sev-with-amd-epyc-processors).
+- 在 KubeVirt v1.9 之前：必须启用 `WorkloadEncryptionSEV` [功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)。
+- 客户机必须支持 [UEFI 启动](../compute/virtual_hardware.md#biosuefi)。
+- 必须为客户机 VM 禁用 SecureBoot。
+- 能够运行 [SEV-SNP](https://docs.amd.com/v/u/en-US/58207-using-sev-with-amd-epyc-processors) 的 AMD EPYC 硬件。
 
-### Deploying AMD SEV-SNP enabled VMs
+### 部署启用 AMD SEV-SNP 的 VM {#deploying-amd-sev-snp-enabled-vms}
 
-SEV-SNP memory encryption can be requested by setting the `spec.domain.launchSecurity.snp` element in the VMI definition:
+可以通过在 VMI 定义中设置 `spec.domain.launchSecurity.snp` 元素来请求 SEV-SNP 内存加密：
 
 
 ```yaml
@@ -130,61 +131,63 @@ spec:
 ```
 
 
-### Limitations
 
-- SEV/SEV-ES are mutually exclusive from SNP, running both SEV and SNP will not run.
-- Uses default policy that QEMU uses (e.g Policy: 0x30000).
-- Live Migration is not supported.
-- The VMs are not attested.
+### 限制 {#limitations}
 
-## IBM Secure Execution for Linux (Secure Execution)
+- SEV/SEV-ES 与 SNP 互斥，同时运行 SEV 和 SNP 将无法运行。
+- 使用 QEMU 所用的默认策略（例如 Policy: 0x30000）。
+- 不支持实时迁移。
+- 这些 VM 不会经过证明。
 
-IBM Secure Execution for Linux is a s390x security technology that is introduced with IBM z15 and LinuxONE III. It protects data of workloads that run in a KVM guest from being inspected or modified by the server environment.
+## 面向 Linux 的 IBM Secure Execution（Secure Execution） {#ibm-secure-execution-for-linux-secure-execution}
 
-In particular, no hardware administrator, no KVM code, and no KVM administrator can access the data in a guest that was started as an IBM Secure Execution guest.
+面向 Linux 的 IBM Secure Execution 是随 IBM z15 和 LinuxONE III 引入的一项 s390x 安全技术。它可以保护在 KVM 客户机中运行的工作负载数据，使其不会被服务器环境检查或修改。
 
-For more details please read the [official documentation](https://www.ibm.com/docs/en/linux-on-systems?topic=execution-introduction).
+特别是，硬件管理员、KVM 代码以及 KVM 管理员都无法访问以 IBM Secure Execution 客户机方式启动的客户机中的数据。
 
-### **FEATURE STATE:**
+更多细节请阅读[官方文档](https://www.ibm.com/docs/en/linux-on-systems?topic=execution-introduction)。
+
+### **功能状态：** {#feature-state}
 
 * Alpha - [`v1.6.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.6.0)
 * Beta - [`v1.7.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.7.0)
-* GA - [`v1.9.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.9.0) (Enabled by default)
+* GA - [`v1.9.0`](https://github.com/kubevirt/kubevirt/releases/tag/v1.9.0)（默认启用）
 
-### Prerequisites
+### 前提条件 {#prerequisites_1}
 
-- IBM z15/LinuxONE III or newer
-- Kubernetes Cluster with LPAR worker nodes (No nested virtualization)
-- Kubevirt and CDI deployed on the Cluster
-- Secure Execution prepared guest. See the [official docs](https://www.ibm.com/docs/en/linux-on-systems?topic=execution-workload-owner-tasks).
-- Before kubevirt 1.9: `SecureExecution` [feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate) must be enabled.
+- IBM z15/LinuxONE III 或更新版本
+- 带有 LPAR 工作节点的 Kubernetes 集群（无嵌套虚拟化）
+- 集群上已部署 KubeVirt 和 CDI
+- 已为 Secure Execution 准备好的客户机。参见[官方文档](https://www.ibm.com/docs/en/linux-on-systems?topic=execution-workload-owner-tasks)。
+- 在 KubeVirt 1.9 之前：必须启用 `SecureExecution` [功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)。
 
-### Preparing the host(s)
+### 准备宿主机 {#preparing-the-hosts}
 
-On all LPAR worker nodes that should run Secure Execution VMs, the following steps need to be taken to enable them to host the workloads:
+在所有应当运行 Secure Execution VM 的 LPAR 工作节点上，需要执行以下步骤，使它们能够承载这些工作负载：
 
-1. SSH to the node
-2. Add `prot_virt=1` to the kernel cmdline:
-  - Edit `zipl.conf`:
+1. 通过 SSH 登录该节点
+2. 将 `prot_virt=1` 添加到内核命令行：
+  - 编辑 `zipl.conf`：
   ```
   # vi zipl.conf
   ...
   parameters=" ...prot_virt=1"
   ...
   ```
-  - Run `zipl` to ensure the change is picked up during the next reboot
-  - Reboot the node
-3. Verify that Secure Execution is now enabled:
+  - 运行 `zipl`，以确保下次重启时会采用该变更
+  - 重启该节点
+3. 验证 Secure Execution 现已启用：
 ```
 $ cat /sys/firmware/uv/prot_virt_host
 1
 ```
 
-### Running a Secure Execution Guest VM
 
-Ensure that your workload is [uploaded to a data volume using CDI](../storage/containerized_data_importer.md#virtctl-image-upload).
+### 运行 Secure Execution 客户机 VM {#running-a-secure-execution-guest-vm}
 
-Memory Protection via Secure Execution can be requested by setting `spec.domain.launchSecurity` element in the VMI definition.
+确保你的工作负载已[使用 CDI 上传到数据卷](../storage/containerized_data_importer.md#virtctl-image-upload)。
+
+可以通过在 VMI 定义中设置 `spec.domain.launchSecurity` 元素来请求基于 Secure Execution 的内存保护。
 ```
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -215,14 +218,15 @@ spec:
           dataVolume:
             name: secure-execution-dv
 ```
-### Limitations
 
-As the host is not permitted to access the guest memory, certain features do not work with Secure Execution VMs
-- live migration
-  - VMs need to be moved offline instead
-  - If moving between different machines, VMs need to be encrypted with hostkeys of both machines
-- Saving and restoring VM from disk
-- Memory dump
-- Huge Pages
-- Pass-through of host devices, for example PCI and CCW.
-- Memory ballooning through a virtio-balloon device.
+### 限制 {#limitations_1}
+
+由于宿主机不被允许访问客户机内存，某些功能无法与 Secure Execution VM 一起使用：
+- 实时迁移
+  - VM 需要改为离线迁移
+  - 如果在不同机器之间迁移，VM 需要使用两台机器的 hostkey 进行加密
+- 从磁盘保存和恢复 VM
+- 内存转储
+- 大页
+- 主机设备直通，例如 PCI 和 CCW。
+- 通过 virtio-balloon 设备进行内存气球调节。

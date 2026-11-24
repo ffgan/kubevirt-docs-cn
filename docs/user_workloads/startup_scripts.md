@@ -1,120 +1,91 @@
-# Startup Scripts
+# 启动脚本 {#startup-scripts}
 
-KubeVirt supports the ability to assign a startup script to a
-VirtualMachineInstance instance which is executed automatically when the
-VM initializes.
+KubeVirt 支持为 VirtualMachineInstance 实例分配启动脚本的能力，该脚本会在 VM 初始化时自动执行。
 
-These scripts are commonly used to automate injection of users and SSH
-keys into VMs in order to provide remote access to the machine. For
-example, a startup script can be used to inject credentials into a VM
-that allows an Ansible job running on a remote host to access and
-provision the VM.
+这些脚本通常用于自动向 VM 注入用户和 SSH 密钥，以便提供对该机器的远程访问。例如，启动脚本可用于向 VM 注入凭据，使运行在远程主机上的 Ansible 作业能够访问并置备该 VM。
 
-Startup scripts are not limited to any specific use case though. They
-can be used to run any arbitrary script in a VM on boot.
+不过，启动脚本并不限于任何特定用例。它们可以在 VM 启动时运行任意脚本。
 
-## Cloud-init
+## Cloud-init {#cloud-init}
 
-cloud-init is a widely adopted project used for early initialization of
-a VM. Used by cloud providers such as AWS and GCP, cloud-init has
-established itself as the defacto method of providing startup scripts to
-VMs.
+cloud-init 是一个被广泛采用的项目，用于 VM 的早期初始化。AWS 和 GCP 等云提供商都在使用它，cloud-init 已成为向 VM 提供启动脚本的事实标准方法。
 
-Cloud-init documentation can be found here: [Cloud-init
-Documentation](https://cloudinit.readthedocs.io/en/latest/).
+Cloud-init 文档可以在此处找到：[Cloud-init 文档](https://cloudinit.readthedocs.io/en/latest/)。
 
-KubeVirt supports cloud-init's [NoCloud](https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html) 
-and [ConfigDrive](https://cloudinit.readthedocs.io/en/latest/reference/datasources/configdrive.html) datasources
-which involve injecting startup scripts into a VM instance through the
-use of an ephemeral disk. VMs with the cloud-init package installed will
-detect the ephemeral disk and execute custom userdata scripts at boot.
+KubeVirt 支持 cloud-init 的 [NoCloud](https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html) 和 [ConfigDrive](https://cloudinit.readthedocs.io/en/latest/reference/datasources/configdrive.html) 数据源，它们通过临时磁盘将启动脚本注入 VM 实例。安装了 cloud-init 软件包的 VM 会检测到该临时磁盘，并在启动时执行自定义的用户数据脚本。
 
-## Ignition
+## Ignition {#ignition}
 
-Ignition is an alternative to cloud-init which allows for configuring the
-VM disk on first boot. You can find the Ignition documentation [here](https://coreos.github.io/ignition/). 
-You can also find a comparison between cloud-init and Ignition [here](https://www.flatcar.org/docs/latest/provisioning/ignition/#ignition-vs-coreos-cloudinit).
+Ignition 是 cloud-init 的替代方案，可用于在首次启动时配置 VM 磁盘。你可以在[此处](https://coreos.github.io/ignition/)找到 Ignition 文档。你也可以在[此处](https://www.flatcar.org/docs/latest/provisioning/ignition/#ignition-vs-coreos-cloudinit)找到 cloud-init 与 Ignition 的对比。
 
-Ignition can be used with Kubevirt by using the `cloudInitConfigDrive` volume.
+在 KubeVirt 中，可以通过使用 `cloudInitConfigDrive` 卷来使用 Ignition。
 
-## Sysprep
+## Sysprep {#sysprep}
 
-Sysprep is an automation tool for Windows that automates Windows
-installation, setup, and custom software provisioning.
+Sysprep 是用于 Windows 的自动化工具，可自动完成 Windows 的安装、设置以及自定义软件置备。
 
-The general flow is:
+一般流程如下：
 
-1. Seal the vm image with the Sysprep tool, for example by running:
+1. 使用 Sysprep 工具封装 VM 镜像，例如运行：
 
         %WINDIR%\system32\sysprep\sysprep.exe /generalize /shutdown /oobe /mode:vm
 
     !!! Note
-        We need to make sure the base vm does not restart, which can be done by setting the vm run strategy as `RerunOnFailure`.
+        我们需要确保基础 VM 不会重新启动，这可以通过将 VM 的运行策略设置为 `RerunOnFailure` 来实现。
           
-          VM runStrategy:
+          VM runStrategy：
 
             spec:
               runStrategy: RerunOnFailure
 
-    More information can be found here:
+    更多信息可以在此处找到：
 
-    * [Sysprep Process Overview](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/sysprep-process-overview)
-    * [Sysprep (Generalize) a Windows installation](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/sysprep--generalize--a-windows-installation)
-
-    !!! Note
-        It is important that there is no answer file detected when the Sysprep Tool is triggered, because Windows Setup searches for answer files at the beginning of each configuration pass and caches it. If that happens, when the OS will start - it will just use the cached answer file, ignoring the one we provide through the Sysprep API. More information can be found [here](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-setup-automation-overview#implicit-answer-file-search-order).
-
-2. Providing an Answer file named `autounattend.xml` in an attached media. The answer file can be provided in a ConfigMap or a Secret with the key `autounattend.xml`
-
-    The configuration file can be generated with [Windows SIM](https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/wsim/windows-system-image-manager-overview-topics) or it can be specified manually according to the information found here:
-
-    * [Answer files (unattend.xml)](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs)
-    * [Answer File Reference](https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/wsim/answer-files-overview)
-    * [Answer File Components Reference](https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/unattend/components-b-unattend)
+    * [Sysprep 流程概述](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/sysprep-process-overview)
+    * [对 Windows 安装执行 Sysprep（通用化）](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/sysprep--generalize--a-windows-installation)
 
     !!! Note
-        There are also many easy to find online tools available for creating an answer file.
+        重要的是，在触发 Sysprep 工具时不能检测到应答文件，因为 Windows 安装程序会在每个配置阶段开始时搜索应答文件并缓存它。如果发生这种情况，操作系统启动时就只会使用缓存的应答文件，而忽略我们通过 Sysprep API 提供的那个应答文件。更多信息可以在[此处](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-setup-automation-overview#implicit-answer-file-search-order)找到。
 
-## Cloud-init Examples
+2. 在附加介质中提供名为 `autounattend.xml` 的应答文件。应答文件可以在 ConfigMap 或 Secret 中提供，其键为 `autounattend.xml`。
 
-### User Data
+    该配置文件可以使用 [Windows SIM](https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/wsim/windows-system-image-manager-overview-topics) 生成，也可以根据此处找到的信息手动指定：
 
-KubeVirt supports the cloud-init NoCloud and ConfigDrive data sources
-which involve injecting startup scripts through the use of a disk
-attached to the VM.
+    * [应答文件（unattend.xml）](https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs)
+    * [应答文件参考](https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/wsim/answer-files-overview)
+    * [应答文件组件参考](https://docs.microsoft.com/en-us/windows-hardware/customize/desktop/unattend/components-b-unattend)
 
-In order to assign a custom userdata script to a VirtualMachineInstance
-using this method, users must define a disk and a volume for the NoCloud
-or ConfigDrive datasource in the VirtualMachineInstance's spec.
+    !!! Note
+        此外，网上还有许多容易找到的工具可用于创建应答文件。
 
-#### Data Sources
+## Cloud-init 示例 {#cloud-init-examples}
 
-Under most circumstances users should stick to the NoCloud data source
-as it is the simplest cloud-init data source. Only if NoCloud is not
-supported by the cloud-init implementation (e.g.
-[coreos-cloudinit](https://github.com/coreos/coreos-cloudinit)) users
-should switch the data source to ConfigDrive.
+### 用户数据 {#user-data}
 
-Switching the cloud-init data source to ConfigDrive is as easy as
-changing the volume type in the VirtualMachineInstance's spec from
-`cloudInitNoCloud` to `cloudInitConfigDrive`.
+KubeVirt 支持 cloud-init 的 NoCloud 和 ConfigDrive 数据源，它们通过使用挂接到 VM 的磁盘来注入启动脚本。
 
-NoCloud data source:
+要使用此方法为 VirtualMachineInstance 分配自定义用户数据脚本，用户必须在 VirtualMachineInstance 的 spec 中为 NoCloud 或 ConfigDrive 数据源定义磁盘和卷。
+
+#### 数据源 {#data-sources}
+
+在大多数情况下，用户应坚持使用 NoCloud 数据源，因为它是最简单的 cloud-init 数据源。仅当 cloud-init 实现不支持 NoCloud 时（例如 [coreos-cloudinit](https://github.com/coreos/coreos-cloudinit)），用户才应把数据源切换为 ConfigDrive。
+
+把 cloud-init 数据源切换为 ConfigDrive 非常简单，只需把 VirtualMachineInstance spec 中的卷类型从 `cloudInitNoCloud` 改为 `cloudInitConfigDrive`。
+
+NoCloud 数据源：
 
     volumes:
       - name: cloudinitvolume
         cloudInitNoCloud:
           userData: "#cloud-config"
 
-ConfigDrive data source:
+ConfigDrive 数据源：
 
     volumes:
       - name: cloudinitvolume
         cloudInitConfigDrive:
           userData: "#cloud-config"
 
-When using the ConfigDrive datasource, the `networkData` part has to be in the
-[OpenStack Metadata Service Network](https://specs.openstack.org/openstack/nova-specs/specs/liberty/implemented/metadata-service-network-info.html) format:
+使用 ConfigDrive 数据源时，`networkData` 部分必须采用 [OpenStack 元数据服务网络](https://specs.openstack.org/openstack/nova-specs/specs/liberty/implemented/metadata-service-network-info.html) 格式：
 ```
   spec:
     domain:
@@ -135,18 +106,14 @@ When using the ConfigDrive datasource, the `networkData` part has to be in the
           userData: "#cloud-config"
 ```
 
-> **Note**
-> The MAC address of the secondary interface should be predefined and identical in 
-> the network interface and the cloud-init networkData. 
+> **注意**
+> 辅助接口的 MAC 地址应当预先定义，并且在网络接口和 cloud-init 的 networkData 中保持相同。
 
-See the examples below for more complete cloud-init examples.
+请查看下面的示例，以获取更完整的 cloud-init 示例。
 
-#### Cloud-init user-data as clear text
+#### 以明文形式提供的 Cloud-init 用户数据 {#cloud-init-user-data-as-clear-text}
 
-In the example below, a SSH key is stored in the cloudInitNoCloud
-Volume's userData field as clean text. There is a corresponding disks
-entry that references the cloud-init volume and assigns it to the VM's
-device.
+在下面的示例中，SSH 密钥以明文形式存储在 cloudInitNoCloud 卷的 userData 字段中。有一个对应的 disks 条目引用该 cloud-init 卷，并将其分配给 VM 的设备。
 
     # Create a VM manifest with the startup script
     # a cloudInitNoCloud volume's userData field.
@@ -187,16 +154,11 @@ device.
 
     kubectl create -f my-vmi.yaml
 
-#### Cloud-init user-data as base64 string
+#### 以 base64 字符串形式提供的 Cloud-init 用户数据 {#cloud-init-user-data-as-base64-string}
 
-In the example below, a simple bash script is base64 encoded and stored
-in the cloudInitNoCloud Volume's userDataBase64 field. There is a
-corresponding disks entry that references the cloud-init volume and
-assigns it to the VM's device.
+在下面的示例中，一段简单的 bash 脚本经过 base64 编码，并存储在 cloudInitNoCloud 卷的 userDataBase64 字段中。有一个对应的 disks 条目引用该 cloud-init 卷，并将其分配给 VM 的设备。
 
-*Users also have the option of storing the startup script in a
-Kubernetes Secret and referencing the Secret in the VM's spec. Examples
-further down in the document illustrate how that is done.*
+*用户也可以选择把启动脚本存放在 Kubernetes Secret 中，并在 VM 的 spec 里引用该 Secret。文档后面的示例说明了具体做法。*
 
     # Create a simple startup script
 
@@ -240,17 +202,13 @@ further down in the document illustrate how that is done.*
 
     kubectl create -f my-vmi.yaml
 
-#### Cloud-init UserData as k8s Secret
+#### 以 k8s Secret 形式提供的 Cloud-init 用户数据 {#cloud-init-userdata-as-k8s-secret}
 
-Users who wish to not store the cloud-init userdata directly in the
-VirtualMachineInstance spec have the option to store the userdata into a
-Kubernetes Secret and reference that Secret in the spec.
+不希望把 cloud-init 用户数据直接存放在 VirtualMachineInstance spec 中的用户，可以选择把用户数据存入 Kubernetes Secret，并在 spec 中引用该 Secret。
 
-Multiple VirtualMachineInstance specs can reference the same Kubernetes
-Secret containing cloud-init userdata.
+多个 VirtualMachineInstance spec 可以引用同一个包含 cloud-init 用户数据的 Kubernetes Secret。
 
-Below is an example of how to create a Kubernetes Secret containing a
-startup script and reference that Secret in the VM's spec.
+下面的示例说明如何创建包含启动脚本的 Kubernetes Secret，并在 VM 的 spec 中引用该 Secret。
 
     # Create a simple startup script
 
@@ -297,18 +255,14 @@ startup script and reference that Secret in the VM's spec.
     # Post the VM
     kubectl create -f my-vmi.yaml
 
-#### Injecting SSH keys with Cloud-init's Cloud-config
+#### 使用 Cloud-init 的 Cloud-config 注入 SSH 密钥 {#injecting-ssh-keys-with-cloud-inits-cloud-config}
 
-In the examples so far, the cloud-init userdata script has been a bash
-script. Cloud-init has it's own configuration that can handle some
-common tasks such as user creation and SSH key injection.
+到目前为止的示例中，cloud-init 用户数据脚本一直是 bash 脚本。Cloud-init 有自己的配置，可以处理一些常见任务，例如创建用户和注入 SSH 密钥。
 
-More cloud-config examples can be found here: [Cloud-init
-Examples](https://cloudinit.readthedocs.io/en/latest/topics/examples.html)
+更多 cloud-config 示例可以在此处找到：[Cloud-init 示例](https://cloudinit.readthedocs.io/en/latest/topics/examples.html)
 
 <!-- markdown-link-check-disable -->
-Below is an example of using cloud-config to inject an SSH key for the
-default user (fedora in this case) of a [Fedora Atomic](https://www.projectatomic.io/) disk image.
+下面的示例使用 cloud-config，为 [Fedora Atomic](https://www.projectatomic.io/) 磁盘镜像的默认用户（本例中为 fedora）注入 SSH 密钥。
 <!-- markdown-link-check-enable -->
 
     # Create the cloud-init cloud-config userdata.
@@ -356,13 +310,11 @@ default user (fedora in this case) of a [Fedora Atomic](https://www.projectatomi
     # Connect to VM with passwordless SSH key
     ssh -i <insert private key here> fedora@<insert ip here>
 
-#### Inject SSH key using a Custom Shell Script
+#### 使用自定义 Shell 脚本注入 SSH 密钥 {#inject-ssh-key-using-a-custom-shell-script}
 
-Depending on the boot image in use, users may have a mixed experience
-using cloud-init's cloud-config to create users and inject SSH keys.
+取决于所用的启动镜像，用户在使用 cloud-init 的 cloud-config 创建用户并注入 SSH 密钥时，体验可能参差不齐。
 
-Below is an example of creating a user and injecting SSH keys for that
-user using a script instead of cloud-config.
+下面的示例使用脚本而不是 cloud-config 来创建用户，并为该用户注入 SSH 密钥。
 
     cat << END > startup-script.sh
     #!/bin/bash
@@ -411,23 +363,17 @@ user using a script instead of cloud-config.
     # Connect to VM with passwordless SSH key
     ssh -i <insert private key here> foo@<insert ip here>
 
-### Network Config
+### 网络配置 {#network-config}
 
-A cloud-init [network version
-1](https://cloudinit.readthedocs.io/en/latest/reference/network-config-format-v1.html)
-configuration can be set to configure the network at boot.
+可以设置 cloud-init 的[网络版本 1](https://cloudinit.readthedocs.io/en/latest/reference/network-config-format-v1.html)配置，以便在启动时配置网络。
 
-Cloud-init [user-data](#user-data) **must** be set for cloud-init to
-parse *network-config* even if it is just the user-data config header:
+要使 cloud-init 解析 *network-config*，**必须**设置 Cloud-init [用户数据](#user-data)，哪怕它只是用户数据配置头：
 
     #cloud-config
 
-#### Cloud-init network-config as clear text
+#### 以明文形式提供的 Cloud-init network-config {#cloud-init-network-config-as-clear-text}
 
-In the example below, a simple cloud-init network-config is stored in
-the cloudInitNoCloud Volume's networkData field as clean text. There is
-a corresponding disks entry that references the cloud-init volume and
-assigns it to the VM's device.
+在下面的示例中，一段简单的 cloud-init network-config 以明文形式存储在 cloudInitNoCloud 卷的 networkData 字段中。有一个对应的 disks 条目引用该 cloud-init 卷，并将其分配给 VM 的设备。
 
     # Create a VM manifest with the network-config in
     # a cloudInitNoCloud volume's networkData field.
@@ -475,16 +421,11 @@ assigns it to the VM's device.
 
     kubectl create -f my-vmi.yaml
 
-#### Cloud-init network-config as base64 string
+#### 以 base64 字符串形式提供的 Cloud-init network-config {#cloud-init-network-config-as-base64-string}
 
-In the example below, a simple network-config is base64 encoded and
-stored in the cloudInitNoCloud Volume's networkDataBase64 field. There
-is a corresponding disks entry that references the cloud-init volume and
-assigns it to the VM's device.
+在下面的示例中，一段简单的 network-config 经过 base64 编码，并存储在 cloudInitNoCloud 卷的 networkDataBase64 字段中。有一个对应的 disks 条目引用该 cloud-init 卷，并将其分配给 VM 的设备。
 
-*Users also have the option of storing the network-config in a
-Kubernetes Secret and referencing the Secret in the VM's spec. Examples
-further down in the document illustrate how that is done.*
+*用户也可以选择把 network-config 存放在 Kubernetes Secret 中，并在 VM 的 spec 里引用该 Secret。文档后面的示例说明了具体做法。*
 
     # Create a simple network-config
 
@@ -536,18 +477,13 @@ further down in the document illustrate how that is done.*
 
     kubectl create -f my-vmi.yaml
 
-#### Cloud-init network-config as k8s Secret
+#### 以 k8s Secret 形式提供的 Cloud-init network-config {#cloud-init-network-config-as-k8s-secret}
 
-Users who wish to not store the cloud-init network-config directly in
-the VirtualMachineInstance spec have the option to store the
-network-config into a Kubernetes Secret and reference that Secret in the
-spec.
+不希望把 cloud-init network-config 直接存放在 VirtualMachineInstance spec 中的用户，可以选择把 network-config 存入 Kubernetes Secret，并在 spec 中引用该 Secret。
 
-Multiple VirtualMachineInstance specs can reference the same Kubernetes
-Secret containing cloud-init network-config.
+多个 VirtualMachineInstance spec 可以引用同一个包含 cloud-init network-config 的 Kubernetes Secret。
 
-Below is an example of how to create a Kubernetes Secret containing a
-network-config and reference that Secret in the VM's spec.
+下面的示例说明如何创建包含 network-config 的 Kubernetes Secret，并在 VM 的 spec 中引用该 Secret。
 
     # Create a simple network-config
 
@@ -602,33 +538,23 @@ network-config and reference that Secret in the VM's spec.
     # Post the VM
     kubectl create -f my-vmi.yaml
 
-### Debugging
+### 调试 {#debugging}
 
-Depending on the operating system distribution in use, cloud-init output
-is often printed to the console output on boot up. When developing
-userdata scripts, users can connect to the VM's console during boot up
-to debug.
+取决于所用的操作系统发行版，cloud-init 的输出通常会在启动时打印到控制台输出中。在开发用户数据脚本时，用户可以在启动期间连接到 VM 的控制台进行调试。
 
-Example of connecting to console using virtctl:
+使用 virtctl 连接到控制台的示例：
 
     virtctl console <name of vmi>
 
-### Device Role Tagging
+### 设备角色标记 {#device-role-tagging}
 
-KubeVirt provides a mechanism for users to tag devices such as Network
-Interfaces with a specific role. The tag will be matched to the hardware
-address of the device and this mapping exposed to the guest OS via
-cloud-init.
+KubeVirt 提供一种机制，让用户可以为网络接口等设备标记特定角色。该标记将与设备的硬件地址相匹配，并且这一映射会通过 cloud-init 暴露给客户机操作系统。
 
-This additional metadata will help the guest OS users with multiple networks
-interfaces to identify the devices that may have a specific role, such as a
-network device dedicated to a specific service or a disk intended to be used by
-a specific application (database, webcache, etc.)
+这些额外的元数据将帮助拥有多个网络接口的客户机操作系统用户识别可能具有特定角色的设备，例如专用于特定服务的网络设备，或打算由特定应用程序（数据库、网页缓存等）使用的磁盘。
 
-This functionality already exists in platforms such as OpenStack. KubeVirt will
-provide the data in a similar format, known to users and services like cloud-init.
+此功能已经存在于 OpenStack 等平台中。KubeVirt 将以类似的格式提供这些数据，这种格式为 cloud-init 等用户和服务所熟知。
 
-For example:
+例如：
 ```yaml
 kind: VirtualMachineInstance
 spec:
@@ -675,19 +601,15 @@ The metadata will be available in the guests config drive `openstack/latest/meta
 }
 ```
 
-## Ignition Examples
+## Ignition 示例 {#ignition-examples}
 
-Ignition data can be passed into a `cloudInitConfigDrive` source using 
-either clear text, a base64 string or a k8s Secret.
+Ignition 数据可以使用明文、base64 字符串或 k8s Secret 传入 `cloudInitConfigDrive` 源。
 
-Some examples of Ignition configurations can be found 
-[in the examples](https://coreos.github.io/ignition/examples/) 
-given by the Ignition documentation.
+一些 Ignition 配置示例可以在 Ignition 文档给出的[示例](https://coreos.github.io/ignition/examples/)中找到。
 
-### Ignition as clear text
+### 以明文形式提供的 Ignition {#ignition-as-clear-text}
 
-Here is a complete example of a Kubevirt VM using Ignition to add an ssh key to the 
-`coreos` user at first boot : 
+下面是一个完整示例，展示使用 Ignition 的 KubeVirt VM 如何在首次启动时向 `coreos` 用户添加 SSH 密钥：
 
 ```yaml
 apiVersion: kubevirt.io/v1alpha3
@@ -750,13 +672,11 @@ spec:
               }
 ```
 
-See that the Ignition config is simply passed to the `userData` annotation of the 
-`cloudInitConfigDrive` volume.
+可以看到，Ignition 配置只是被传入 `userData` 注解，该注解位于 `cloudInitConfigDrive` 卷中。
 
-### Ignition as base64
+### 以 base64 形式提供的 Ignition {#ignition-as-base64}
 
-You can also pass the Ignition config as a base64 string by using the `userDatabase64`
-annotation : 
+也可以通过使用 `userDatabase64` 注解，以 base64 字符串的形式传入 Ignition 配置：
 
 ```yaml
 ...
@@ -764,19 +684,19 @@ cloudInitConfigDrive:
   userDataBase64: eyJpZ25pdGlvbiI6eyJjb25maWciOnt9LCJwcm94eSI6e30sInNlY3VyaXR5Ijp7fSwidGltZW91dHMiOnt9LCJ2ZXJzaW9uIjoiMy4yLjAifSwicGFzc3dkIjp7InVzZXJzIjpbeyJuYW1lIjoiY29yZW9zIiwic3NoQXV0aG9yaXplZEtleXMiOlsic3NoLWVkMjU1MTlBQUFBQzNOemFDMWxaREkxTlRFNUFBQUFJUEwzYXhGR0hJM2RiOWlKV2tQWFZiWXpEN09hV1R0SHVxbXhMdmorRHp0QiB1c2VyQGV4YW1wbGUiXX1dfSwic3RvcmFnZSI6e30sInN5c3RlbWQiOnt9fQ==
 ```
 
-You can obtain the base64 string by doing `cat ignition.json | base64 -w0` in your terminal.
+你可以在终端中执行 `cat ignition.json | base64 -w0` 来获得该 base64 字符串。
 
-### Ignition as k8s Secret
+### 以 k8s Secret 形式提供的 Ignition {#ignition-as-k8s-secret}
 
-If you do not want to store the Ignition config into the VM configuration, you can use a k8s Secret.
+如果你不想把 Ignition 配置存入 VM 配置，可以使用 k8s Secret。
 
-First, create the secret with the ignition data in it :
+首先，创建其中包含 ignition 数据的 Secret：
 
 ```bash
 kubectl create secret generic my-ign-secret --from-file=ignition=ignition.json
 ```
 
-Then specify this secret into your VM configuration :
+然后在 VM 配置中指定该 Secret：
 
 ```yaml
 ...
@@ -785,11 +705,11 @@ cloudInitConfigDrive:
     name: my-ign-secret
 ```
 
-## Sysprep Examples
+## Sysprep 示例 {#sysprep-examples}
 
-### Sysprep in a ConfigMap
+### ConfigMap 中的 Sysprep {#sysprep-in-a-configmap}
 
-The answer file can be provided in a ConfigMap:
+应答文件可以在 ConfigMap 中提供：
 
 ```yaml
 apiVersion: v1
@@ -804,7 +724,7 @@ data:
     </unattend>
 ```
 
-And attached to the VM like so:
+并像这样挂接到 VM：
 
 ```yaml
 kind: VirtualMachine
@@ -844,9 +764,9 @@ spec:
             name: sysprep-config
 ```
 
-### Sysprep in a Secret
+### Secret 中的 Sysprep {#sysprep-in-a-secret}
 
-The answer file can be provided in a Secret:
+应答文件可以在 Secret 中提供：
 
 ```yaml
 apiVersion: v1
@@ -862,7 +782,7 @@ data:
     </unattend>
 ```
 
-And attached to the VM like so:
+并像这样挂接到 VM：
 
 ```yaml
 kind: VirtualMachine
@@ -902,11 +822,9 @@ spec:
             name: sysprep-secret
 ```
 
-### Base Sysprep VM
+### 基础 Sysprep VM {#base-sysprep-vm}
 
-In the example below, a configMap with `autounattend.xml` file is used to modify the Windows iso image which is downloaded from Microsoft
-and creates a base installed Windows machine with virtio drivers installed and all the commands executed in `post-install.ps1`
-For the below manifests to work it needs to have `win10-iso` DataVolume.
+在下面的示例中，使用包含 `autounattend.xml` 文件的 ConfigMap 来修改从 Microsoft 下载的 Windows ISO 镜像，并创建一台已完成基础安装的 Windows 机器，其中安装了 virtio 驱动，且执行了 `post-install.ps1` 中的全部命令。要使下面的清单生效，需要具备 `win10-iso` DataVolume。
 
 ```yaml
 apiVersion: v1
@@ -1247,11 +1165,9 @@ spec:
 
 ```
 
-### Launching a VM from template
+### 从模板启动 VM {#launching-a-vm-from-template}
 
-From the above example after the sysprep command is executed in the `post-install.ps1` and the vm is in shutdown state,
-A new VM can be launched from the base `win10-template` with additional changes mentioned from the below `unattend.xml` in `sysprep-config`.
-The new VM can take upto 5 minutes to be in running state since Windows goes through oobe setup in the background with the customizations specified in the below `unattend.xml` file.
+在上面的示例中，当 `post-install.ps1` 中的 sysprep 命令执行完毕并且 VM 处于关机状态后，可以从基础 `win10-template` 启动一台新 VM，并应用下面 `unattend.xml`（位于 `sysprep-config` 中）所提到的额外更改。新 VM 进入运行状态最多可能需要 5 分钟，因为 Windows 会在后台按照下面 `unattend.xml` 文件中指定的自定义项进行 oobe 设置。
 
 ```yaml
 apiVersion: v1

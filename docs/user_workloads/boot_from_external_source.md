@@ -1,23 +1,19 @@
-# Booting From External Source
+# 从外部源启动 {#booting-from-external-source}
 
-When installing a new guest virtual machine OS, it is often useful to boot directly from a kernel and initrd stored in
-the host physical machine OS, allowing command line arguments to be passed directly to the installer.
+安装新的客户机虚拟机 OS 时，直接从存放在宿主机物理机 OS 中的 kernel 和 initrd 启动通常很有用，这样可以把命令行参数直接传给安装程序。
 
-Booting from an external source is supported in Kubevirt starting from [version v0.42.0-rc.0](https://github.com/kubevirt/kubevirt/releases/tag/v0.42.0-rc.0).
-This enables the capability to define a Virtual Machine that will use a custom kernel / initrd binary, with possible
-custom arguments, during its boot process.
+从[版本 v0.42.0-rc.0](https://github.com/kubevirt/kubevirt/releases/tag/v0.42.0-rc.0)开始，KubeVirt 支持从外部源启动。这样就可以定义一台虚拟机，在启动过程中使用自定义 kernel / initrd 二进制文件，并可以带上自定义参数。
 
-The binaries are provided though a container image.
-The container is pulled from the container registry and resides on the local node hosting the VMs.
+这些二进制文件通过容器镜像提供。
+该容器从容器仓库拉取，并驻留在承载这些 VM 的本地节点上。
 
-## Use cases
-Some use cases for this may be:
-- For a kernel developer it may be very convenient to launch VMs that are defined to boot from the latest kernel binary
-that is often being changed.
-- Initrd can be set with files that need to reside on-memory during all the VM's life-cycle.
+## 使用场景 {#use-cases}
+这方面的一些使用场景可能是：
+- 对 kernel 开发者来说，启动被定义为从经常变更的最新 kernel 二进制文件启动的 VM，可能会非常方便。
+- 可以把需要在 VM 整个生命周期内驻留在内存中的文件设置到 initrd 中。
 
-## Workflow
-Defining an external boot source can be done in the following way:
+## 工作流程 {#workflow}
+可以按以下方式定义外部启动源：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -43,24 +39,21 @@ spec:
             memory: 1Gi
 ```
 
-Notes:
+说明：
 
-- `initrdPath` and `kernelPath` define the path for the binaries inside the container.
+- `initrdPath` 和 `kernelPath` 定义容器内二进制文件的路径。
 
-- Kernel and Initrd binaries must be owned by `qemu` user & group.
-  - To change ownership: `chown qemu:qemu <binary>` when `<binary>` is the binary file.
+- Kernel 和 Initrd 二进制文件的所有者必须是 `qemu` 用户和组。
+  - 要更改所有权：执行 `chown qemu:qemu <binary>`，其中 `<binary>` 是该二进制文件。
 
-- `kernelArgs` can only be provided if a kernel binary is provided (i.e. `kernelPath` not defined). These
-arguments will be passed to the default kernel the VM boots from.
+- `kernelArgs` 只有在提供了 kernel 二进制文件时才能提供（即未定义 `kernelPath`）。这些参数会传给 VM 启动所用的默认 kernel。
   
-- `imagePullSecret` and `imagePullPolicy` are optional
+- `imagePullSecret` 和 `imagePullPolicy` 是可选的
 
-- if `imagePullPolicy` is `Always` and the container image is updated then the VM will be booted
-  into the new kernel when VM restarts
+- 如果 `imagePullPolicy` 为 `Always` 且容器镜像已更新，则 VM 重启时会启动到新 kernel
 
 
-Booting the kernel with a root file system can be done by specifying the root file system as a
-[disk](https://kubevirt.io/user-guide/storage/disks_and_volumes/) (e.g. containerDisk):
+要让 kernel 与根文件系统一起启动，可以把根文件系统指定为[磁盘](https://kubevirt.io/user-guide/storage/disks_and_volumes/)（例如 containerDisk）：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -112,17 +105,13 @@ spec:
                 - "sudo tar -xvf /mnt/kernel-modules-disk/kernel_m.tgz --directory /usr/lib/modules/"
 ```
 
-Notes:
+说明：
 
-- It is not necessary to package the root file system into the same `containerDisk` as the kernel. The file system
-  could also be pulled in via something like a `dataVolumeDisk`.
+- 不必把根文件系统和 kernel 打包进同一个 `containerDisk`。也可以通过类似 `dataVolumeDisk` 的方式拉取文件系统。
 
-- If the custom kernel was configured to build modules, we need to install these in the root file system. For this
-  example the kernel modules were bundled into a tarball and packaged into an isofs. This isofs is then added to
-  the `containerDisk` and unpacked into the root file system with the cloudinit runcmd.
+- 如果自定义 kernel 被配置为构建模块，就需要把这些模块安装到根文件系统中。在此示例中，kernel 模块被打包成 tarball 并放入 isofs。然后把该 isofs 加入 `containerDisk`，并用 cloudinit runcmd 解包到根文件系统中。
 
-- Following the [containerDisk Workflow Example](https://kubevirt.io/user-guide/storage/disks_and_volumes/#containerdisk-workflow-example),
-  we need to add the initramfs, kernel, root file system and kernel modules isofs to our custom-containerdisk:
+- 按照 [containerDisk 工作流程示例](https://kubevirt.io/user-guide/storage/disks_and_volumes/#containerdisk-workflow-example)，我们需要把 initramfs、kernel、根文件系统和 kernel 模块 isofs 加入我们的 custom-containerdisk：
   ```dockerfile
   FROM scratch
   ADD --chown=107:107 initramfs /boot/
@@ -130,5 +119,4 @@ Notes:
   ADD --chown=107:107 https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2 /disk/
   ADD --chown=107:107 kernel-modules.isofs /boot/
   ```
-- The `kernelArgs` must specify the correct root device. In this case, the arguments were simply copied from the cloud
-  image's `/proc/cmdline`.
+- `kernelArgs` 必须指定正确的根设备。在此例中，这些参数只是从 cloud 镜像的 `/proc/cmdline` 复制而来。

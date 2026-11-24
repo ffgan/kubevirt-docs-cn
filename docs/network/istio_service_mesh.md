@@ -1,25 +1,24 @@
-# Istio service mesh
+# Istio 服务网格 {#istio-service-mesh}
 
-Service mesh allows to monitor, visualize and control traffic between pods.
-Kubevirt supports running VMs as a part of Istio service mesh.
+服务网格可以监控、可视化并控制 Pod 之间的流量。KubeVirt 支持把 VM 作为 Istio 服务网格的一部分运行。
 
-## Limitations
+## 限制 {#limitations}
 
-- Istio service mesh is only supported with a pod network masquerade or passt binding.
+- Istio 服务网格仅支持 Pod 网络的 masquerade 或 passt 绑定。
 
-- Istio uses a [list of ports](https://istio.io/latest/docs/ops/deployment/requirements/#ports-used-by-istio) for its own purposes, these ports must not be explicitly specified in a VMI interface.
+- Istio 会把[一组端口](https://istio.io/latest/docs/ops/deployment/requirements/#ports-used-by-istio)用于自身目的，这些端口不得在 VMI 接口中显式指定。
 
-- Istio only supports IPv4.
+- Istio 仅支持 IPv4。
 
-## Prerequisites
+## 前提条件 {#prerequisites}
 
-- This guide assumes that Istio is already deployed and uses Istio CNI Plugin. See [Istio documentation](https://istio.io/latest/docs/) for more information.
+- 本指南假定 Istio 已经部署，并且使用 Istio CNI 插件。更多信息请参阅 [Istio 文档](https://istio.io/latest/docs/)。
 
-- Optionally, `istioctl` binary for troubleshooting. See Istio [installation inctructions](https://istio.io/latest/docs/setup/getting-started/).
+- 可选：用于故障排查的 `istioctl` 二进制文件。请参阅 Istio [安装说明](https://istio.io/latest/docs/setup/getting-started/)。
 
-- The target namespace where the VM is created must be labelled with `istio-injection=enabled` label.
+- 创建 VM 的目标命名空间必须带有 `istio-injection=enabled` 标签。
 
-- If Multus is used to manage CNI, the following `NetworkAttachmentDefinition` is required in the application namespace:
+- 如果使用 Multus 管理 CNI，则应用命名空间中需要如下 `NetworkAttachmentDefinition`：
 ```yaml
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
@@ -27,9 +26,9 @@ metadata:
   name: istio-cni
 ```
 
-## Create a VirtualMachineInstance with enabled Istio proxy injecton
+## 创建启用了 Istio 代理注入的 VirtualMachineInstance {#create-a-virtualmachineinstance-with-enabled-istio-proxy-injecton}
 
-The example below specifies a VMI with masquerade network interface and `sidecar.istio.io/inject` annotation to register the VM to the service mesh. 
+下面的示例指定了一个使用 masquerade 网络接口的 VMI，以及用于把 VM 注册到服务网格的 `sidecar.istio.io/inject` 注解。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -63,7 +62,7 @@ spec:
         image: registry:5000/kubevirt/fedora-cloud-container-disk-demo:devel
 ```
 
-Istio expects each application to be associated with at least one Kubernetes service. Create the following Service exposing port 8080:
+Istio 期望每个应用至少关联一个 Kubernetes Service。请创建下面这个暴露 8080 端口的 Service：
 
 ```yaml
 apiVersion: v1
@@ -79,11 +78,11 @@ spec:
       protocol: TCP
 ```
 
-**Note:** Each Istio enabled VMI must feature the `sidecar.istio.io/inject` annotation instructing KubeVirt to perform necessary network configuration.
+**注意：** 每个启用了 Istio 的 VMI 都必须带有 `sidecar.istio.io/inject` 注解，以指示 KubeVirt 执行必要的网络配置。
 
-## Verification
+## 验证 {#verification}
 
-Verify istio-proxy sidecar is deployed and able to synchronize with Istio control plane using `istioctl proxy-status` command. See Istio [Debbuging Envoy and Istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) documentation section for more information about `proxy-status` subcommand.
+使用 `istioctl proxy-status` 命令，验证 istio-proxy 边车已经部署，并且能够与 Istio 控制平面同步。关于 `proxy-status` 子命令的更多信息，请参阅 Istio 文档中的[调试 Envoy 和 Istiod](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/)一节。
 
 ```shell
 $ kubectl get pods
@@ -99,9 +98,9 @@ NAME                                    CDS        LDS        EDS        RDS    
 virt-launcher-vmi-istio-ncx7r.default   SYNCED     SYNCED     SYNCED     SYNCED       istiod-7c4d8c7757-hshj5     1.10.0
 ```
 
-## Troubleshooting
+## 故障排查 {#troubleshooting}
 
-### Istio sidecar is not deployed
+### Istio 边车未部署 {#istio-sidecar-is-not-deployed}
 
 ```shell
 $ kubectl get pods
@@ -112,9 +111,9 @@ $ kubectl get pods virt-launcher-vmi-istio-jnw6p -o jsonpath='{.spec.containers[
 compute volumecontainerdisk
 ```
 
-**Resolution:** Make sure the `istio-injection=enabled` is added to the target namespace. If the issue persists, consult [relevant part of Istio documentation](https://istio.io/latest/docs/ops/configuration/mesh/injection-concepts/).
+**解决办法：** 请确认已向目标命名空间添加 `istio-injection=enabled`。如果问题仍然存在，请查阅 [Istio 文档的相关部分](https://istio.io/latest/docs/ops/configuration/mesh/injection-concepts/)。
 
-### Istio sidecar is not ready
+### Istio 边车未就绪 {#istio-sidecar-is-not-ready}
 ```shell
 $ kubectl get pods
 NAME                             READY   STATUS    RESTARTS   AGE
@@ -126,9 +125,9 @@ $ kubectl describe pod virt-launcher-vmi-istio-lg5gp
   Warning  Unhealthy  2d8h (x4 over 2d8h)  kubelet            Readiness probe failed: Get "http://10.244.186.222:15021/healthz/ready": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
 ```
 
-**Resolution:** Make sure the `sidecar.istio.io/inject: "true"` annotation is defined in the created VMI and that masquerade or passt binding is used for pod network interface.
+**解决办法：** 请确认所创建的 VMI 中定义了 `sidecar.istio.io/inject: "true"` 注解，并且 Pod 网络接口使用了 masquerade 或 passt 绑定。
 
-### Virt-launcher pod for VMI is stuck at initialization phase
+### VMI 的 virt-launcher Pod 停在初始化阶段 {#virt-launcher-pod-for-vmi-is-stuck-at-initialization-phase}
 ```shell
 $ kubectl get pods
 NAME                             READY   STATUS     RESTARTS   AGE
@@ -140,4 +139,4 @@ $ kubectl describe pod virt-launcher-vmi-istio-44mws
 
 ```
 
-**Resolution:** Make sure the `istio-cni` NetworkAttachmentDefinition (provided in the [Prerequisites](#prerequisites) section) is created in the target namespace.
+**解决办法：** 请确认已在目标命名空间中创建 `istio-cni` NetworkAttachmentDefinition（见[前提条件](#prerequisites)一节）。

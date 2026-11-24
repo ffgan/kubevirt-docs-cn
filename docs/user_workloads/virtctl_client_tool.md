@@ -1,55 +1,46 @@
-# Download and Install the virtctl Command Line Interface
+# 下载并安装 virtctl 命令行界面 {#download-and-install-the-virtctl-command-line-interface}
 
-## Download the `virtctl` client tool
+## 下载 `virtctl` 客户端工具 {#download-the-virtctl-client-tool}
 
-Basic VirtualMachineInstance operations can be performed with the stock
-`kubectl` utility. However, the `virtctl` binary utility is required to
-use advanced features such as:
+基本的 VirtualMachineInstance 操作可以用标准的 `kubectl` 工具完成。不过，要使用以下高级功能，则需要 `virtctl` 二进制工具：
 
--   Serial and graphical console access
+-   串行控制台和图形控制台访问
 
-It also provides convenience commands for:
+它还为以下操作提供便捷命令：
 
--   Starting and stopping VirtualMachineInstances
+-   启动和停止 VirtualMachineInstance
 
--   Live migrating VirtualMachineInstances and canceling live migrations
+-   对 VirtualMachineInstance 进行实时迁移以及取消实时迁移
 
--   Uploading virtual machine disk images
+-   上传虚拟机磁盘镜像
 
-There are two ways to get it:
+获取它有两种方式：
 
--   the most recent version of the tool can be retrieved from the
-    [official release
-    page](https://github.com/kubevirt/kubevirt/releases)
+-   可以从[官方发布页面](https://github.com/kubevirt/kubevirt/releases)获取该工具的最新版本
 
--   it can be installed as a `kubectl` plugin using
-    [krew](https://krew.dev/)
+-   可以使用 [krew](https://krew.dev/) 将其安装为 `kubectl` 插件
 
-Example:
+示例：
 
 ```
 export VERSION=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
 wget https://github.com/kubevirt/kubevirt/releases/download/${VERSION}/virtctl-${VERSION}-linux-amd64
 ```
 
-## Install `virtctl` with `krew`
+## 安装 `virtctl`（使用 `krew`） {#install-virtctl-with-krew}
 
-It is required to [install `krew` plugin
-manager](https://github.com/kubernetes-sigs/krew/#installation)
-beforehand. If `krew` is installed, `virtctl` can be installed via
-`krew`:
+需要事先[安装 `krew` 插件管理器](https://github.com/kubernetes-sigs/krew/#installation)。如果已安装 `krew`，`virtctl` 可以通过 `krew` 安装：
 
     $ kubectl krew install virt
 
-Then `virtctl` can be used as a kubectl plugin. For a list of available
-commands run:
+之后可以将 `virtctl` 用作 kubectl 插件。要列出可用命令，请运行：
 
     $ kubectl virt help
 
-Every occurrence throughout this guide of
+本指南中每一处出现的
 
     $ ./virtctl <command>...
 
-should then be read as
+都应理解为
 
     $ kubectl virt <command>...

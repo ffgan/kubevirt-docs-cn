@@ -1,22 +1,22 @@
-# KubeVirt Migration Controller
+# KubeVirt 迁移控制器 {#kubevirt-migration-controller}
 
-The [KubeVirt Migration Controller](https://github.com/kubevirt/kubevirt-migration-controller) project provides a set of APIs that facilitate bulk storage live migration operations. This enables you to live migrate multiple virtual machine disks to a common destination storage class.
+[KubeVirt 迁移控制器](https://github.com/kubevirt/kubevirt-migration-controller)项目提供了一组 API，用于协助批量存储实时迁移操作。这使你能够把多个虚拟机磁盘实时迁移到一个共同的目标存储类。
 
-## Prerequisites 
-Your KubeVirt environment must have the [Containerized Data Importer (CDI)](../storage/containerized_data_importer.md) installed to use persistent disks.
+## 先决条件 {#prerequisites}
+要使用持久磁盘，KubeVirt 环境必须已安装[容器化数据导入器（CDI）](../storage/containerized_data_importer.md)。
 
-## Installation
+## 安装 {#installation}
 
-Install the latest release using the operator
+使用 operator 安装最新发行版
 
 ```shell
 for YAML in $(curl -s https://api.github.com/repos/kubevirt/kubevirt-migration-operator/releases/latest | grep browser_download_url | grep -oE 'https://[^"]+\.yaml'); do kubectl create -f $YAML; done
 ```
 
 
-## Create a VirtualMachine with disk on storage A
+## 在存储 A 上创建带磁盘的 VirtualMachine {#create-a-virtualmachine-with-disk-on-storage-a}
 
-Execute the following, to create a VirtualMachine and DataVolume pair:
+执行以下命令，创建一对 VirtualMachine 和 DataVolume：
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -66,7 +66,7 @@ spec:
 EOF
 ```
 
-## Create a migration plan
+## 创建迁移计划 {#create-a-migration-plan}
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -85,7 +85,7 @@ spec:
 EOF
 ```
 
-## Start the migration
+## 启动迁移 {#start-the-migration}
 
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -99,18 +99,18 @@ spec:
 EOF
 ```
 
-Observe completion
+观察完成情况
 ```shell
 $ kubectl get virtualmachinestoragemigration
 NAME             PLAN        PHASE       AGE
 test-migration   test-plan   Completed   50s
 ```
 
-## Multi namespace
+## 多命名空间 {#multi-namespace}
 
-One can also issue a single plan/migration against multiple namespaces using `MultiNamespaceVirtualMachineStorageMigrationPlan/MultiNamespaceVirtualMachineStorageMigration`.  
-The former embeds single namespaced spec, and creates it in the specified namespace.  
-An example can be found here:
+也可以使用 `MultiNamespaceVirtualMachineStorageMigrationPlan/MultiNamespaceVirtualMachineStorageMigration` 针对多个命名空间发起单个计划/迁移。  
+前者嵌入单命名空间的 spec，并在指定的命名空间中创建它。  
+示例见此处：
 
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
@@ -135,7 +135,7 @@ spec:
                 storageClassName: standard
 ```
 
-And similarly, to start it
+同样，要启动它
 
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
@@ -147,15 +147,15 @@ spec:
     name: multi-ns-storage-migration-plan
 ```
 
-## Canceling a migration
+## 取消迁移 {#canceling-a-migration}
 
-To cancel an in-progress migration, delete the `VirtualMachineStorageMigration` resource:
+要取消正在进行的迁移，请删除 `VirtualMachineStorageMigration` 资源：
 
 ```shell
 kubectl delete virtualmachinestoragemigration test-migration
 ```
 
-The controller will transition the migration through the `Canceling` phase, automatically revert the VM volumes back to their original source PVCs, and clean up any target DataVolumes that were created during the migration. Once complete, the migration reaches the `Canceled` phase and the resource is removed.
+控制器会使迁移经过 `Canceling` 阶段，自动把 VM 卷恢复为原来的源 PVC，并清理迁移期间创建的任何目标 DataVolume。完成后，迁移进入 `Canceled` 阶段，该资源会被删除。
 
 ```shell
 $ kubectl get virtualmachinestoragemigration
@@ -163,6 +163,6 @@ NAME             PLAN        PHASE      AGE
 test-migration   test-plan   Canceled   30s
 ```
 
-For multi-namespace migrations, delete the `MultiNamespaceVirtualMachineStorageMigration` resource — each child migration will be cancelled in the same way.
+对于多命名空间迁移，请删除 `MultiNamespaceVirtualMachineStorageMigration` 资源 — 每个子迁移都会以相同方式被取消。
 
-> **Note:** This differs from KubeVirt's built-in [volume migration](volume_migration.md#volume-migration-cancellation), where cancellation requires applying the old VM spec to revert the volume set. With the migration controller, deleting the migration CR is sufficient — the controller handles the revert automatically.
+> **Note:** 这与 KubeVirt 内置的[卷迁移](volume_migration.md#volume-migration-cancellation)不同。在那里，取消需要应用旧的 VM spec 以恢复卷集合。使用迁移控制器时，删除迁移 CR 就足够了 — 控制器会自动处理回退。

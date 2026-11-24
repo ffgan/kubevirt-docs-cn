@@ -1,169 +1,127 @@
-# Architecture
+# 架构 {#architecture}
 
-KubeVirt is built using a service oriented architecture and a choreography
-pattern.
+KubeVirt 采用面向服务的架构和协同模式构建。
 
-## Stack
+## 技术栈 {#stack}
 
 
       +---------------------+
       | KubeVirt            |
     ~~+---------------------+~~
-      | Orchestration (K8s) |
+      | 编排 (K8s)          |
       +---------------------+
-      | Scheduling (K8s)    |
+      | 调度 (K8s)          |
       +---------------------+
-      | Container Runtime   |
+      | 容器运行时          |
     ~~+---------------------+~~
-      | Operating System    |
+      | 操作系统            |
       +---------------------+
-      | Virtual(kvm)        |
+      | 虚拟化(kvm)         |
     ~~+---------------------+~~
-      | Physical            |
+      | 物理                |
       +---------------------+
 
-Users requiring virtualization services are speaking to the Virtualization API
-(see below) which in turn is speaking to the Kubernetes cluster to schedule
-requested Virtual Machine Instances (VMIs). Scheduling, networking, and storage 
-are all delegated to Kubernetes, while KubeVirt provides the virtualization functionality.
+需要虚拟化服务的用户会与虚拟化 API（见下文）通信，而该 API 再与 Kubernetes 集群通信，以调度所请求的虚拟机实例（VMI）。调度、网络和存储都委托给 Kubernetes，而 KubeVirt 提供虚拟化功能。
 
 
-## Additional Services
+## 附加服务 {#additional-services}
 
-KubeVirt provides additional functionality to your Kubernetes cluster,
-to perform virtual machine management
+KubeVirt 为你的 Kubernetes 集群提供额外功能，用以执行虚拟机管理。
 
-If we recall how Kubernetes is handling Pods, then we remember that Pods are
-created by posting a Pod specification to the Kubernetes API Server.
-This specification is then transformed into an object inside the API Server,
-this object is of a specific type or _kind_ - that is how it's called in the
-specification.
-A Pod is of the type `Pod`. Controllers within Kubernetes know how to handle
-these Pod objects. Thus once a new Pod object is seen, those controllers
-perform the necessary actions to bring the Pod alive, and to match the
-required state.
+如果我们回想 Kubernetes 是如何处理 Pod 的，就会记得 Pod 是通过向 Kubernetes API Server 提交一份 Pod 规约来创建的。然后，该规约会在 API Server 内部被转换成为一个对象。这个对象具有特定的类型，也就是 _kind_——规约中就是这样称呼它的。
+类型为 `Pod` 的对象就是 Pod。Kubernetes 中的控制器知道如何处理这些 Pod 对象。因此，一旦出现新的 Pod 对象，这些控制器就会执行必要的操作，使 Pod 运行起来，并匹配所需状态。
 
-This same mechanism is used by KubeVirt. Thus KubeVirt delivers three things
-to provide the new functionality:
+KubeVirt 使用同样的机制。因此，KubeVirt 交付三样东西来提供这项新功能：
 
-1. Additional types - so called [Custom Resource Definition](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) (CRD) - are added to the Kubernetes API
-2. Additional controllers for cluster wide logic associated with these new types
-3. Additional daemons for node specific logic associated with new types
+1. 附加类型——即所谓的[自定义资源定义](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)（CRD）——被添加到 Kubernetes API
+2. 与这些新类型关联的、用于集群范围逻辑的附加控制器
+3. 与新类型关联的、用于节点特定逻辑的附加守护进程
 
-Once all three steps have been completed, you are able to
+这三步全部完成后，你就可以
 
-- create new objects of these new types in Kubernetes (VMIs in our
-  case)
-- and the new controllers take care to get the VMIs scheduled on some host,
-- and a daemon - the `virt-handler` - is taking care of a host - alongside the
-  `kubelet` - to launch the VMI and configure it until it matches the required
-  state.
+- 在 Kubernetes 中创建这些新类型的新对象（在我们的场景中是 VMI）
+- 并且新的控制器负责把 VMI 调度到某台宿主机上，
+- 并且有一个守护进程——即 `virt-handler`——与 `kubelet` 一起照管一台宿主机，启动 VMI 并对其进行配置，直到它匹配所需状态。
 
-One final note; both controllers and daemons are running as Pods (or similar)
-_on top of_ the Kubernetes cluster, and are not installed alongside it. The type
-is - as said before - even defined inside the Kubernetes API server. This allows
-users to speak to Kubernetes, but modify VMIs.
+最后说明一点：控制器和守护进程都作为 Pod（或类似对象）运行在 Kubernetes 集群 _之上_，而不是与集群并列安装。如前所述，类型甚至是在 Kubernetes API server 内部定义的。这使得用户可以与 Kubernetes 对话，但修改的是 VMI。
 
-The following diagram illustrates how the additional controllers and daemons
-communicate with Kubernetes and where the additional types are stored:
+下图说明附加的控制器和守护进程如何与 Kubernetes 通信，以及附加类型存储在何处：
 
-![Architecture diagram](../assets/architecture.png "Architecture")
+![架构图](../assets/architecture.png "架构")
 
-And a simplified version:
+以及一个简化版本：
 
-![Simplified architecture diagram](../assets/architecture-simple.png "Simplified architecture")
+![简化架构图](../assets/architecture-simple.png "简化架构")
 
-## Application Layout
+## 应用布局 {#application-layout}
 
-* Cluster
-  * KubeVirt Components
+* 集群
+  * KubeVirt 组件
     * virt-controller
     * virt-handler
     * libvirtd
     * …
-  * KubeVirt Managed Pods
+  * KubeVirt 管理的 Pod
     * VMI Foo
     * VMI Bar
     * …
-  * KubeVirt Custom Resources
+  * KubeVirt 自定义资源
     * VirtualMachine (VM) Foo
         -> VirtualMachineInstance (VMI) Foo
     * VirtualMachineInstanceReplicaSet (VMIRS) Bar
         -> VirtualMachineInstance (VMI) Bar
 
-VirtualMachineInstance (VMI) is the custom resource that represents the basic ephemeral building block of an instance.
-In a lot of cases this object won't be created directly by the user but by a high level resource.
-High level resources for VMI can be:
+VirtualMachineInstance（VMI）是表示一个实例的基本临时构建块的自定义资源。
+在很多情况下，这个对象不会由用户直接创建，而是由更高层的资源创建。
+VMI 的高层资源可以是：
 
-* VirtualMachine (VM) - StateFul VM that can be stopped and started while keeping the VM data and state.
-* VirtualMachineInstanceReplicaSet (VMIRS) - Similar to pods ReplicaSet, a group of ephemeral VMIs with similar configuration defined in a template.
+* VirtualMachine（VM）——有状态 VM，可以停止和启动，并保留 VM 数据和状态。
+* VirtualMachineInstanceReplicaSet（VMIRS）——类似于 Pod 的 ReplicaSet，一组配置相似的临时 VMI，其配置定义在模板中。
 
-## Native Workloads
+## 原生工作负载 {#native-workloads}
 
-KubeVirt is deployed on top of a Kubernetes cluster.
-This means that you can continue to run your Kubernetes-native workloads next
-to the VMIs managed through KubeVirt.
+KubeVirt 部署在 Kubernetes 集群之上。
+这意味着你可以继续在通过 KubeVirt 管理的 VMI 旁边运行 Kubernetes 原生工作负载。
 
-Furthermore: if you can run native workloads, and you have KubeVirt installed,
-you should be able to run VM-based workloads, too.
-For example, Application Operators should not require additional permissions
-to use cluster features for VMs, compared to using that feature with a plain Pod.
+此外：如果你可以运行原生工作负载，并且已经安装了 KubeVirt，那么你也应该能够运行基于 VM 的工作负载。
+例如，与把某项集群功能用于普通 Pod 相比，应用 Operator 在把该功能用于 VM 时不应需要额外权限。
 
-Security-wise, installing and using KubeVirt must not grant users any permission
-they do not already have regarding native workloads. For example, a non-privileged
-Application Operator must never gain access to a privileged Pod by using a KubeVirt
-feature.
+从安全角度看，安装和使用 KubeVirt 不得授予用户任何他们在原生工作负载方面尚不具备的权限。例如，非特权的应用 Operator 绝不能通过使用某项 KubeVirt 功能而获得对特权 Pod 的访问。
 
-## The Razor
+## 剃刀 {#the-razor}
 
-We love virtual machines, think that they are very important and work hard to make
-them easy to use in Kubernetes. But even more than VMs, we love good design
-and modular, reusable components.
-Quite frequently, we face a dilemma: should we solve a problem in KubeVirt in a
-way that is best optimized for VMs, or should we take a longer path and introduce
-the solution to Pod-based workloads too?
+我们热爱虚拟机，认为它们非常重要，并努力让它们在 Kubernetes 中易于使用。但比起 VM，我们更热爱良好的设计，以及模块化、可复用的组件。
+我们经常面临一个两难：应当以对 VM 最优的方式在 KubeVirt 中解决问题，还是应当走一条更长的路，把解决方案也引入基于 Pod 的工作负载？
 
-To decide these dilemmas we came up with the **KubeVirt Razor**:
-"If something is useful for Pods, we should not implement it only for VMs".
+为了决定这些两难，我们提出了 **KubeVirt Razor**：
+“如果某项能力对 Pod 有用，我们就不应当只为 VM 实现它”。
 
-For example, we debated how we should connect VMs to external network
-resources. The quickest way seems to introduce KubeVirt-specific code,
-attaching a VM to a host bridge.
-However, we chose the longer path of integrating with [Multus](https://github.com/intel/multus-cni)
-and [CNI](https://github.com/containernetworking) and improving them.
+例如，我们讨论过应当如何把 VM 连接到外部网络资源。最快的办法似乎是引入 KubeVirt 专用代码，把 VM 挂接到宿主机网桥。
+然而，我们选择了与 [Multus](https://github.com/intel/multus-cni) 和 [CNI](https://github.com/containernetworking) 集成并改进它们这条更长的路。
 
-## VirtualMachine
+## VirtualMachine {#virtualmachine}
 
-A `VirtualMachine` provides additional management capabilities to a
-VirtualMachineInstance inside the cluster. That includes:
+`VirtualMachine` 为集群内的 VirtualMachineInstance 提供额外的管理能力。这包括：
 
--   API stability
+-   API 稳定性
 
--   Start/stop/restart capabilities on the controller level
+-   控制器层面的启动/停止/重启能力
 
--   Offline configuration change with propagation on
-    VirtualMachineInstance recreation
+-   离线配置变更，并在重新创建 VirtualMachineInstance 时进行传播
 
--   Ensure that the VirtualMachineInstance is running if it should be
-    running
+-   确保 VirtualMachineInstance 在应当运行时处于运行状态
 
-It focuses on a 1:1 relationship between the controller instance and a
-virtual machine instance. In many ways it is very similar to a
-[StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
-with `spec.replica` set to `1`.
+它侧重于控制器实例与虚拟机实例之间的 1:1 关系。在许多方面，它非常类似于将 `spec.replica` 设置为 `1` 的 [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)。
 
-## How to use a VirtualMachine
+## 如何使用 VirtualMachine {#how-to-use-a-virtualmachine}
 
-A VirtualMachine will make sure that a VirtualMachineInstance object
-with an identical name will be present in the cluster when the VirtualMachine
-is in a Running state, which is controlled via the `spec.runStrategy` field.
-For more information regarding Run Strategies, please refer to [Run Strategies](../compute/run_strategies.md)
+当 VirtualMachine 处于 Running 状态时，它会确保集群中存在一个名称相同的 VirtualMachineInstance 对象。该状态通过 `spec.runStrategy` 字段控制。
+有关运行策略的更多信息，请参阅[运行策略](../compute/run_strategies.md)
 
-### Starting and stopping
+### 启动与停止 {#starting-and-stopping}
 
-Virtual Machines can be turned on/off in an imperative or a declarative manner.
-Setting a `spec.runStrategy` like `Always` or `Halted` means that the system will continuously
-try to ensure the Virtual Machine is turned on/off:
+虚拟机可以用命令式或声明式方式开启或关闭。
+将 `spec.runStrategy` 设置为 `Always` 或 `Halted` 之类的值，意味着系统会持续尝试确保虚拟机处于开启或关闭状态：
 
     # Start the virtual machine:
     kubectl patch virtualmachine vm --type merge -p \
@@ -173,8 +131,7 @@ try to ensure the Virtual Machine is turned on/off:
     kubectl patch virtualmachine vm --type merge -p \
         '{"spec":{"runStrategy": "Halted"}}'
 
-However, with the `Manual` `runStrategy`, the user would imperatively choose when to turn
-the VM on or off, without the system performing any automatic actions:
+不过，在 `Manual` `runStrategy` 下，用户会以命令式方式自行选择何时开启或关闭 VM，系统不会执行任何自动操作：
 
     # Start the virtual machine:
     virtctl start vm
@@ -182,23 +139,15 @@ the VM on or off, without the system performing any automatic actions:
     # Stop the virtual machine:
     virtctl stop vm
 
-Find more details about [a VM's life-cycle in the relevant section](../user_workloads/lifecycle.md)
+更多细节请参见[相关章节中的 VM 生命周期](../user_workloads/lifecycle.md)
 
-### Controller status
+### 控制器状态 {#controller-status}
 
-Once a VirtualMachineInstance is created, its state will be tracked via
-`status.created` and `status.ready` fields of the VirtualMachine. If a
-VirtualMachineInstance exists in the cluster, `status.created` will equal
-`true`. If the VirtualMachineInstance is also ready, `status.ready` will
-equal `true` too.
+一旦创建了 VirtualMachineInstance，其状态将通过 VirtualMachine 的 `status.created` 和 `status.ready` 字段进行跟踪。如果集群中存在 VirtualMachineInstance，`status.created` 将等于 `true`。如果该 VirtualMachineInstance 也已就绪，`status.ready` 同样等于 `true`。
 
-If a VirtualMachineInstance reaches a final state but the
-`spec.runStrategy` equals `Always`, the VirtualMachine controller will set
-`status.ready` to `false` and re-create the VirtualMachineInstance.
+如果 VirtualMachineInstance 到达终态，但 `spec.runStrategy` 等于 `Always`，VirtualMachine 控制器会把 `status.ready` 设为 `false`，并重新创建 VirtualMachineInstance。
 
-Additionally, the `status.printableStatus` field provides high-level summary
-information about the state of the VirtualMachine. This information is also displayed
-when listing VirtualMachines using the CLI:
+此外，`status.printableStatus` 字段提供关于 VirtualMachine 状态的高层摘要信息。使用 CLI 列出 VirtualMachine 时也会显示该信息：
 
 ```
 $ kubectl get virtualmachines
@@ -207,106 +156,80 @@ vm1      4m    Running
 vm2      11s   Stopped
 ```
 
-Here's the list of states currently supported and their meanings.
-Note that states may be added/removed in future releases, so caution
-should be used if consumed by automated programs.
+以下是当前支持的状态及其含义。
+请注意，未来的发行版可能会增加或移除状态，因此自动化程序在使用这些状态时应谨慎。
 
- - **Stopped**: The virtual machine is currently stopped and isn't expected to start.
- - **Provisioning**: Cluster resources associated with the virtual machine (e.g., DataVolumes) are being provisioned and prepared.
- - **Starting**: The virtual machine is being prepared for running.
- - **Running**: The virtual machine is running.
- - **Paused**: The virtual machine is paused.
- - **Migrating**: The virtual machine is in the process of being migrated to another host.
- - **Stopping**: The virtual machine is in the process of being stopped.
- - **Terminating**: The virtual machine is in the process of deletion, as well as its associated resources (VirtualMachineInstance, DataVolumes, …).
- - **Unknown**: The state of the virtual machine could not be obtained, typically due to an error in communicating with the host on which it's running.
+ - **Stopped**：虚拟机当前已停止，并且预期不会启动。
+ - **Provisioning**：与虚拟机关联的集群资源（例如 DataVolumes）正在被制备和准备。
+ - **Starting**：虚拟机正在为运行做准备。
+ - **Running**：虚拟机正在运行。
+ - **Paused**：虚拟机已暂停。
+ - **Migrating**：虚拟机正在被迁移到另一台宿主机。
+ - **Stopping**：虚拟机正在停止。
+ - **Terminating**：虚拟机正在被删除，其关联资源（VirtualMachineInstance、DataVolumes 等）也在被删除。
+ - **Unknown**：无法获取虚拟机的状态，通常是因为与其运行所在的宿主机通信时出错。
 
 
-### Restarting
+### 重启 {#restarting}
 
-A VirtualMachineInstance restart can be triggered by deleting the
-VirtualMachineInstance. This will also propagate configuration changes
-from the template in the VirtualMachine:
+可以通过删除 VirtualMachineInstance 来触发其重启。这也会传播 VirtualMachine 中模板的配置变更：
 
     # Restart the virtual machine (you delete the instance!):
     kubectl delete virtualmachineinstance vm
 
-To restart a VirtualMachine named vm using virtctl:
+要使用 virtctl 重启名为 vm 的 VirtualMachine：
 
     $ virtctl restart vm
 
-This would perform a normal restart for the VirtualMachineInstance and
-would reschedule the VirtualMachineInstance on a new virt-launcher Pod
+这会对 VirtualMachineInstance 执行正常重启，并在一个新的 virt-launcher Pod 上重新调度该 VirtualMachineInstance。
 
-To force restart a VirtualMachine named vm using virtctl:
+要使用 virtctl 强制重启名为 vm 的 VirtualMachine：
 
     $ virtctl restart vm --force --grace-period=0
 
-This would try to perform a normal restart, and would also delete the
-virt-launcher Pod of the VirtualMachineInstance with setting
-GracePeriodSeconds to the seconds passed in the command.
+这会尝试执行正常重启，并且还会删除该 VirtualMachineInstance 的 virt-launcher Pod，同时把 GracePeriodSeconds 设置为命令中传入的秒数。
 
-Currently, only setting grace-period=0 is supported.
+目前仅支持设置 grace-period=0。
 
-!!! warning "Note"
-    Force restart can cause data corruption, and should be used in cases of
-    kernel panic or VirtualMachine being unresponsive to normal restarts.
+!!! warning "注意"
+    强制重启可能导致数据损坏，应当在发生内核 panic，或 VirtualMachine 对正常重启无响应时使用。
 
-### Fencing considerations
+### 隔离注意事项 {#fencing-considerations}
 
-A VirtualMachine will never restart or re-create a
-VirtualMachineInstance until the current instance of the
-VirtualMachineInstance is deleted from the cluster.
+在当前的 VirtualMachineInstance 实例从集群中删除之前，VirtualMachine 绝不会重启或重新创建 VirtualMachineInstance。
 
-### Exposing as a Service
+### 暴露为 Service {#exposing-as-a-service}
 
-A VirtualMachine can be exposed as a service. The actual service will be
-available once the VirtualMachineInstance starts without additional
-interaction.
+VirtualMachine 可以暴露为 Service。一旦 VirtualMachineInstance 启动，实际的 Service 即可用，无需额外交互。
 
-For example, exposing SSH port (22) as a `ClusterIP` service using `virtctl`
-after the VirtualMachine was created, but before it started:
+例如，在 VirtualMachine 已创建但尚未启动之后，将 SSH 端口（22）暴露为 `ClusterIP` Service，并使用 `virtctl`：
 
     $ virtctl expose virtualmachine vmi-ephemeral --name vmiservice --port 27017 --target-port 22
 
-All service exposure options that apply to a VirtualMachineInstance apply to a VirtualMachine.
+适用于 VirtualMachineInstance 的所有 Service 暴露选项同样适用于 VirtualMachine。
 
-See [Service Objects](../network/service_objects.md) for more details.
+更多细节请参见 [Service 对象](../network/service_objects.md)。
 
-## When to use a VirtualMachine
+## 何时使用 VirtualMachine {#when-to-use-a-virtualmachine}
 
-### When API stability is required between restarts
+### 当重启之间需要 API 稳定性时 {#when-api-stability-is-required-between-restarts}
 
-A `VirtualMachine` makes sure that VirtualMachineInstance API
-configurations are consistent between restarts. A classical example are
-licenses which are bound to the firmware UUID of a virtual machine. The
-`VirtualMachine` makes sure that the UUID will always stay the same
-without the user having to take care of it.
+`VirtualMachine` 确保 VirtualMachineInstance 的 API 配置在重启之间保持一致。一个典型的例子是绑定到虚拟机固件 UUID 的许可证。`VirtualMachine` 确保 UUID 始终保持不变，而用户无需自行处理。
 
-One of the main benefits is that a user can still make use of defaulting
-logic, although a stable API is needed.
+主要好处之一是，即使用户需要稳定的 API，仍然可以使用默认值逻辑。
 
-### When config updates should be picked up on the next restart
+### 当配置更新应在下次重启时生效时 {#when-config-updates-should-be-picked-up-on-the-next-restart}
 
-If the VirtualMachineInstance configuration should be modifiable inside
-the cluster and these changes should be picked up on the next
-VirtualMachineInstance restart. This means that no hotplug is involved.
+如果 VirtualMachineInstance 的配置应当可以在集群内修改，并且这些变更应当在下次 VirtualMachineInstance 重启时被采纳。这意味着不涉及热插拔。
 
-### When you want to let the cluster manage your individual VirtualMachineInstance
+### 当你希望让集群管理你的单个 VirtualMachineInstance 时 {#when-you-want-to-let-the-cluster-manage-your-individual-virtualmachineinstance}
 
-Kubernetes as a declarative system can help you to manage the
-VirtualMachineInstance. You tell it that you want this
-VirtualMachineInstance with your application running, the VirtualMachine
-will try to make sure it stays running.
+Kubernetes 作为一个声明式系统，可以帮助你管理 VirtualMachineInstance。你告诉它希望这个运行着你的应用的 VirtualMachineInstance 存在，VirtualMachine 会尽量确保它保持运行。
 
-!!! info "Note"
-    The current belief is that if it is defined that the
-    VirtualMachineInstance should be running, it should be running. This is
-    different from many classical virtualization platforms, where VMs stay
-    down if they were switched off. Restart policies may be added if needed.
-    Please provide your use-case if you need this!
+!!! info "注意"
+    当前的看法是：如果定义了 VirtualMachineInstance 应当运行，它就应当处于运行状态。这与许多传统虚拟化平台不同；在那些平台上，如果 VM 被关闭，它们会保持关闭。如有需要，可以增加重启策略。如果你需要这一点，请提供你的使用场景！
 
-### Example
+### 示例 {#example}
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -346,28 +269,27 @@ spec:
         name: cloudinitdisk
 ```
 
-Saving this manifest into `vm.yaml` and submitting it to Kubernetes will
-create the controller instance:
+将此清单保存为 `vm.yaml` 并提交到 Kubernetes，将会创建控制器实例：
 
 ```
 $ kubectl create -f vm.yaml
 virtualmachine "vm-cirros" created
 ```
 
-Since `spec.runStrategy` is set to `Halted`, no vmi will be created:
+由于 `spec.runStrategy` 被设置为 `Halted`，不会创建 vmi：
 
 ```
 $ kubectl get vmis
 No resources found.
 ```
 
-Let's start the VirtualMachine:
+让我们启动这个 VirtualMachine：
 
 ```
 $ virtctl start vm-cirros
 ```
 
-As expected, a VirtualMachineInstance called `vm-cirros` got created:
+正如预期，一个名为 `vm-cirros` 的 VirtualMachineInstance 已被创建：
 
 ```
 $ kubectl describe vm vm-cirros
@@ -425,11 +347,9 @@ Events:
   Normal  SuccessfulCreate  15s   virtualmachine-controller  Created virtual machine: vm-cirros
 ```
 
-### Kubectl commandline interactions
+### Kubectl 命令行交互 {#kubectl-commandline-interactions}
 
-Whenever you want to manipulate the VirtualMachine through the
-commandline you can use the kubectl command. The following are examples
-demonstrating how to do it.
+每当你想通过命令行操作 VirtualMachine 时，都可以使用 kubectl 命令。以下示例演示了具体做法。
 
 ```
     # Define a virtual machine:

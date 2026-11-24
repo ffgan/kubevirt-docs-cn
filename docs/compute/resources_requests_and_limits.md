@@ -1,40 +1,40 @@
-# Resources requests and limits
+# 资源请求与限制 {#resources-requests-and-limits}
 
-In this document, we are talking about the resources values set on the virt-launcher compute container, referred to as "the container" below for simplicity.
+在本文档中，我们讨论的是设置在 virt-launcher 计算容器上的资源值，为简单起见，下文称之为“容器”。
 
-## CPU
+## CPU {#cpu}
 
-Note: dedicated CPUs (and isolated emulator thread) are ignored here as they have a [dedicated page](../compute/dedicated_cpu_resources.md).
+注意：此处忽略专用 CPU（以及隔离的模拟器线程），因为它们有[专门的页面](../compute/dedicated_cpu_resources.md)。
 
-### CPU requests on the container
-- By default, the container requests (1/cpuAllocationRatio) CPU per vCPU. The number of vCPUs is sockets * cores * threads, defaults to 1.
-- cpuAllocationRatio defaults to 10 but can be changed in the CR.
-- If a CPU limit is manually set on the VM(I) and no CPU request is, the CPU requests on the container will match the CPU limits
-- Manually setting CPU requests on the VM(I) will override all of the above and be the CPU requests for the container
+### 容器上的 CPU 请求 {#cpu-requests-on-the-container}
+- 默认情况下，容器为每个 vCPU 请求 (1/cpuAllocationRatio) 的 CPU。vCPU 的数量为 sockets * cores * threads，默认值为 1。
+- cpuAllocationRatio 的默认值为 10，但可以在 CR 中更改。
+- 如果在 VM(I) 上手动设置了 CPU 限制，但没有设置 CPU 请求，则容器上的 CPU 请求将与 CPU 限制一致
+- 在 VM(I) 上手动设置 CPU 请求将覆盖上述所有设置，并成为该容器的 CPU 请求
 
-### CPU limits on the container
-- By default, no CPU limit is set on the container
-- If auto CPU limits is enabled (see next section), then the container will have a CPU limit of 1 per vCPU
-- Manually setting CPU limits on the VM(I) will override all of the above and be the CPU limits for the container
+### 容器上的 CPU 限制 {#cpu-limits-on-the-container}
+- 默认情况下，不为该容器设置 CPU 限制
+- 如果启用了自动 CPU 限制（见下一节），则该容器将具有每个 vCPU 为 1 的 CPU 限制
+- 在 VM(I) 上手动设置 CPU 限制将覆盖上述所有设置，并成为该容器的 CPU 限制
 
-### Auto CPU limits
-KubeVirt automatically set CPU limits on VM(I)s if all the following conditions are true:
+### 自动 CPU 限制 {#auto-cpu-limits}
+如果以下所有条件均为真，KubeVirt 会自动为 VM(I) 设置 CPU 限制：
 
-- The namespace where the VMI will be created has a ResourceQuota containing cpu limits.
-- The VMI has no manually set cpu limits.
-- The VMI is not requesting dedicated CPU.
+- 将要创建 VMI 的命名空间拥有一份包含 cpu 限制的 ResourceQuota。
+- 该 VMI 没有手动设置的 cpu 限制。
+- 该 VMI 没有请求专用 CPU。
 
-Additionally, you can add the namespaceLabelSelector in the KubeVirt CR, forcing CPU limits to be set.
+此外，你可以在 KubeVirt CR 中添加 namespaceLabelSelector，以强制设置 CPU 限制。
 
-In both cases, the VM(I) created will have a CPU limit of 1 per vCPU.
+在这两种情况下，所创建的 VM(I) 都将具有每个 vCPU 为 1 的 CPU 限制。
 
-#### autoCPULimitNamespaceLabelSelector configuration
-Cluster admins can define a label selector in the KubeVirt CR.  
-Once that label selector is defined, if the creation namespace matches the selector, all VM(I)s created in it will have a CPU limits set.
+#### autoCPULimitNamespaceLabelSelector 配置 {#autocpulimitnamespacelabelselector-configuration}
+集群管理员可以在 KubeVirt CR 中定义标签选择器。
+一旦定义了该标签选择器，如果创建时所在的命名空间与该选择器匹配，则在其中创建的所有 VM(I) 都会设置 CPU 限制。
 
-Example:
+示例：
 
-- CR:
+- CR：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: KubeVirt
@@ -48,7 +48,7 @@ spec:
         autoCpuLimit: "true"
 ```
 
-- Namespace:
+- 命名空间：
 ```yaml
 apiVersion: v1
 kind: Namespace
@@ -59,31 +59,23 @@ metadata:
   name: default
 ```
 
-## Memory
-### Memory requests on the container
-- VM(I)s must specify a desired amount of memory, in either spec.domain.memory.guest or spec.domain.resources.requests.memory (ignoring hugepages, see the [dedicated page](../compute/hugepages.md)). If both are set, the memory requests take precedence. A calculated amount of overhead will be added to it, forming the memory request value for the container. See [Memory overhead](#memory-overhead) below for what contributes to that overhead.
+## 内存 {#memory}
+### 容器上的内存请求 {#memory-requests-on-the-container}
+- VM(I) 必须指定期望的内存量，可以写在 spec.domain.memory.guest 或 spec.domain.resources.requests.memory 中（忽略大页，参见[专门的页面](../compute/hugepages.md)）。如果两者都已设置，则内存请求优先。会在其上加上计算得出的开销量，从而构成该容器的内存请求值。关于哪些因素构成该开销，请参见下方的[内存开销](#memory-overhead)。
 
-### Memory overhead
+### 内存开销 {#memory-overhead}
 
-Various VM resources, such as a video adapter, IOThreads, and
-supplementary system software, consume additional memory from the Node,
-beyond the requested memory intended for the guest OS consumption. In
-order to provide a better estimate for the scheduler, this memory
-overhead will be calculated and added to the requested memory.
+各种 VM 资源，例如视频适配器、IOThreads 以及辅助系统软件，会从节点消耗额外内存，超出准备供客户机操作系统消耗的请求内存。为了给调度器提供更好的估计值，将计算此内存开销并加到请求的内存上。
 
-The default memory overhead has been set to 32Mi to account for these
-additional system resources.
+默认内存开销已设置为 32Mi，用以计入这些额外的系统资源。
 
-Please see [how Pods with resource requests are
-scheduled](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#how-pods-with-resource-requests-are-scheduled)
-for additional information on resource requests and limits.
+有关资源请求与限制的更多信息，请参见[具有资源请求的 Pod 如何被调度](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#how-pods-with-resource-requests-are-scheduled)。
 
-#### Viewing memory overhead
+#### 查看内存开销 {#viewing-memory-overhead}
 
-> Note: This feature requires the `VmiMemoryOverheadReport` feature gate to be enabled.
+> 注意：此功能要求启用 `VmiMemoryOverheadReport` 功能门控。
 
-When the feature gate is enabled, the calculated overhead is exposed in
-the VMI status:
+启用该功能门控后，计算得出的开销会公开在 VMI 的 status 中：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -95,18 +87,11 @@ status:
     memoryOverhead: 512Mi
 ```
 
-The `status.memory.memoryOverhead` field is populated when the VMI
-starts, and reflects the overhead calculated for the current
-virt-launcher pod.
+`status.memory.memoryOverhead` 字段在 VMI 启动时填充，并反映为当前 virt-launcher Pod 计算得出的开销。
 
-#### Memory overhead after live migration
+#### 实时迁移后的内存开销 {#memory-overhead-after-live-migration}
 
-During live migration, the target node may calculate a different
-overhead value (for example, due to different hardware or configuration).
-While a migration is in progress, the target overhead is reported in
-`status.migrationState.targetMemoryOverhead`. Once the migration
-completes, `status.memory.memoryOverhead` is updated to reflect the
-new value:
+在实时迁移期间，目标节点可能会计算出不同的开销值（例如，由于硬件或配置不同）。迁移进行期间，目标开销报告在 `status.migrationState.targetMemoryOverhead` 中。迁移完成后，`status.memory.memoryOverhead` 会更新以反映新值：
 
 ```yaml
 status:
@@ -116,24 +101,23 @@ status:
     targetMemoryOverhead: 520Mi
 ```
 
-### Memory limits on the container
-- By default, no memory limit is set on the container
-- If auto memory limits is enabled (see next section), then the container will have a limit of 2x the requested memory.
-- Manually setting a memory limit on the VM(I) will set the same value on the container
+### 容器上的内存限制 {#memory-limits-on-the-container}
+- 默认情况下，不为该容器设置内存限制
+- 如果启用了自动内存限制（见下一节），则该容器将具有所请求内存 2 倍的限制。
+- 在 VM(I) 上手动设置内存限制，会在该容器上设置相同的值
 
-#### Warnings
-- Memory limits have to be more than memory requests + overhead, otherwise the container will have memory requests > limits and be rejected by Kubernetes.
-- Memory usage bursts could lead to VM crashes when memory limits are set
+#### 警告 {#warnings}
+- 内存限制必须大于内存请求与开销之和，否则容器会出现内存请求大于限制的情况，并被 Kubernetes 拒绝。
+- 设置了内存限制时，内存用量突发可能导致 VM 崩溃
 
 
-### Auto memory limits
-KubeVirt automatically set memory limits on VM(I)s if all the following conditions are true:
+### 自动内存限制 {#auto-memory-limits}
+如果以下所有条件均为真，KubeVirt 会自动为 VM(I) 设置内存限制：
 
-- The namespace where the VMI will be created has a ResourceQuota containing memory limits.
-- The VMI has no manually set memory limits.
-- The VMI is not requesting dedicated CPU.
+- 将要创建 VMI 的命名空间拥有一份包含内存限制的 ResourceQuota。
+- 该 VMI 没有手动设置的内存限制。
+- 该 VMI 没有请求专用 CPU。
 
-If all the previous conditions are true, the memory limits will be set to a value (`2x`) of the memory requests.
-This ratio can be adjusted, per namespace, by adding the label `alpha.kubevirt.io/auto-memory-limits-ratio`,
-with the desired custom value.
-For example, with `alpha.kubevirt.io/auto-memory-limits-ratio: "1.2"`, the memory limits set will be equal to (`1.2x`) of the memory requests.
+如果前述所有条件均为真，内存限制将被设置为内存请求的（`2x`）。
+可以按命名空间添加标签 `alpha.kubevirt.io/auto-memory-limits-ratio`，并带上期望的自定义值，来调整这一比例。
+例如，使用 `alpha.kubevirt.io/auto-memory-limits-ratio: "1.2"` 时，所设置的内存限制将等于内存请求的（`1.2x`）。

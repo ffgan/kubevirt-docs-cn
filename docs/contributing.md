@@ -3,66 +3,66 @@ hide:
   - navigation
 ---
 
-# Contributing
+# 贡献 {#contributing}
 
-Welcome!! And thank you for taking the first step to contributing to the KubeVirt project. On this page you should be able to find all the information required to get started on your contribution journey, as well as information on how to become a community member and grow into roles of responsibility. 
+欢迎！！感谢你迈出为 KubeVirt 项目做贡献的第一步。在本页中，你应当能够找到开始贡献之旅所需的全部信息，以及如何成为社区成员并成长为承担职责的角色。
 
-If you think something might be missing from this page, please help us by [raising a bug](https://github.com/kubevirt/user-guide/issues)!
+如果你认为本页可能缺少某些内容，请通过[提交缺陷](https://github.com/kubevirt/user-guide/issues)来帮助我们！
 
-## Prerequisites
+## 前提条件 {#prerequisites}
 
-Reviewing the following will prepare you for contributing:
+阅读以下内容将为你的贡献做好准备：
 
-* If this is your first step in the world of open source, consider reading the CNCF's [Start Contributing to Open Source](https://contribute.cncf.io/contributors/getting-started/) page for an introduction to key concepts.
-* You should be comfortable with Git. Most contributions follow the GitHub workflow of fork, branch, commit, open pull request, review changes, and merge to work effectively in the KubeVirt community.  If you're new to git, [git-scm.com](https://git-scm.com/doc) has a nice set of tutorials.
-* Familiarize yourself with the various repositories of the [KubeVirt](https://github.com/kubevirt) GitHub organization.
-* Try one of our [quick start labs](https://kubevirt.io/user-guide/) on [killercoda](https://killercoda.com/kubevirt), [minikube](https://kubevirt.io/quickstart_minikube/), or [kind](https://kubevirt.io/quickstart_kind/).
-* See the [Other ways to contribute](#other-ways-to-contribute) section below.
+* 如果这是你踏入开源世界的第一步，建议阅读 CNCF 的[开始为开源做贡献](https://contribute.cncf.io/contributors/getting-started/)页面，以了解关键概念。
+* 你应当能够熟练使用 Git。大多数贡献遵循 GitHub 工作流：fork、创建分支、提交、打开拉取请求、评审变更并合并，以便在 KubeVirt 社区中有效协作。如果你是 Git 新手，[git-scm.com](https://git-scm.com/doc) 提供了一套不错的教程。
+* 熟悉 [KubeVirt](https://github.com/kubevirt) GitHub 组织下的各个仓库。
+* 在 [killercoda](https://killercoda.com/kubevirt)、[minikube](https://kubevirt.io/quickstart_minikube/) 或 [kind](https://kubevirt.io/quickstart_kind/) 上尝试我们的[快速入门实验](https://kubevirt.io/user-guide/)之一。
+* 参见下方的[其他贡献方式](#other-ways-to-contribute)一节。
 
-Other contributor guides for code contributors:
+面向代码贡献者的其他贡献指南：
 
-* You need to be familiar with writing code in golang.  See the [golang tour](https://tour.golang.org/welcome/1) to familiarize yourself.
-* To contribute to the core of the project, read the Developer [contribution page](https://github.com/kubevirt/kubevirt/blob/main/CONTRIBUTING.md) and the [getting started page](https://github.com/kubevirt/kubevirt/blob/main/docs/getting-started.md) in the kubevirt/kubevirt repo.
-* Alternatively, to contribute to its storage management add-on, check out the [kubevirt/containerized-data-importer](https://github.com/kubevirt/containerized-data-importer/tree/main) (CDI) repo, and its [contribution page](https://github.com/kubevirt/containerized-data-importer/blob/main/CONTRIBUTING.md).
+* 你需要熟悉使用 golang 编写代码。请参阅 [golang 导览](https://tour.golang.org/welcome/1)来熟悉它。
+* 要为核心项目做贡献，请阅读 kubevirt/kubevirt 仓库中的开发者[贡献页面](https://github.com/kubevirt/kubevirt/blob/main/CONTRIBUTING.md)和[入门页面](https://github.com/kubevirt/kubevirt/blob/main/docs/getting-started.md)。
+* 或者，要为其存储管理附加组件做贡献，请查看 [kubevirt/containerized-data-importer](https://github.com/kubevirt/containerized-data-importer/tree/main)（CDI）仓库及其[贡献页面](https://github.com/kubevirt/containerized-data-importer/blob/main/CONTRIBUTING.md)。
 
-## Your first contribution
+## 你的第一次贡献 {#your-first-contribution}
 
-Not sure where to start? Here are some open issues in suggested repos. Look for any labeled 'good-first-issue', which are triaged to help new contributors:
+不确定从哪里开始？以下是建议仓库中的一些未决问题。寻找标有 'good-first-issue' 的问题，它们已经过分类，以便帮助新贡献者：
 
-### Documentation and community repositories
+### 文档与社区仓库 {#documentation-and-community-repositories}
 
-These repositories have low barriers to entry and are great for first contributions. You don't need to be a Go developer to contribute here:
+这些仓库入门门槛较低，非常适合第一次贡献。你不需要是 Go 开发者也可以在这里做贡献：
 
-* **[user-guide](https://github.com/kubevirt/user-guide/issues)**: The documentation you're reading now. Fixes to typos, unclear explanations, or missing feature docs are always welcome.
-* **[kubevirt.github.io](https://github.com/kubevirt/kubevirt.github.io/issues)**: The KubeVirt website. You can contribute blog posts, case studies, or labs.
-* **[community](https://github.com/kubevirt/community/issues)**: Governance and community documents.
+* **[user-guide](https://github.com/kubevirt/user-guide/issues)**：你正在阅读的文档。欢迎修正笔误、不清晰的解释或缺失的功能文档。
+* **[kubevirt.github.io](https://github.com/kubevirt/kubevirt.github.io/issues)**：KubeVirt 网站。你可以贡献博客文章、案例研究或实验。
+* **[community](https://github.com/kubevirt/community/issues)**：治理与社区文档。
 
-### Code repositories
+### 代码仓库 {#code-repositories}
 
-These are our two largest and most popular repos. Both require Go knowledge and familiarity with Kubernetes:
+这是我们最大、最受欢迎的两个仓库。两者都需要 Go 知识以及对 Kubernetes 的熟悉：
 
-* **[kubevirt](https://github.com/kubevirt/kubevirt/issues)**: The core KubeVirt project.
-* **[containerized-data-importer](https://github.com/kubevirt/containerized-data-importer/issues)** (CDI): The storage management add-on.
+* **[kubevirt](https://github.com/kubevirt/kubevirt/issues)**：核心 KubeVirt 项目。
+* **[containerized-data-importer](https://github.com/kubevirt/containerized-data-importer/issues)**（CDI）：存储管理附加组件。
 
 
 
-### Other ways to get started
+### 其他入门方式 {#other-ways-to-get-started}
 
-* Review an open pull request for accuracy and language : useful feedback doesn't require deep code knowledge.
-* Watch the [New Contributor session recording](https://www.youtube.com/playlist?list=PLnLpXX8KHIYw1nDm8BLpg1SyETGcH93yl) for a walkthrough of how the project works and how to make your first contribution.
-* Open an issue/bug if you see an error, typo, or area that could be improved for clarity.
+* 评审一个未决拉取请求的准确性与语言：有用的反馈并不需要深入的代码知识。
+* 观看[新贡献者会议录制](https://www.youtube.com/playlist?list=PLnLpXX8KHIYw1nDm8BLpg1SyETGcH93yl)，了解项目如何运作以及如何做出第一次贡献。
+* 如果你发现错误、笔误或可以写得更清晰的地方，请提交问题或缺陷。
 
-## Important community resources
+## 重要的社区资源 {#important-community-resources}
 
-You should familiarize yourself with the following documents, which are critical to being a member of the community:
+你应当熟悉以下文档，它们对成为社区成员至关重要：
 
-* [Code of Conduct](https://github.com/kubevirt/kubevirt/blob/main/CODE_OF_CONDUCT.md): Everyone is expected to abide by the CoC to ensure an open and welcoming environment. Our CoC is based on the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md) which also has a variety of translations. 
-* [Our community membership policy](https://github.com/kubevirt/community/blob/main/membership_policy.md): How to become a member and grow into roles of responsibility.
-* [Project governance](https://github.com/kubevirt/community/blob/main/GOVERNANCE.md): Project Maintainer responsibilities.
-* [AI Contribution Policy](https://github.com/kubevirt/community/blob/main/ai-contribution-policy.md)
+* [行为准则](https://github.com/kubevirt/kubevirt/blob/main/CODE_OF_CONDUCT.md)：每个人都应遵守 CoC，以确保开放、友好的环境。我们的 CoC 基于 [CNCF 行为准则](https://github.com/cncf/foundation/blob/main/code-of-conduct.md)，后者也有多种翻译版本。
+* [我们的社区成员政策](https://github.com/kubevirt/community/blob/main/membership_policy.md)：如何成为成员并成长为承担职责的角色。
+* [项目治理](https://github.com/kubevirt/community/blob/main/GOVERNANCE.md)：项目维护者的职责。
+* [AI 贡献政策](https://github.com/kubevirt/community/blob/main/ai-contribution-policy.md)
 
-## Other ways to contribute
+## 其他贡献方式 {#other-ways-to-contribute}
 
-* Visit the KubeVirt [community page](https://kubevirt.io/community/), participate on Slack or follow us on our socials (Blue Sky, Mastodon, and Twitter/X); learn about local meetups and events.
-* Visit the KubeVirt [website repository](https://github.com/kubevirt/kubevirt.github.io) and submit a blog post, case study or lab.
-* Visit the KubeVirt [user-guide repository](https://github.com/kubevirt/user-guide) and find feature documentation that could use an update.
+* 访问 KubeVirt [社区页面](https://kubevirt.io/community/)，在 Slack 上参与讨论，或在我们的社交媒体（Blue Sky、Mastodon 和 Twitter/X）上关注我们；了解本地见面会和活动。
+* 访问 KubeVirt [网站仓库](https://github.com/kubevirt/kubevirt.github.io)，提交博客文章、案例研究或实验。
+* 访问 KubeVirt [user-guide 仓库](https://github.com/kubevirt/user-guide)，寻找可以更新的功能文档。

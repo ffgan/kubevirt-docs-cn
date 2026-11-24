@@ -1,20 +1,13 @@
-# Service objects
+# Service 对象 {#service-objects}
 
-Once the VirtualMachineInstance is started, in order to connect to a
-VirtualMachineInstance, you can create a `Service` object for a
-VirtualMachineInstance. Currently, three types of service are supported:
-`ClusterIP`, `NodePort` and `LoadBalancer`. The default type is
-`ClusterIP`.
+VirtualMachineInstance 启动之后，为了连接到 VirtualMachineInstance，可以为它创建一个 `Service` 对象。目前支持三种 Service：`ClusterIP`、`NodePort` 和 `LoadBalancer`。默认类型是 `ClusterIP`。
 
-> **Note**: Labels on a VirtualMachineInstance are passed through to the
-> pod, so simply add your labels for service creation to the
-> VirtualMachineInstance. From there on it works like exposing any other
-> k8s resource, by referencing these labels in a service.
+> **注意**：VirtualMachineInstance 上的标签会传递到 Pod，因此只需把用于创建 Service 的标签加到 VirtualMachineInstance 上。此后的做法与暴露任何其他 k8s 资源相同，即在 Service 中引用这些标签。
 
 
-## Expose VirtualMachineInstance as a ClusterIP Service
+## 将 VirtualMachineInstance 暴露为 ClusterIP Service {#expose-virtualmachineinstance-as-a-clusterip-service}
 
-Give a VirtualMachineInstance with the label `special: key`:
+给定一个带有标签 `special: key` 的 VirtualMachineInstance：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -39,7 +32,7 @@ spec:
       image: kubevirt/cirros-registry-disk-demo:latest
 ```
 
-we can expose its SSH port (22) by creating a `ClusterIP` service:
+可以通过创建 `ClusterIP` Service 来暴露其 SSH 端口（22）：
 
 ```yaml
 apiVersion: v1
@@ -56,40 +49,34 @@ spec:
   type: ClusterIP
 ```
 
-You just need to create this `ClusterIP` service by using `kubectl`:
+创建这个 `ClusterIP` Service 时，使用 `kubectl`：
 
     $ kubectl create -f vmiservice.yaml
 
-Alternatively, the VirtualMachineInstance could be exposed using the
-`virtctl` command:
+也可以使用 `virtctl` 命令来暴露该 VirtualMachineInstance：
 
     $ virtctl expose virtualmachineinstance vmi-ephemeral --name vmiservice --port 27017 --target-port 22
 
-Notes: \* If `--target-port` is not set, it will be take the same value
-as `--port` \* The cluster IP is usually allocated automatically, but it
-may also be forced into a value using the `--cluster-ip` flag (assuming
-value is in the valid range and not taken)
+说明：\* 如果未设置 `--target-port`，它将取与 `--port` 相同的值 \* 集群 IP 通常会自动分配，但也可以使用 `--cluster-ip` 标志强制指定一个值（假定该值处于有效范围且未被占用）
 
-Query the service object:
+查询该 Service 对象：
 
     $ kubectl get service
     NAME        TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)     AGE
     vmiservice   ClusterIP   172.30.3.149   <none>        27017/TCP   2m
 
-You can connect to the VirtualMachineInstance by service IP and service
-port inside the cluster network:
+可以在集群网络内部，通过 Service IP 和 Service 端口连接到该 VirtualMachineInstance：
 
     $ ssh cirros@172.30.3.149 -p 27017
 
 
-## Expose VirtualMachineInstance as a NodePort Service
+## 将 VirtualMachineInstance 暴露为 NodePort Service {#expose-virtualmachineinstance-as-a-nodeport-service}
 
-To expose a VirtualMachineInstance (VMI) via a Kubernetes service (e.g., NodePort, ClusterIP, LoadBalancer), ensure the associated VirtualMachine (VM) template includes the appropriate labels. These labels are inherited by the underlying pod created by the VMI, allowing the service to target the correct pod via its selector.
+要通过 Kubernetes Service（例如 NodePort、ClusterIP、LoadBalancer）暴露 VirtualMachineInstance（VMI），请确保关联的 VirtualMachine（VM）模板包含相应的标签。这些标签会被 VMI 所创建的底层 Pod 继承，从而使该 Service 能够通过其选择器定位到正确的 Pod。
 
-For further details, refer to Kubernetes documentation on [Services and Selectors](https://kubernetes.io/docs/concepts/services-networking/service/#services-with-selectors).
+更多细节请参阅 Kubernetes 关于 [Service 与选择器](https://kubernetes.io/docs/concepts/services-networking/service/#services-with-selectors) 的文档。
 
-Expose the SSH port (22) of a VirtualMachineInstance running on KubeVirt
-by creating a `NodePort` service:
+通过创建 `NodePort` Service，暴露运行于 KubeVirt 上的 VirtualMachineInstance 的 SSH 端口（22）：
 
 ```yaml
 apiVersion: v1
@@ -109,35 +96,30 @@ spec:
   type: NodePort
 ```
 
-You just need to create this `NodePort` service by using `kubectl`:
+创建这个 `NodePort` Service 时，使用 `kubectl`：
 
     $ kubectl create -f nodeport.yaml
 
-Alternatively, the VirtualMachineInstance could be exposed using the
-`virtctl` command:
+也可以使用 `virtctl` 命令来暴露该 VirtualMachineInstance：
 
     $ virtctl expose virtualmachineinstance vmi-ephemeral --name nodeport --type NodePort --port 27017 --target-port 22 --node-port 30000
 
-Notes: \* If `--node-port` is not set, its value will be allocated
-dynamically (in the range above 30000) \* If the `--node-port` value is
-set, it must be unique across all services
+说明：\* 如果未设置 `--node-port`，其值会被动态分配（范围为 30000 以上）\* 如果设置了 `--node-port`，该值必须在所有 Service 中保持唯一
 
-The service can be listed by querying for the service objects:
+可以通过查询 Service 对象来列出该 Service：
 
     $ kubectl get service
     NAME           TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)           AGE
     nodeport       NodePort   172.30.232.73   <none>        27017:30000/TCP   5m
 
-Connect to the VirtualMachineInstance by using a node IP and node port
-outside the cluster network:
+在集群网络外部，使用节点 IP 和节点端口连接到该 VirtualMachineInstance：
 
     $ ssh cirros@$NODE_IP -p 30000
 
 
-## Expose VirtualMachineInstance as a LoadBalancer Service
+## 将 VirtualMachineInstance 暴露为 LoadBalancer Service {#expose-virtualmachineinstance-as-a-loadbalancer-service}
 
-Expose the RDP port (3389) of a VirtualMachineInstance running on
-KubeVirt by creating `LoadBalancer` service. Here is an example:
+通过创建 `LoadBalancer` Service，暴露运行于 KubeVirt 上的 VirtualMachineInstance 的 RDP 端口（3389）。示例如下：
 
 ```yaml
 apiVersion: v1
@@ -155,38 +137,28 @@ spec:
   type: LoadBalancer
 ```
 
-You could create this `LoadBalancer` service by using `kubectl`:
+创建这个 `LoadBalancer` Service 时，使用 `kubectl`：
 
     $ kubectl create -f lbsvc.yaml
 
-Alternatively, the VirtualMachineInstance could be exposed using the
-`virtctl` command:
+也可以使用 `virtctl` 命令来暴露该 VirtualMachineInstance：
 
     $ virtctl expose virtualmachineinstance vmi-ephemeral --name lbsvc --type LoadBalancer --port 27017 --target-port 3389
 
-Note that the external IP of the service could be forced to a value
-using the `--external-ip` flag (no validation is performed on this
-value).
+请注意，可以使用 `--external-ip` 标志把该 Service 的外部 IP 强制设为某个值（不会对该值做校验）。
 
-The service can be listed by querying for the service objects:
+可以通过查询 Service 对象来列出该 Service：
 
     $ kubectl get svc
     NAME      TYPE           CLUSTER-IP       EXTERNAL-IP                   PORT(S)           AGE
     lbsvc     LoadBalancer   172.30.27.5      172.29.10.235,172.29.10.235   27017:31829/TCP   5s
 
-Use `vinagre` client to connect your VirtualMachineInstance by using the
-public IP and port.
+使用 `vinagre` 客户端，通过公共 IP 和端口连接到你的 VirtualMachineInstance。
 
-Note that here the external port here (31829) was dynamically allocated.
+请注意，这里的外部端口（31829）是动态分配的。
 
-## Service lifecycle
+## Service 生命周期 {#service-lifecycle}
 
-Service objects may be created explicitly by a user or implicitly
-through the `virtctl expose` command.
+Service 对象可以由用户显式创建，也可以通过 `virtctl expose` 命令隐式创建。
 
-While creating the service explicitly, it is up to the user to explicitly
-clean up the service.
-From v1.9 the implicit service creation through `virtctl expose` adds an
-[`ownerReference`](https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/) to the service object, binding the service to the VM/VMI.
-As a result, the service will be collected by the k8s garbage-collector once
-the referenced object (e.g. VMI) is deleted.
+显式创建 Service 时，需要由用户显式清理该 Service。从 v1.9 起，通过 `virtctl expose` 隐式创建 Service 时，会向该 Service 对象添加 [`ownerReference`](https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/)，从而把 Service 绑定到 VM/VMI。因此，一旦被引用的对象（例如 VMI）被删除，k8s 垃圾回收器就会回收该 Service。

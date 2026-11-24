@@ -1,17 +1,8 @@
-# DNS records
+# DNS 记录 {#dns-records}
 
-In order to create unique DNS records per VirtualMachineInstance, it is
-possible to set `spec.hostname` and `spec.subdomain`. If a subdomain is
-set and a headless service with a name, matching the subdomain, exists,
-kube-dns will create unique DNS entries for every VirtualMachineInstance
-which matches the selector of the service. Have a look at the [DNS for
-Services and Pods
-documentation](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pods-hostname-and-subdomain-fields)
-for additional information.
+为了给每个 VirtualMachineInstance 创建唯一的 DNS 记录，可以设置 `spec.hostname` 和 `spec.subdomain`。如果设置了子域，并且存在一个名称与该子域匹配的无头 Service，kube-dns 就会为每一个匹配该 Service 选择器的 VirtualMachineInstance 创建唯一的 DNS 条目。更多信息请参阅 [Service 与 Pod 的 DNS 文档](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pods-hostname-and-subdomain-fields)。
 
-The following example consists of a VirtualMachine and a headless
-Service which matches the labels and the subdomain of the
-VirtualMachineInstance:
+下面的示例包含一个 VirtualMachine，以及一个与该 VirtualMachineInstance 的标签和子域相匹配的无头 Service：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -58,11 +49,7 @@ spec:
     targetPort: 1234
 ```
 
-As a consequence, when we enter the VirtualMachineInstance via e.g.
-`virtctl console vmi-fedora` and ping `myvmi.mysubdomain` we see that we
-find a DNS entry for `myvmi.mysubdomain.default.svc.cluster.local` which
-points to `10.244.0.57`, which is the IP of the VirtualMachineInstance
-(not of the Service):
+因此，例如当我们通过 `virtctl console vmi-fedora` 进入 VirtualMachineInstance，并对 `myvmi.mysubdomain` 执行 ping 时，会看到存在一条 DNS 条目 `myvmi.mysubdomain.default.svc.cluster.local`，它指向 `10.244.0.57`，该地址是 VirtualMachineInstance 的 IP（不是 Service 的 IP）：
 
     [fedora@myvmi ~]$ ping myvmi.mysubdomain
     PING myvmi.mysubdomain.default.svc.cluster.local (10.244.0.57) 56(84) bytes of data.
@@ -75,14 +62,8 @@ points to `10.244.0.57`, which is the IP of the VirtualMachineInstance
         inet6 fe80::858:aff:fef4:39/64 scope link
            valid_lft forever preferred_lft forever
 
-So `spec.hostname` and `spec.subdomain` get translated to a DNS A-record
-of the form
-`<vmi.spec.hostname>.<vmi.spec.subdomain>.<vmi.metadata.namespace>.svc.cluster.local`.
-If no `spec.hostname` is set, then we fall back to the
-VirtualMachineInstance name itself. The resulting DNS A-record looks
-like this then:
-`<vmi.metadata.name>.<vmi.spec.subdomain>.<vmi.metadata.namespace>.svc.cluster.local`.
+于是，`spec.hostname` 和 `spec.subdomain` 会被转换成如下形式的 DNS A 记录：`<vmi.spec.hostname>.<vmi.spec.subdomain>.<vmi.metadata.namespace>.svc.cluster.local`。如果没有设置 `spec.hostname`，就会回退到 VirtualMachineInstance 自身的名称。此时得到的 DNS A 记录如下：`<vmi.metadata.name>.<vmi.spec.subdomain>.<vmi.metadata.namespace>.svc.cluster.local`。
 
-> **Note** To resolve short names like `myvmi.mysubdomain` using search domains, the guest's `/etc/resolv.conf` must include `options ndots:2` or higher.
-> In a Linux guest if `options ndots` is not specified, the system defaults to `ndots:1` as indicated in  resolver spec](https://man7.org/linux/man-pages/man5/resolv.conf.5.html).
-> KubeVirt does not configure the guest system resolver. It can either be pre-configured in the VM image or configured at runtime using cloud-init.
+> **注意** 要借助搜索域解析 `myvmi.mysubdomain` 这样的短名称，客户机的 `/etc/resolv.conf` 必须包含 `options ndots:2` 或更高的值。
+> 在 Linux 客户机中，如果未指定 `options ndots`，系统默认使用 `ndots:1`，如 resolver spec](https://man7.org/linux/man-pages/man5/resolv.conf.5.html) 所示。
+> KubeVirt 不会配置客户机系统的解析器。它可以预先配置在 VM 镜像中，也可以在运行时使用 cloud-init 进行配置。

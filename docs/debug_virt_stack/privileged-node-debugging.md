@@ -1,45 +1,41 @@
-# Privileged debugging on the node
+# 在节点上进行特权调试 {#privileged-debugging-on-the-node}
 
-This article describes the scenarios in which you can create privileged pods and have root access to the cluster nodes.
+本文介绍你可以创建特权 Pod、并获得集群节点 root 访问权限的那些场景。
 
-With privileged pods, you may access devices in `/dev`, utilize host namespaces and ptrace processes that are running on the node, and use the `hostPath` volume to mount node directories in the container.
+借助特权 Pod，你可以访问 `/dev` 中的设备，使用宿主机命名空间并对节点上正在运行的进程进行 ptrace，以及使用 `hostPath` 卷把节点目录挂载到容器中。
 
-A quick way to verify if you are allowed to create privileged pods is to create a sample pod with the `--dry-run=server` option, like:
+一种快速验证你是否被允许创建特权 Pod 的方法，是使用 `--dry-run=server` 选项创建一个示例 Pod，例如：
 
 ```console
 $ kubectl apply -f debug-pod.yaml --dry-run=server
 ```
 
-# Build the container image
+# 构建容器镜像 {#build-the-container-image}
 
-KubeVirt uses [distroless containers](https://github.com/GoogleContainerTools/distroless) and those images don't have a package manager, for this reason it isn't possible to use the image as parent for installing additional packages.
+KubeVirt 使用 [distroless 容器](https://github.com/GoogleContainerTools/distroless)，而这些镜像没有软件包管理器，因此无法把该镜像用作父镜像来安装额外的软件包。
 
-In certain debugging scenarios, the tools require to have exactly the same binary available. However, if the debug tools are operating in a different container, this can be especially difficult as the filesystems of the containers are isolated.
+在某些调试场景中，这些工具要求恰好有相同的二进制文件可用。不过，如果调试工具运行在另一个容器中，这一点会特别困难，因为容器的文件系统是相互隔离的。
 
-This section will cover how to build a container image with
-the debug tools plus binaries of the KubeVirt version you want to debug.
+本节将介绍如何构建一个容器镜像，其中包含调试工具，以及你想要调试的那个 KubeVirt 版本的二进制文件。
 
-Based on your installation the namespace and the name of the KubeVirt CR could
-vary. In this example, we'll assume that KubeVirt CR is called `kubevirt` and
-installed in the `kubevirt` namespace. You can easily find out how it is called
-in your cluster by searching with `kubectl get kubevirt -A`.
-This is necessary as we need to retrieve the original `virt-launcher` image to have exactly the same QEMU binary we want to debug.
+根据你的安装情况，KubeVirt CR 的命名空间和名称可能有所不同。在本示例中，我们假定 KubeVirt CR 名为 `kubevirt`，并安装在 `kubevirt` 命名空间中。你可以在自己的集群中通过 `kubectl get kubevirt -A` 进行搜索，轻松查出它的名称。
+这样做是必要的，因为我们需要获取原始的 `virt-launcher` 镜像，以便拥有我们想要调试的完全相同的 QEMU 二进制文件。
 
-Get the registry of the images of the KubeVirt installation:
+获取 KubeVirt 安装所用镜像的镜像仓库：
 ```console
 $ export registry=$(kubectl get kubevirt kubevirt -n kubevirt  -o jsonpath='{.status.observedDeploymentConfig}' |jq '.registry'|tr -d "\"")
 $ echo $registry
 "registry:5000/kubevirt"
 ```
 
-Get the shasum of the virt-launcher image:
+获取 virt-launcher 镜像的 shasum：
 ```console
 $ export tag=$(kubectl get kubevirt kubevirt -n kubevirt  -o jsonpath='{.status.observedDeploymentConfig}' |jq '.virtLauncherSha'|tr -d "\"")
 $ echo $tag
 "sha256:6c8b85eed8e83a4c70779836b246c057d3e882eb513f3ded0a02e0a4c4bda837"
 ```
 
-Dockerfile:
+Dockerfile：
 ```dockerfile
 ARG registry
 ARG tag
@@ -58,7 +54,7 @@ RUN yum install -y \
 COPY --from=launcher / /
 ```
 
-Then, we can build the image by using the `registry` and the `tag` retrieved in the previous steps:
+然后，我们可以使用前面步骤中获取到的 `registry` 和 `tag` 来构建该镜像：
 ```console
 $ podman build \
     -t debug-tools \
@@ -67,9 +63,9 @@ $ podman build \
     -f Dockerfile .
 ```
 
-## Deploy the privileged debug pod
+## 部署特权调试 Pod {#deploy-the-privileged-debug-pod}
 
-This is an example that gives you a couple of suggestions how you can define your debugging pod:
+下面这个示例就如何定义你的调试 Pod 给出几条建议：
 
 ```yaml
 kind: Pod
@@ -114,12 +110,11 @@ spec:
     name: sys-kernel
 ```
 
-The `privileged` option is required to have access to mostly all the resources
-on the node.
+要能够访问节点上几乎所有的资源，`privileged` 选项是必需的。
 
-The `nodeName` ensures that the debugging pod will be scheduled on the desired node. In order to select the right now, you can use the `-owide` option with `kubectl get po` and this will report the nodes where the pod is running.
+`nodeName` 确保调试 Pod 会被调度到所期望的节点上。为了选择正确的节点，你可以使用 `-owide` 选项配合 `kubectl get po`，这样就会报告该 Pod 正在运行的节点。
 
-Example:
+示例：
 ```console
  k get pods -owide
 NAME                                READY   STATUS    RESTARTS   AGE     IP               NODE     NOMINATED NODE   READINESS GATES
@@ -128,23 +123,23 @@ node01-debug                        1/1     Running   0          44m     192.168
 virt-launcher-vmi-ephemeral-xg98p   3/3     Running   0          2m54s   10.244.196.148   node01   <none>           1/1
 ```
 
-In the `volumes` section, you can specify the directories you want to be directly mounted in the debugging container. For example, `/usr/lib/modules` is particularly useful if you need to load some kernel modules.
+在 `volumes` 部分，你可以指定希望被直接挂载进调试容器的那些目录。例如，如果你需要加载某些内核模块，`/usr/lib/modules` 就特别有用。
 
-Sharing the host pid namespace with the option `hostPID` allows you to see all the processes on the node and attach to it with tools like `gdb` and `strace`.
+借助 `hostPID` 选项共享宿主机 PID 命名空间，使你能够看到节点上的所有进程，并用 `gdb` 和 `strace` 之类的工具附加到进程上。
 
-`exec`-ing into the pod gives you a shell with  privileged access to the node plus the tooling you installed into the image:
+对 Pod 执行 `exec` 会给你一个 shell，让你拥有对节点的特权访问，外加你安装进该镜像的那些工具：
 
 ```console
 $ kubectl exec -ti debug -- bash
 ```
 
-The following examples assume you have already execed into the `node01-debug` pod.
+下面的示例假定你已经 exec 进入了 `node01-debug` 这个 Pod。
 
-### Validating the host for virtualization
+### 验证宿主机是否适合虚拟化 {#validating-the-host-for-virtualization}
 
-The tool [`vist-host-validate`](https://libvirt.org/manpages/virt-host-validate.html) is utility to validate the host to run libvirt hypervisor. This, for example, can be used to check if a particular node is kvm capable.
+工具 [`vist-host-validate`](https://libvirt.org/manpages/virt-host-validate.html) 是用来验证宿主机能否运行 libvirt 虚拟机监控程序的实用工具。例如，可以用它来检查某个特定节点是否具备 kvm 能力。
 
-Example:
+示例：
 ```console
 $  virt-host-validate
   QEMU: Checking for hardware virtualization                                 : PASS
@@ -163,9 +158,9 @@ $  virt-host-validate
   QEMU: Checking for secure guest support                                    : WARN (Unknown if this platform has Secure
 ```
 
-### Run a command directly on the node
+### 直接在节点上运行命令 {#run-a-command-directly-on-the-node}
 
-The debug container has in the volume section the host filesystem mounted under `/host`. This can be particularly useful if you want to access the node filesystem or execute a command directly on the host. However, the tool needs already to be present on the node.
+调试容器在卷部分把宿主机文件系统挂载在 `/host` 之下。如果你想访问节点文件系统，或者直接在宿主机上执行命令，这一点会特别有用。不过，该工具必须已经存在于节点上。
 
 ```console
 # chroot /host
@@ -186,10 +181,9 @@ REDHAT_SUPPORT_PRODUCT="Red Hat Enterprise Linux 9"
 REDHAT_SUPPORT_PRODUCT_VERSION="CentOS Stream"
 ```
 
-### Attach to a running process (e.g strace or gdb)
+### 附加到正在运行的进程（例如 strace 或 gdb） {#attach-to-a-running-process-eg-strace-or-gdb}
 
-This requires the field `hostPID: true` in this way you are able to list all the
-processes running on the node.
+这需要字段 `hostPID: true`，这样一来，你就能够列出节点上正在运行的所有进程。
 
 ```console
 $ ps -ef |grep qemu-kvm
@@ -197,12 +191,11 @@ qemu       50122   49850  0 12:34 ?        00:00:25 /usr/libexec/qemu-kvm -name 
 $ gdb -p 50122 /usr/libexec/qemu-kvm
 ```
 
-### Debugging using `crictl`
+### 使用 `crictl` 进行调试 {#debugging-using-crictl}
 
-[`Crictl`](https://github.com/kubernetes-sigs/cri-tools/blob/master/docs/crictl.md) is a cli for CRI runtimes and can be particularly useful to troubleshoot container failures (for a more detailed guide, please refer to this [Kubernetes article](https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/)).
+[`Crictl`](https://github.com/kubernetes-sigs/cri-tools/blob/master/docs/crictl.md) 是面向 CRI 运行时的命令行工具，对排查容器故障会特别有用（如需更详细的指南，请参阅这篇 [Kubernetes 文章](https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/)）。
 
-In this example, we'll concentrate to find where libvirt creates the files
-and directory in the `compute` container of the virt-launcher pod.
+在本示例中，我们将专注于找出 libvirt 在 virt-launcher Pod 的 `compute` 容器里于何处创建文件和目录。
 
 ```console
 $ crictl ps |grep compute

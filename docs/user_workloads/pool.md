@@ -1,48 +1,46 @@
-# VirtualMachinePool
+# VirtualMachinePool {#virtualmachinepool}
 
-A *VirtualMachinePool* tries to ensure that a specified
-number of VirtualMachine replicas and their respective
-VirtualMachineInstances are in the ready state at any time.
-In other words, a *VirtualMachinePool* makes sure that a
-VirtualMachine or a set of VirtualMachines is always up
-and ready. 
+*VirtualMachinePool* 会设法确保在任何时候都有指定数量的
+VirtualMachine 副本及其各自的
+VirtualMachineInstance 处于就绪状态。
+换言之，*VirtualMachinePool* 确保一个
+VirtualMachine 或一组 VirtualMachine 始终处于运行
+并就绪的状态。
 
-No state is kept and no guarantees are made about the maximum number
-of VirtualMachineInstance replicas running at any time.
-For example, the *VirtualMachinePool* may decide to create
-new replicas if possibly still running VMs are entering an
-unknown state.
+系统不保存状态，也不对任何时刻正在运行的
+VirtualMachineInstance 副本数量上限作出保证。
+例如，如果可能仍在运行的 VM 进入
+未知状态，*VirtualMachinePool* 可能会决定创建
+新的副本。
 
 
-## Using VirtualMachinePool
+## 使用 VirtualMachinePool {#using-virtualmachinepool}
 
-The *VirtualMachinePool* allows us to specify a *VirtualMachineTemplate*
-in `spec.virtualMachineTemplate`. It consists of `ObjectMetadata` in
-`spec.virtualMachineTemplate.metadata`, and a `VirtualMachineSpec` in
-`spec.virtualMachineTemplate.spec`. The specification of the virtual machine
-is equal to the specification of the virtual machine in the
-`VirtualMachine` workload.
+*VirtualMachinePool* 允许我们在 `spec.virtualMachineTemplate` 中指定 *VirtualMachineTemplate*。
+它由 `ObjectMetadata`（位于 `spec.virtualMachineTemplate.metadata` 中）
+以及 `VirtualMachineSpec`（位于 `spec.virtualMachineTemplate.spec` 中）组成。虚拟机的规格
+与 `VirtualMachine` 工作负载中的虚拟机规格相同。
 
-`spec.replicas` can be used to specify how many replicas are wanted. If
-unspecified, the default value is 1. This value can be updated anytime.
-The controller will react to the changes.
+`spec.replicas` 可用于指定所需的副本数量。如果
+未指定，默认值为 1。该值可以随时更新。
+控制器会对这些变更作出反应。
 
-`spec.selector` is used by the controller to keep track of managed
-virtual machines. The selector specified there must be able to match the
-virtual machine labels as specified in `spec.virtualMachineTemplate.metadata.labels`.
-If the selector does not match these labels, or they are empty, the
-controller will simply do nothing except log an error. The user
-is responsible for avoiding the creation of other virtual machines or
-*VirtualMachinePools* which may conflict with the selector and
-the template labels.
+`spec.selector` 由控制器用来跟踪所管理的
+虚拟机。此处指定的选择器必须能够匹配
+`spec.virtualMachineTemplate.metadata.labels` 中指定的虚拟机标签。
+如果选择器与这些标签不匹配，或者这些标签为空，
+控制器除了记录一条错误日志之外不会做任何事情。用户
+有责任避免创建可能与该选择器及
+模板标签相冲突的其他虚拟机或
+*VirtualMachinePool*。
 
-### Creating a VirtualMachinePool
+### 创建 VirtualMachinePool {#creating-a-virtualmachinepool}
 
-VirtualMachinePool is part of the Kubevirt API `pool.kubevirt.io/v1alpha1`.
+VirtualMachinePool 属于 KubeVirt API `pool.kubevirt.io/v1alpha1`。
 
-The example below shows how to create a simple `VirtualMachinePool`:
+下面的示例展示如何创建一个简单的 `VirtualMachinePool`：
 
-#### Example
+#### 示例 {#example}
 
 ```yaml
 apiVersion: pool.kubevirt.io/v1alpha1
@@ -83,8 +81,8 @@ spec:
             name: containerdisk 
 ```
 
-Saving this manifest into `vm-pool-cirros.yaml` and submitting it to
-Kubernetes will create three virtual machines based on the template.
+将此清单保存为 `vm-pool-cirros.yaml` 并提交到
+Kubernetes，将会基于该模板创建三台虚拟机。
 
     $ kubectl create -f vm-pool-cirros.yaml
     virtualmachinepool.pool.kubevirt.io/vm-pool-cirros created
@@ -158,41 +156,40 @@ Kubernetes will create three virtual machines based on the template.
       Normal  SuccessfulCreate  17s   virtualmachinepool-controller  Created VM default/vm-pool-cirros-2
       Normal  SuccessfulCreate  17s   virtualmachinepool-controller  Created VM default/vm-pool-cirros-1
 
-`Replicas` is `3` and `Ready Replicas` is `2`. This means that at the
-moment when showing the status, three Virtual Machines were already
-created, but only two are running and ready.
+`Replicas` 为 `3`，`Ready Replicas` 为 `2`。这意味着在
+显示该状态的那一刻，三台虚拟机已经
+创建，但只有两台正在运行并就绪。
 
-### Scaling via the Scale Subresource
+### 通过 Scale 子资源进行扩缩 {#scaling-via-the-scale-subresource}
 
-> **Note:** This requires KubeVirt 0.59 or newer.
+> **注意：** 这要求 KubeVirt 0.59 或更新版本。
 
-The `VirtualMachinePool` supports the `scale` subresource.
-As a consequence it is possible to scale it via `kubectl`:
+`VirtualMachinePool` 支持 `scale` 子资源。
+因此可以通过 `kubectl` 对其进行扩缩：
 
     $ kubectl scale vmpool vm-pool-cirros --replicas 5
 
 
-### Removing a VirtualMachine from VirtualMachinePool
+### 从 VirtualMachinePool 中移除 VirtualMachine {#removing-a-virtualmachine-from-virtualmachinepool}
 
-It is also possible to remove a `VirtualMachine` from its `VirtualMachinePool`.
+也可以把一个 `VirtualMachine` 从它所属的 `VirtualMachinePool` 中移除。
 
-In this scenario, the `ownerReferences` needs to be removed from the `VirtualMachine`.
-This can be achieved either by using `kubectl edit` or `kubectl patch`.
-Using `kubectl patch` it would look like:
+在此场景中，`ownerReferences` 需要从该 `VirtualMachine` 上移除。
+这可以通过 `kubectl edit` 或 `kubectl patch` 来完成。
+使用 `kubectl patch` 时如下所示：
 
     kubectl patch vm vm-pool-cirros-0 --type merge --patch '{"metadata":{"ownerReferences":null}}' 
 
-> **Note:** You may want to update your VirtualMachine labels as well to avoid impact on selectors.
+> **注意：** 你可能还需要更新 VirtualMachine 的标签，以避免对选择器造成影响。
 
 
-### Using the Horizontal Pod Autoscaler
+### 使用 Horizontal Pod Autoscaler {#using-the-horizontal-pod-autoscaler}
 
-> **Note:** This requires KubeVirt 0.59 or newer.
+> **注意：** 这要求 KubeVirt 0.59 或更新版本。
 
-The
 [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
-(HPA) can be used with a `VirtualMachinePool`. Simply
-reference it in the spec of the autoscaler:
+（HPA）可以与 `VirtualMachinePool` 一起使用。只需
+在自动扩缩器的 spec 中引用它：
 
 ```yaml
 apiVersion: autoscaling/v1
@@ -211,17 +208,17 @@ spec:
 ```
 
 
-or use `kubectl autoscale` to define the HPA via the commandline:
+或者使用 `kubectl autoscale` 通过命令行定义 HPA：
 
     $ kubectl autoscale vmpool vm-pool-cirros --min=3 --max=10 --cpu-percent=50
 
-## Exposing a VirtualMachinePool as a Service
+## 将 VirtualMachinePool 暴露为 Service {#exposing-a-virtualmachinepool-as-a-service}
 
-A VirtualMachinePool may be exposed as a service. When
-this is done, one of the VirtualMachine replicas will be picked
-for the actual delivery of the service.
+VirtualMachinePool 可以被暴露为服务。完成此操作后，
+会从 VirtualMachine 副本中挑选一个，
+用于实际提供该服务。
 
-For example, exposing SSH port (22) as a ClusterIP service:
+例如，将 SSH 端口（22）暴露为 ClusterIP 服务：
 
 ```yaml
 apiVersion: v1
@@ -237,37 +234,34 @@ spec:
       port: 2222
       targetPort: 22
 ```
-Saving this manifest into `vm-pool-cirros-ssh.yaml` and submitting it to
-Kubernetes will create the `ClusterIP` service listening on port 2222 and
-forwarding to port 22.
+将此清单保存为 `vm-pool-cirros-ssh.yaml` 并提交到
+Kubernetes，将会创建在端口 2222 上监听、
+并转发到端口 22 的 `ClusterIP` 服务。
 
-See [Service
-Objects](http://kubevirt.io/user-guide/virtual_machines/service_objects/)
-for more details.
-
-
-## Using Persistent Storage
-
-> **Note:** DataVolumes are part of [CDI](https://kubevirt.io/user-guide/operations/containerized_data_importer/)
-
-Usage of a `DataVolumeTemplates` within a `spec.virtualMachineTemplate.spec` will result in the creation
-of unique persistent storage for each VM within a VMPool. The `DataVolumeTemplate`
-name will have the VM's sequential postfix appended to it when the VM is created from the
-`spec.virtualMachineTemplate.spec.dataVolumeTemplates`. This makes each VM a completely unique stateful workload.
+更多细节请参阅[服务
+对象](http://kubevirt.io/user-guide/virtual_machines/service_objects/)。
 
 
-## Using Unique CloudInit and ConfigMap Volumes with VirtualMachinePools
+## 使用持久存储 {#using-persistent-storage}
 
-By default, any secrets or configMaps references in a `spec.virtualMachineTemplate.spec.template`
-Volume section will be used directly as is, without any modification to the naming. This
-means if you specify a secret in a `CloudInitNoCloud` volume, that every VM instance spawned
-from the VirtualMachinePool with this volume will get the exact same secret used for their cloud-init
-user data.
+> **注意：** DataVolume 是 [CDI](https://kubevirt.io/user-guide/operations/containerized_data_importer/) 的一部分
 
-This default behavior can be modified by setting both the `AppendIndexToSecretRefs` and
-`AppendIndexToConfigMapRefs` booleans to `true` within `spec.NameGeneration` of the VMPool definition.
-When these booleans are enabled, references to secret and configMap names will have the VM's sequential index
-appended to the secret and configmap name. This allows someone to pre-generate unique per VM
-`secret` and `configMap` data for a VirtualMachinePool ahead of time in a way that will be predictably
-assigned to VMs within the VirtualMachinePool.
+`DataVolumeTemplates` 在 `spec.virtualMachineTemplate.spec` 中的使用，会为 VMPool 中的每个 VM 创建
+独有的持久存储。`DataVolumeTemplate`
+的名称会在该 VM 从 `spec.virtualMachineTemplate.spec.dataVolumeTemplates` 创建时追加该 VM 的顺序后缀。这使得每个 VM 都成为完全独有的有状态工作负载。
 
+
+## 在 VirtualMachinePool 中使用互不相同的 CloudInit 与 ConfigMap 卷 {#using-unique-cloudinit-and-configmap-volumes-with-virtualmachinepools}
+
+默认情况下，`spec.virtualMachineTemplate.spec.template`
+卷部分中的任何 secret 或 configMap 引用都会按原样直接使用，不会对名称做任何修改。这
+意味着，如果你在 `CloudInitNoCloud` 卷中指定了一个 secret，那么从带有该卷的 VirtualMachinePool
+生成的每一个 VM 实例都会把完全相同的 secret 用于它们的 cloud-init
+用户数据。
+
+可以通过把 `AppendIndexToSecretRefs` 和
+`AppendIndexToConfigMapRefs` 这两个布尔值都设置为 `true`（位于 VMPool 定义的 `spec.NameGeneration` 中）来改变这一默认行为。
+启用这两个布尔值后，对 secret 和 configMap 名称的引用会把该 VM 的顺序索引
+追加到 secret 和 configMap 名称上。这样就可以预先为 VirtualMachinePool 中的每个 VM
+生成互不相同的 `secret` 和 `configMap` 数据，并以可预期的方式
+分配给该 VirtualMachinePool 中的各个 VM。

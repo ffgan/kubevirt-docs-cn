@@ -1,37 +1,36 @@
-# Clone API
+# 克隆 API {#clone-api}
 
-The `clone.kubevirt.io` API Group defines resources for cloning KubeVirt objects.
+`clone.kubevirt.io` API 组定义了用于克隆 KubeVirt 对象的资源。
 
-This API has two main use-cases:
-* Cloning a Virtual Machine.
-* Creating "golden snapshots" that would be used as a template for creating new VMs
-(see [Using clones as a "golden VM image"](#using-clones-as-a-golden-vm-image) below).
+此 API 有两个主要用例：
+* 克隆虚拟机。
+* 创建将用作新建 VM 模板的“黄金快照”
+（参见下方[将克隆用作“黄金 VM 镜像”](#using-clones-as-a-golden-vm-image)）。
 
-Please bear in mind that the clone API is in version `v1beta1`. This means that this API is not fully stable
-yet and that APIs may change in the future.
+请注意，克隆 API 的版本为 `v1beta1`。这意味着此 API 尚未完全稳定，
+未来 API 可能会发生变化。
 
-## Prerequisites
+## 先决条件 {#prerequisites}
 
-### Snapshot / Restore
+### 快照 / 恢复 {#snapshot-restore}
 
-Under the hood, the clone API relies upon Snapshot & Restore APIs. Therefore, in order to be able to use the clone API,
-please see [Snapshot & Restore prerequisites](../storage/snapshot_restore_api.md#prerequisites).
+在底层，克隆 API 依赖快照与恢复 API。因此，要能够使用克隆 API，
+请参阅[快照与恢复的先决条件](../storage/snapshot_restore_api.md#prerequisites)。
 
-### Snapshot Feature Gate
+### 快照功能门控 {#snapshot-feature-gate}
 
-Currently, clone API is guarded by Snapshot feature gate. The
-[feature gates](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-field in the KubeVirt CR must be expanded by adding the `Snapshot` to it.
+目前，克隆 API 受 Snapshot 功能门控保护。必须扩展 KubeVirt CR 中的
+[功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
+字段，向其中添加 `Snapshot`。
 
-## The clone object
+## 克隆对象 {#the-clone-object}
 
-Firstly, as written above, the clone API relies upon Snapshot & Restore APIs under the hood. Therefore, it might be helpful
-to look at [Snapshot & Restore](../storage/snapshot_restore_api.md) user-guide page for more info.
+首先，如上所述，克隆 API 在底层依赖快照与恢复 API。因此，
+查阅[快照与恢复](../storage/snapshot_restore_api.md)用户指南页面以了解更多信息可能会有所帮助。
 
-### VirtualMachineClone object overview
+### VirtualMachineClone 对象概述 {#virtualmachineclone-object-overview}
 
-In order to initiate cloning, a `VirtualMachineClone` object (CRD) needs to be created on the cluster. An example
-for such an object is:
+要启动克隆，需要在集群上创建 `VirtualMachineClone` 对象（CRD）。此类对象的示例如下：
 ```yaml
 kind: VirtualMachineClone
 apiVersion: "clone.kubevirt.io/v1beta1"
@@ -70,68 +69,67 @@ spec:
   newSMBiosSerial: "new-serial"
 ```
 
-In the next section I will go through the different settings to elaborate them.
+下一节将逐一说明这些不同的设置。
 
-#### Source & Target
+#### 源与目标 {#source-target}
 
-The source and target indicate the source/target API group, kind and name. A few important notes:
+源和目标指明源/目标的 API 组、kind 和名称。几点重要说明：
 
-* Currently, the only supported kinds are `VirtualMachine` (of `kubevirt.io` api group) and `VirtualMachineSnapshot` (
-of `snapshot.kubevirt.io` api group), but more types are expected to be supported in the future.
+* 目前，唯一支持的 kind 是 `VirtualMachine`（属于 `kubevirt.io` API 组）和 `VirtualMachineSnapshot`（
+属于 `snapshot.kubevirt.io` API 组），但预计未来会支持更多类型。
 
-* The target name is **optional**. If unspecified, the clone controller will generate a name for the target automatically.
+* 目标名称是**可选的**。如果未指定，克隆控制器会自动为目标生成名称。
 
-* The target and source must reside in the same namespace.
+* 目标与源必须位于同一命名空间。
 
-#### Label & Annotation filters
+#### 标签与注解过滤器 {#label-annotation-filters}
 
-These spec fields are intended to determine which labels / annotations are being copied to the target or stripped away.
+这些 spec 字段用于确定哪些标签 / 注解会被复制到目标，或被剥离。
 
-The filters are a list of strings. Each string represents a key that may exist at the source. Every source key that matches
-to one of these values is being copied to the cloned target. In addition, special regular-expression-like characters can be
-used:
+过滤器是一个字符串列表。每个字符串表示可能存在于源上的一个键。每一个与这些值之一匹配的源键
+都会被复制到克隆目标。此外，可以使用特殊的、类似正则表达式的字符：
 
-* **Wildcard character (\*)** can be used to match anything. Wildcard can be only used at the **end** of the filter.
-  * These filters are valid:
+* **通配符（\*）** 可用于匹配任意内容。通配符只能用在过滤器的**末尾**。
+  * 以下过滤器有效：
     * "*"
     * "some/key*"
-  * These filters are invalid:
+  * 以下过滤器无效：
     * "some/*/key"
     * "*/key"
-* **Negation character (!)** can be used to avoid matching certain keys. Negation can be only used at the **beginning** of a filter.
-  Note that a Negation and Wildcard can be used together.
-  * These filters are valid:
+* **否定字符（!）** 可用于避免匹配某些键。否定字符只能用在过滤器的**开头**。
+  请注意，否定字符和通配符可以一起使用。
+  * 以下过滤器有效：
     * "!some/key"
     * "!some/*"
-  * These filters are invalid:
+  * 以下过滤器无效：
     * "key!"
     * "some/!key"
 
-Setting label / annotation filters is **optional**. If unset, all labels / annotations will be copied as a default.
+设置标签 / 注解过滤器是**可选的**。如果未设置，默认会复制所有标签 / 注解。
 
-#### Template Label & Template Annotation filters
+#### 模板标签与模板注解过滤器 {#template-label-template-annotation-filters}
 
-Some network CNIs such as Kube-OVN or OVN-Kubernetes inject network information into the annotations of a VM. When cloning a VM from a target VM the cloned VM will use the same network. To avoid this you can use template labels and annotation filters.
+某些网络 CNI（例如 Kube-OVN 或 OVN-Kubernetes）会把网络信息注入 VM 的注解。从目标 VM 克隆 VM 时，克隆得到的 VM 将使用同一网络。要避免这种情况，可以使用模板标签和注解过滤器。
 
-#### newMacAddresses
+#### newMacAddresses {#newmacaddresses}
 
-This field is used to explicitly replace MAC addresses for certain interfaces. The field is a string to string map; the
-keys represent interface names and the values represent the new MAC address for the clone target.
+此字段用于显式替换某些接口的 MAC 地址。该字段是字符串到字符串的映射；
+键表示接口名称，值表示克隆目标的新 MAC 地址。
 
-This field is optional. By default, all mac addresses are stripped out. This suits situations when kube-mac-pool is
-deployed in the cluster which would automatically assign the target with a fresh valid MAC address.
+此字段是可选的。默认情况下，所有 MAC 地址都会被剥离。这适用于集群中部署了 kube-mac-pool 的情况，
+它会自动为目标分配一个新的有效 MAC 地址。
 
-#### newSMBiosSerial
+#### newSMBiosSerial {#newsmbiosserial}
 
-This field is used to explicitly set an SMBios serial for the target.
+此字段用于显式设置目标的 SMBios 序列号。
 
-This field is optional. By default, the target would have an auto-generated serial that's based on the VM name.
+此字段是可选的。默认情况下，目标会拥有一个基于 VM 名称自动生成的序列号。
 
-### JSON patches
+### JSON 补丁 {#json-patches}
 
-It is sometimes necessary to modify the specs of VMs further than filtering before cloning them (e.g modifying or adding annotations for CNIs).
+有时需要在克隆之前对 VM 的 spec 做比过滤更进一步的修改（例如为 CNI 修改或添加注解）。
 
-JSON patches can be applied to the `specs` and `labels/annotations` of cloned VMs using the `patches` parameter:
+可以对克隆 VM 的 `specs` 和 `labels/annotations` 应用 JSON 补丁，方法是使用 `patches` 参数：
 
 ```yaml
 apiVersion: snapshot.kubevirt.io/v1beta1
@@ -152,18 +150,18 @@ spec:
     - '{"op": "replace", "path": "/spec/template/metadata/labels/example", "value": "replaced-value"}'
 ```
 
-**Keep in mind that patches must be carefully applied.** Some fields might be used to reference other resources, or be used as targets by other resources.
+**请牢记，补丁必须谨慎应用。** 某些字段可能用于引用其他资源，也可能被其他资源用作目标。
 
-Patches are cumulative (and have precedence) with modifications done using template label/annotation filters and MAC address/SMBIOS fields.
+补丁与通过模板标签/注解过滤器以及 MAC 地址/SMBIOS 字段所做的修改是累积的（并且具有更高优先级）。
 
-### Volume name policy
+### 卷名称策略 {#volume-name-policy}
 
-The `volumeNamePolicy` field controls how volumes are named during the clone operation. Under the hood, this is converted to a `volumeRestorePolicy` on the `VirtualMachineRestore` created by the clone controller.
+`volumeNamePolicy` 字段控制克隆操作期间卷的命名方式。在底层，这会被转换为 `volumeRestorePolicy`，位于克隆控制器所创建的 `VirtualMachineRestore` 上。
 
-The following policies are available:
+可用策略如下：
 
-- **RandomizeNames** (default policy): The names of cloned PVCs are randomly generated. This guarantees there are no collisions, but the names are not predictable.
-- **PrefixTargetName**: The names of cloned PVCs are generated by prefixing the volume name with the target VM name: `{targetVMName}-{volumeName}`. This provides predictable, deterministic naming while avoiding collisions when cloning to different targets. Names are truncated to 63 characters to comply with DNS label length limits.
+- **RandomizeNames**（默认策略）：克隆 PVC 的名称随机生成。这可以保证不会发生冲突，但名称不可预测。
+- **PrefixTargetName**：克隆 PVC 的名称通过在卷名前加上目标 VM 名称来生成：`{targetVMName}-{volumeName}`。这样可以提供可预测的确定性命名，同时在克隆到不同目标时避免冲突。名称会被截断为 63 个字符，以符合 DNS 标签长度限制。
 
 ```yaml
 kind: VirtualMachineClone
@@ -182,21 +180,21 @@ spec:
   volumeNamePolicy: PrefixTargetName
 ```
 
-In this example, a volume named `disk0` on the source VM would result in a cloned PVC named `vm-clone-target-disk0`.
+在此示例中，源 VM 上名为 `disk0` 的卷会产生名为 `vm-clone-target-disk0` 的克隆 PVC。
 
-### Creating a VirtualMachineClone object
+### 创建 VirtualMachineClone 对象 {#creating-a-virtualmachineclone-object}
 
-After the clone manifest is ready, we can create it:
+克隆清单准备好之后，就可以创建它：
 ```bash
 kubectl create -f clone.yaml
 ```
 
-To wait for a clone to complete, execute:
+要等待克隆完成，请执行：
 ```bash
 kubectl wait vmclone testclone --for condition=Ready
 ```
 
-You can check the clone's phase in the clone's status. It can be one of the following:
+可以在克隆的 status 中查看克隆所处的阶段。它可以是以下之一：
 
 * SnapshotInProgress
 
@@ -210,29 +208,29 @@ You can check the clone's phase in the clone's status. It can be one of the foll
 
 * Unknown
 
-After the clone is finished, the target can be inspected:
+克隆完成后，可以检查目标：
 ```bash
 kubectl get vm vm-clone-target -o yaml
 ```
 
-### Using clones as a "golden VM image"
+### 将克隆用作“黄金 VM 镜像” {#using-clones-as-a-golden-vm-image}
 
-One of the great things that could be accomplished with the clone API when the source is of kind `VirtualMachineSnapshot`
-is to create "golden VM images" (a.k.a. Templates / Bookmark VMs / etc). In other words, the following
-workflow is available:
+当源的 kind 为 `VirtualMachineSnapshot` 时，使用克隆 API 可以完成的一件很有用的事情
+是创建“黄金 VM 镜像”（亦称模板 / 书签 VM 等）。换句话说，可以使用以下
+工作流：
 
-**Create a golden image**
+**创建黄金镜像**
 
-* Create a VM
+* 创建 VM
 
-* Prepare a "golden VM" environment. This can mean different things in different contexts.
-For example, add certain users, install a database, configure it in a certain way, etc.
+* 准备“黄金 VM”环境。这在不同上下文中可以有不同含义。
+例如，添加某些用户、安装数据库、以某种方式配置它，等等。
 
-* Snapshot the VM
+* 为该 VM 创建快照
 
-* Optional: Delete the VM
+* 可选：删除该 VM
 
-Then, this "golden image" can be duplicated as many times as needed. To instantiate a VM from the snapshot:
+然后，可以根据需要多次复制此“黄金镜像”。要从快照实例化 VM：
 
-* Create a Clone object where the source would point to the previously taken snapshot
-* Create as many VMs you need
+* 创建一个克隆对象，其源指向先前创建的快照
+* 创建所需数量的 VM

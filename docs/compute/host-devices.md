@@ -1,24 +1,16 @@
-# Host Devices Assignment
+# 主机设备分配 {#host-devices-assignment}
 
-KubeVirt provides a mechanism for assigning host devices to a virtual machine.
-This mechanism is generic and allows various types of PCI devices,
-such as accelerators (including GPUs and vGPUs) or any other devices attached to
-a PCI bus, to be assigned. It also allows [Linux Mediated
-devices](https://www.kernel.org/doc/html/latest/driver-api/vfio-mediated-device.html),
-such as pre-configured virtual GPUs to be assigned using the same
-mechanism.
+KubeVirt 提供了一种把主机设备分配给虚拟机的机制。
+该机制是通用的，可以分配各种类型的 PCI 设备，例如加速器（包括 GPU 和 vGPU），或挂接在 PCI 总线上的任何其他设备。它还允许使用同一机制分配 [Linux 中介设备](https://www.kernel.org/doc/html/latest/driver-api/vfio-mediated-device.html)，例如预先配置好的虚拟 GPU。
 
 
-## Host preparation for PCI Passthrough
+## PCI 直通的宿主机准备 {#host-preparation-for-pci-passthrough}
 
- * Host Devices passthrough requires the virtualization extension and the IOMMU extension
-(Intel VT-d or AMD IOMMU) to be enabled in the BIOS.
+ * 主机设备直通要求在 BIOS 中启用虚拟化扩展和 IOMMU 扩展（Intel VT-d 或 AMD IOMMU）。
 
- * To enable IOMMU, depending on the CPU type, a host should be booted with an additional kernel parameter, `intel_iommu=on` for Intel and `amd_iommu=on`
-for AMD.
+ * 要启用 IOMMU，需根据 CPU 类型，让宿主机带上额外的内核参数启动：Intel 使用 `intel_iommu=on`，AMD 使用 `amd_iommu=on`。
 
-Append these parameters to the end of the GRUB_CMDLINE_LINUX line in the grub
-configuration file.
+将这些参数追加到 grub 配置文件中 GRUB_CMDLINE_LINUX 行的末尾。
 
 ```
 # vi /etc/default/grub
@@ -31,49 +23,48 @@ GRUB_CMDLINE_LINUX="nofb splash=quiet console=tty0 ... intel_iommu=on
 # reboot
 ```
 
- * The vfio-pci kernel module should be enabled on the host.
+ * 应在宿主机上启用 vfio-pci 内核模块。
 ```
 # modprobe vfio-pci
 ```
 
-## Preparation of PCI devices for passthrough
+## 为直通准备 PCI 设备 {#preparation-of-pci-devices-for-passthrough}
 
-At this time, KubeVirt is only able to assign PCI devices that are using the `vfio-pci` driver with the exception of [SR-IOV vGPU](#preparation-of-vgpu-devices-with-sr-iov). To prepare a specific device for device assignment, it should first be unbound from its original driver and bound to the `vfio-pci` driver.
+目前，KubeVirt 只能分配使用 `vfio-pci` 驱动的 PCI 设备，[SR-IOV vGPU](#preparation-of-vgpu-devices-with-sr-iov) 除外。要为设备分配准备特定设备，应先将其从原来的驱动解绑，再绑定到 `vfio-pci` 驱动。
 
- * Find the PCI address of the desired device:
+ * 查找所需设备的 PCI 地址：
 
 ```
 $ lspci -DD|grep NVIDIA
 0000.65:00.0 3D controller [0302]: NVIDIA Corporation TU104GL [Tesla T4] [10de:1eb8] (rev a1)
 ```
 
- * Bind that device to the `vfio-pci` driver:
+ * 将该设备绑定到 `vfio-pci` 驱动：
 ```
 echo 0000:65:00.0 > /sys/bus/pci/drivers/nvidia/unbind
 echo "vfio-pci" > /sys/bus/pci/devices/0000\:65\:00.0/driver_override
 echo 0000:65:00.0 > /sys/bus/pci/drivers/vfio-pci/bind
 ```
 
-## Preparation of mediated devices such as vGPU
+## 准备 vGPU 等中介设备 {#preparation-of-mediated-devices-such-as-vgpu}
 
-In general, configuration of a Mediated devices (mdevs), such as vGPUs, should be done according to the vendor directions. 
-KubeVirt can now facilitate the creation of the mediated devices / vGPUs on the cluster nodes. This assumes that the required vendor driver is already installed on the nodes.
-See the [Mediated devices and virtual GPUs](../compute/mediated_devices_configuration.md) to learn more about this functionality.
+一般来说，中介设备（mdevs，例如 vGPU）的配置应按照厂商说明进行。
+KubeVirt 现在可以协助在集群节点上创建中介设备 / vGPU。这假定所需的厂商驱动已经安装在节点上。
+有关此功能的更多信息，请参阅[中介设备与虚拟 GPU](../compute/mediated_devices_configuration.md)。
 
-Once the mdev is configured, KubeVirt will be able to discover and use it for device assignment.
+一旦配置好 mdev，KubeVirt 就能够发现它，并将其用于设备分配。
 
-## Preparation of vGPU devices with SR-IOV
+## 使用 SR-IOV 准备 vGPU 设备 {#preparation-of-vgpu-devices-with-sr-iov}
 
-In general, configuration of vGPUs with SR-IOV should be done according to the vendor directions.
-KubeVirt does not support the creation of virtual function (VF) nor the assignment of vGPU profile to the function.
-KubeVirt only facilitates exposure of these VFs for the VM to consume them (through generic PCI device plugin) but does not have fine-grained distinctions of the profiles, like those for mdevs. Therefore it is recommended to use vendor's device plugin to expose the functions in case of heterogeneous profiles.
+一般来说，带 SR-IOV 的 vGPU 应按照厂商说明进行配置。
+KubeVirt 不支持创建虚拟功能（VF），也不支持把 vGPU profile 分配给该功能。
+KubeVirt 只是便于将这些 VF 公开出来供 VM 使用（通过通用 PCI 设备插件），但并不像 mdev 那样对各种 profile 做细粒度区分。因此，在 profile 异构的情况下，建议使用厂商的设备插件来公开这些功能。
 
-To use a vGPU device that supports SR-IOV, follow the PCI-related notes in [Listing permitted devices](#listing-permitted-devices).
+要使用支持 SR-IOV 的 vGPU 设备，请遵循[列出允许的设备](#listing-permitted-devices)中与 PCI 相关的说明。
 
-## Listing permitted devices
+## 列出允许的设备 {#listing-permitted-devices}
 
-Administrators can control which host devices are exposed and permitted to be used in the
-cluster. Permitted host devices in the cluster will need to be allowlisted in KubeVirt CR by its `vendor:product` selector for PCI devices or mediated device names.
+管理员可以控制哪些主机设备被公开并允许在集群中使用。集群中允许的主机设备需要按其 `vendor:product` 选择器（针对 PCI 设备）或中介设备名称，在 KubeVirt CR 中列入允许列表。
 
 ```
 configuration:
@@ -89,37 +80,35 @@ configuration:
       resourceName: "nvidia.com/GRID_T4-1Q"
 ```
 
- * `pciVendorSelector` is a PCI vendor ID and product ID tuple in the form `vendor_id:product_id`.  This tuple can identify specific types of devices on a host. For example, the identifier `10de:1eb8`, shown above, can be found using `lspci`.
+ * `pciVendorSelector` 是形式为 `vendor_id:product_id` 的 PCI 厂商 ID 与产品 ID 元组。该元组可以标识宿主机上的特定类型设备。例如，上面所示的标识符 `10de:1eb8` 可以使用 `lspci` 找到。
 
         $ lspci -nnv|grep -i nvidia
         65:00.0 3D controller [0302]: NVIDIA Corporation TU104GL [Tesla T4] [10de:1eb8] (rev a1)
 
- * `mdevNameSelector` is a name of a Mediated device type that can identify specific types of Mediated devices on a host.
+ * `mdevNameSelector` 是中介设备类型的名称，可以标识宿主机上的特定类型中介设备。
 
-    You can see what mediated types a given PCI device supports by
-    examining the contents of
-    `/sys/bus/pci/devices/SLOT:BUS:DOMAIN.FUNCTION/mdev_supported_types/TYPE/name`.
-    For example, if you have an NVIDIA T4 GPU on your system, and you substitute in the `SLOT`, `BUS`, `DOMAIN`, and `FUNCTION` values that are correct for your system into the above path name, you will see that a `TYPE` of `nvidia-226` contains the selector string `GRID T4-2A` in its `name` file.
+    可以通过检查
+    `/sys/bus/pci/devices/SLOT:BUS:DOMAIN.FUNCTION/mdev_supported_types/TYPE/name`
+    的内容，查看给定 PCI 设备支持哪些中介类型。
+    例如，如果你的系统上有一块 NVIDIA T4 GPU，并且把上述路径名中的 `SLOT`、`BUS`、`DOMAIN` 和 `FUNCTION` 替换为适用于你的系统的值，你会看到 `TYPE` 为 `nvidia-226` 的类型包含选择器字符串 `GRID T4-2A`，该字符串位于其 `name` 文件中。
 
-    Taking `GRID T4-2A` and specifying it as the `mdevNameSelector` allows KubeVirt to find a corresponding mediated device by matching it against `/sys/class/mdev_bus/SLOT:BUS:DOMAIN.FUNCTION/$mdevUUID/mdev_type/name` for some values of `SLOT:BUS:DOMAIN.FUNCTION` and `$mdevUUID`.
+    将 `GRID T4-2A` 指定为 `mdevNameSelector` 后，KubeVirt 就可以把它与 `/sys/class/mdev_bus/SLOT:BUS:DOMAIN.FUNCTION/$mdevUUID/mdev_type/name` 进行匹配，从而针对某些 `SLOT:BUS:DOMAIN.FUNCTION` 和 `$mdevUUID` 值找到对应的中介设备。
 
- * External providers:
-`externalResourceProvider` field indicates that this resource is being provided by an external device plugin. In this case, KubeVirt will only permit the usage of this device in the cluster but will leave the allocation and monitoring to an external device plugin.
+ * 外部提供者：
+`externalResourceProvider` 字段表示此资源由外部设备插件提供。在这种情况下，KubeVirt 只会允许在集群中使用此设备，而把分配和监控留给外部设备插件。
 
-## Who can allocate a permitted device
+## 谁可以分配已允许的设备 {#who-can-allocate-a-permitted-device}
 
-For every `permittedHostDevices` entry that does not set `externalResourceProvider`, virt-handler registers the device plugin and a ValidatingAdmissionPolicy admits a pod requesting that resource name only when the caller is the virt-controller service account. Virtual machines receive the device on the virt-launcher pod that virt-controller creates.
+对于 `permittedHostDevices` 中每一条未设置 `externalResourceProvider` 的条目，virt-handler 会注册设备插件，并且 ValidatingAdmissionPolicy 仅当调用者是 virt-controller 服务账户时，才准入请求该资源名称的 Pod。虚拟机在 virt-controller 所创建的 virt-launcher Pod 上获得该设备。
 
-The policy reads the KubeVirt custom resource. While that object is missing, admission allows the pod instead of failing pod creation cluster-wide, so the restriction lasts only as long as the KubeVirt CR does.
+该策略读取 KubeVirt 自定义资源。当该对象缺失时，准入会允许该 Pod，以免在整个集群范围内使 Pod 创建失败，因此该限制仅在 KubeVirt CR 存在期间有效。
 
-After upgrade, a non-KubeVirt pod that requests a resource listed in `permittedHostDevices` is denied. Set `externalResourceProvider: true` on that entry when another workload must keep allocating the resource directly. KubeVirt then does not register its own plugin for the name, and the admission policy does not restrict it.
+升级之后，请求 `permittedHostDevices` 中所列资源的非 KubeVirt Pod 会被拒绝。当另一个工作负载必须继续直接分配该资源时，请在该条目上设置 `externalResourceProvider: true`。此后 KubeVirt 不会为该名称注册自己的插件，准入策略也不会限制它。
 
 
-## Starting a Virtual Machine
+## 启动虚拟机 {#starting-a-virtual-machine}
 
-Host devices can be assigned to virtual machines via the `gpus` and
-`hostDevices` fields.  The `deviceNames` can reference both PCI
-and Mediated device resource names.
+可以通过 `gpus` 和 `hostDevices` 字段将主机设备分配给虚拟机。`deviceNames` 既可以引用 PCI 设备资源名称，也可以引用中介设备资源名称。
 
 ```yaml
 kind: VirtualMachineInstance
@@ -136,15 +125,15 @@ spec:
         name: quickaccess1
 ```
 
-## NVMe PCI passthrough
+## NVMe PCI 直通 {#nvme-pci-passthrough}
 
-In order to passthrough an NVMe device the procedure is very similar to the gpu case. The device needs to be listed under the `permittedHostDevice` and under `hostDevices` in the VM declaration. 
+要对 NVMe 设备进行直通，过程与 GPU 的情况非常相似。该设备需要列在 `permittedHostDevice` 之下，并出现在 VM 声明的 `hostDevices` 中。
 
-Currently, the KubeVirt device plugin doesn't allow the user to select a specific device by specifying the address. Therefore, if multiple NVMe devices with the same vendor and product id exist in the cluster, they could be randomly assigned to a VM. If the devices are not on the same node, then the nodeSelector mitigates the issue.
+目前，KubeVirt 设备插件不允许用户通过指定地址来选择特定设备。因此，如果集群中存在多个厂商 ID 和产品 ID 都相同的 NVMe 设备，它们可能会被随机分配给某个 VM。如果这些设备不在同一节点上，则 nodeSelector 可以缓解该问题。
 
-Example:
+示例：
 
-Modify the `permittedHostDevice`
+修改 `permittedHostDevice`
 
 ```yaml
 configuration:
@@ -154,7 +143,7 @@ configuration:
       resourceName: devices.kubevirt.io/nvme
 ```
 
-VMI declaration:
+VMI 声明：
 ```yaml
 kind: VirtualMachineInstance
 metadata:
@@ -192,26 +181,23 @@ spec:
     name: cloudinitdisk
 ```
 
-## USB Host Passthrough
+## USB 主机直通 {#usb-host-passthrough}
 
-Since KubeVirt v1.1, we can provide USB devices that are plugged in a Node to the VM running in the
-same Node.
+自 KubeVirt v1.1 起，我们可以把插入某个节点的 USB 设备提供给在同一节点上运行的 VM。
 
-### Requirements
+### 要求 {#requirements}
 
-Cluster admin privilege to edit the KubeVirt CR in order to:
+需要集群管理员权限才能编辑 KubeVirt CR，以便：
 
-- Enable the `HostDevices` [feature gate](../cluster_admin/activating_feature_gates.md)
-- Edit the `permittedHostDevices` configuration to expose node USB devices to the cluster
+- 启用 `HostDevices` [功能门控](../cluster_admin/activating_feature_gates.md)
+- 编辑 `permittedHostDevices` 配置，把节点 USB 设备公开给集群
 
-### Exposing USB Devices
+### 公开 USB 设备 {#exposing-usb-devices}
 
-In order to assign USB devices to your VMI, you'll need to expose those devices to the cluster under
-a resource name. The device allowlist can be edited in KubeVirt CR under
-`configuration.permittedHostDevices.usb`.
+要把 USB 设备分配给你的 VMI，需要在某个资源名称下将这些设备向集群公开。设备允许列表可以在 KubeVirt CR 的 `configuration.permittedHostDevices.usb` 下编辑。
 
-For this example, we will use the `kubevirt.io/storage` resource name for the device with `vendor:
-"46f4"` and `product: "0001"` [^1].
+在此示例中，我们将使用 `kubevirt.io/storage` 资源名称，对应设备为 `vendor:
+"46f4"` and `product: "0001"` [^1]。
 
 
 ```yaml
@@ -225,14 +211,12 @@ spec:
               product: "0001"
 ```
 
-After adding the `usb` configuration under `permittedHostDevices` to the KubeVirt CR, KubeVirt's
-device-plugin will expose this resource name and you can use it in your VMI.
+在把 `usb` 配置添加到 KubeVirt CR 的 `permittedHostDevices` 之下以后，KubeVirt 的 device-plugin 会公开此资源名称，你可以在 VMI 中使用它。
 
 
-### Adding USB to your VM
+### 把 USB 添加到你的 VM {#adding-usb-to-your-vm}
 
-Now, in the VMI configuration, you can add the `devices.hostDevices.deviceName` and reference the
-resource name provided in the previous step, and also give it a local `name`, for example:
+现在，在 VMI 配置中，可以添加 `devices.hostDevices.deviceName`，引用上一步提供的资源名称，并给它一个本地 `name`，例如：
 
 ```yaml
 spec:
@@ -243,15 +227,12 @@ spec:
         name: usb-storage
 ```
 
-You can find a working example, which uses QEMU's emulated USB storage, under
-[examples/vmi-usb.yaml](https://github.com/kubevirt/kubevirt/blob/main/examples/vmi-usb.yaml).
+可以在 [examples/vmi-usb.yaml](https://github.com/kubevirt/kubevirt/blob/main/examples/vmi-usb.yaml) 中找到一个可运行的示例，该示例使用 QEMU 模拟的 USB 存储。
 
 
-### Bundle of USB devices
+### 一组 USB 设备 {#bundle-of-usb-devices}
 
-You might be interested to redirect more than one USB device to a VMI, for example, a keyboard, a
-mouse and a smartcard device. The KubeVirt CR supports assigning multiple USB devices under the same
-resource name, so you could do:
+你可能希望把不止一个 USB 设备重定向到某个 VMI，例如键盘、鼠标和智能卡设备。KubeVirt CR 支持在同一资源名称下分配多个 USB 设备，因此可以这样做：
 
 ```yaml
 spec:
@@ -268,7 +249,7 @@ spec:
               product: "b100"
 ```
 
-Adding to the VMI configuration:
+添加到 VMI 配置中：
 
 ```yaml
 spec:
@@ -279,6 +260,6 @@ spec:
         name: local-peripherals 
 ```
 
-Note that all USB devices need to be present in order for the assignment to work.
+请注意，所有 USB 设备都必须在位，分配才能生效。
 
-[^1]: Note that you can easily find the `vendor:product` value with the `lsusb` command.
+[^1]: 请注意，`vendor:product` 的值可以用 `lsusb` 命令轻松找到。

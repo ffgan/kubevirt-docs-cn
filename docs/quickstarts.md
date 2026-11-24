@@ -5,16 +5,16 @@ hide:
 ---
 
 
-## Quickstart Guides
+## 快速开始 {#quickstart-guides}
 
-Killercoda provides an interactive environment for exploring KubeVirt scenarios:
+Killercoda 提供用于探索 KubeVirt 场景的交互式环境：
 
-- [KubeVirt on killercoda](https://killercoda.com/kubevirt)
+- [killercoda 上的 KubeVirt](https://killercoda.com/kubevirt)
 
-Guides for deploying KubeVirt with different Kubernetes tools:
+使用不同 Kubernetes 工具部署 KubeVirt 的指南：
 
-- [KubeVirt on minikube](https://kubevirt.io/quickstart_minikube/)
+- [minikube 上的 KubeVirt](https://kubevirt.io/quickstart_minikube/)
 
-- [KubeVirt on kind](https://kubevirt.io/quickstart_kind/)
+- [kind 上的 KubeVirt](https://kubevirt.io/quickstart_kind/)
 
-- [KubeVirt on cloud providers](https://kubevirt.io/quickstart_cloud/)
+- [云提供商上的 KubeVirt](https://kubevirt.io/quickstart_cloud/)

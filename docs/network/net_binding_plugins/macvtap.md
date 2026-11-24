@@ -1,67 +1,59 @@
-# Macvtap binding
+# Macvtap 绑定 {#macvtap-binding}
 
-## Overview
+## 概述 {#overview}
 
-With the `macvtap` binding plugin, virtual machines are directly exposed to the Kubernetes
-nodes L2 network. This is achieved by 'extending' an existing network interface
-with a virtual device that has its own MAC address.
+借助 `macvtap` 绑定插件，虚拟机会被直接暴露到 Kubernetes 节点的 L2 网络。其实现方式是“扩展”一个现有网络接口，为其附加一个拥有自身 MAC 地址的虚拟设备。
 
-Its main benefits are:
+其主要优点如下：
 
-- Direct connection to the node nic with no intermediate bridges.
+- 直接连接到节点网卡，中间没有网桥。
 
-### Functionality support
-| Functionality                            | Support |
+### 功能支持 {#functionality-support}
+
+| 功能 | 支持情况 |
 |------------------------------------------|---------|
-| Run without extra capabilities (on pod)  | Yes     |
-| Migration support                        | No      |
-| IPAM support (on pod)                    | No      |
-| Primary network (pod network)            | No      |
-| Secondary network                        | Yes     |
+| 无需额外权能即可运行（在 Pod 上） | 是 |
+| 迁移支持 | 否 |
+| IPAM 支持（在 Pod 上） | 否 |
+| 主网络（Pod 网络） | 否 |
+| 辅助网络 | 是 |
 
-### Known Issues
+### 已知问题 {#known-issues}
 
-- Live migration is not fully supported, see [issue #5912](https://github.com/kubevirt/kubevirt/issues/5912#issuecomment-888938920)
+- 实时迁移尚未得到完全支持，请参阅[问题 #5912](https://github.com/kubevirt/kubevirt/issues/5912#issuecomment-888938920)
 
-> **Warning**: On [KinD](https://github.com/kubernetes-sigs/kind) clusters,
-> the user needs to [adjust the cluster configuration](https://github.com/kubevirt/macvtap-cni/issues/39#issuecomment-1242765996),
-mounting `dev` of the running host onto the KinD nodes, because of a
-[known issue](https://github.com/kubevirt/macvtap-cni/issues/39).
+> **警告**：在 [KinD](https://github.com/kubernetes-sigs/kind) 集群上，
+> 用户需要[调整集群配置](https://github.com/kubevirt/macvtap-cni/issues/39#issuecomment-1242765996)，
+把正在运行的宿主机的 `dev` 挂载到 KinD 节点上，原因是一个
+[已知问题](https://github.com/kubevirt/macvtap-cni/issues/39)。
 
-### Deployment
+### 部署 {#deployment}
 
-The `macvtap` solution consists of a CNI and a DP.
+`macvtap` 方案由一个 CNI 和一个 DP 组成。
 
-In order to use `macvtap`, the following points need to be covered:
+要使用 `macvtap`，需要完成以下几点：
 
-- Deploy the CNI plugin binary on the nodes.
-- Deploy the Device Plugin daemon on the nodes.
-- Configure which node interfaces are exposed.
-- Define a NetworkAttachmentDefinition that points to the CNI plugin.
+- 在节点上部署 CNI 插件二进制文件。
+- 在节点上部署设备插件守护进程。
+- 配置暴露哪些节点接口。
+- 定义一个指向该 CNI 插件的 NetworkAttachmentDefinition。
 
-#### Macvtap CNI and DP deployment on nodes
+#### 在节点上部署 Macvtap CNI 和 DP {#macvtap-cni-and-dp-deployment-on-nodes}
 
-To simplify the procedure, use the
-[Cluster Network Addons Operator](https://github.com/kubevirt/cluster-network-addons-operator#macvtap)
-to deploy and configure the macvtap components in your cluster.
+为简化该过程，请使用 [Cluster Network Addons Operator](https://github.com/kubevirt/cluster-network-addons-operator#macvtap) 在集群中部署并配置 macvtap 组件。
 
-The aforementioned operator effectively deploys the
-[macvtap](https://github.com/kubevirt/macvtap-cni) cni and device plugin.
+上述 Operator 实际部署的是 [macvtap](https://github.com/kubevirt/macvtap-cni) CNI 和设备插件。
 
-#### Expose node interface to the macvtap device plugin
+#### 向 macvtap 设备插件暴露节点接口 {#expose-node-interface-to-the-macvtap-device-plugin}
 
-There are two different alternatives to configure which host interfaces get
-exposed to the user, enabling them to create macvtap interfaces on top of:
+有两种不同的方式，用来配置向用户暴露哪些宿主机接口，从而使用户能够在这些接口之上创建 macvtap 接口：
 
-- select the host interfaces: indicates which host interfaces are exposed.
-- expose all interfaces: all interfaces of all hosts are exposed.
+- 选择宿主机接口：指明暴露哪些宿主机接口。
+- 暴露全部接口：暴露所有宿主机的全部接口。
 
-Both options are configured via the `macvtap-deviceplugin-config` ConfigMap,
-and more information on how to configure it can be found in the
-[macvtap-cni](https://github.com/kubevirt/macvtap-cni#deployment) repo.
+这两个选项都通过 `macvtap-deviceplugin-config` ConfigMap 进行配置，关于如何配置的更多信息见 [macvtap-cni](https://github.com/kubevirt/macvtap-cni#deployment) 仓库。
 
-This is a minimal example, in which the `eth0` interface of the Kubernetes
-nodes is exposed, via the `lowerDevice` attribute.
+下面是一个最小示例，其中暴露了 Kubernetes 节点的 `eth0` 接口，经由 `lowerDevice` 属性。
 
 ```yaml
 kind: ConfigMap
@@ -80,9 +72,7 @@ data:
     ]
 ```
 
-This step can be omitted, since the default configuration of the aforementioned
-`ConfigMap` is to expose all host interfaces (which is represented by the
-following configuration):
+可以省略这一步，因为上述 `ConfigMap` 的默认配置就是暴露所有宿主机接口（由以下配置表示）：
 
 ```yaml
 kind: ConfigMap
@@ -93,9 +83,9 @@ data:
   DP_MACVTAP_CONF: '[]'
 ```
 
-#### Macvtap NetworkAttachmentDefinition
+#### Macvtap NetworkAttachmentDefinition {#macvtap-networkattachmentdefinition}
 
-The configuration needed for a macvtap network attachment can be minimalistic:
+macvtap 网络附加所需的配置可以非常精简：
 
 ```yaml
 kind: NetworkAttachmentDefinition
@@ -113,38 +103,34 @@ spec:
     }'
 ```
 
-The object should be created in a "default" namespace where all other namespaces
-can access, or, in the same namespace the VMs reside in.
+该对象应当创建在其他所有命名空间都能访问的 “default” 命名空间中，或者创建在 VM 所在的同一命名空间中。
 
-The requested `k8s.v1.cni.cncf.io/resourceName` annotation must point to an
-exposed host interface (via the `lowerDevice` attribute, on the
-`macvtap-deviceplugin-config` `ConfigMap`).
+所请求的 `k8s.v1.cni.cncf.io/resourceName` 注解必须指向一个已暴露的宿主机接口（通过 `lowerDevice` 属性，位于 `macvtap-deviceplugin-config` `ConfigMap` 上）。
 
-## Macvtap network binding plugin
+## Macvtap 网络绑定插件 {#macvtap-network-binding-plugin}
 
-> **Note**: The experimental core macvtap binding was deprecated in v1.2.0 and removed in v1.3.0. 
-> This documentation covers the **network binding plugin** implementation of macvtap.
+> **注意**：实验性的核心 macvtap 绑定已在 v1.2.0 弃用，并在 v1.3.0 移除。本文档介绍的是 macvtap 的**网络绑定插件**实现。
 
-The macvtap binding plugin consists of the following components:
+macvtap 绑定插件由以下组件组成：
 
-- [Macvtap CNI plugin](https://github.com/kubevirt/macvtap-cni).
+- [Macvtap CNI 插件](https://github.com/kubevirt/macvtap-cni)。
 
-The plugin needs to:
+该插件需要：
 
-- Register the binding plugin on the Kubevirt CR.
-- Reference the network binding by name from the VM spec interface.
+- 在 KubeVirt CR 上注册该绑定插件。
+- 从 VM spec 的接口中按名称引用该网络绑定。
 
-And in detail:
+详细说明如下：
 
-### Feature Gate
-As of v1.5.0, the Network Binding Plugin feature enabled by default and has no feature gate.
-The macvtap plugin similarly has no feature gate of its own, but the plugin needs to be made available in the cluster by [registering it](./#macvtap-registration).
+### 功能门控 {#feature-gate}
 
-### Macvtap Registration
-The macvtap binding plugin configuration needs to be added to the kubevirt CR
-in order to be used by VMs.
+自 v1.5.0 起，网络绑定插件功能默认启用，并且没有功能门控。macvtap 插件同样没有自己的功能门控，但需要通过[注册](./#macvtap-registration)使其在集群中可用。
 
-To register the macvtap binding, patch the kubevirt CR as follows:
+### Macvtap 注册 {#macvtap-registration}
+
+要供 VM 使用，需要把 macvtap 绑定插件配置添加到 kubevirt CR 中。
+
+要注册 macvtap 绑定，请按如下方式修补 kubevirt CR：
 
 ```yaml
 kubectl patch kubevirts -n kubevirt kubevirt --type=json -p='[{"op": "add", "path": "/spec/configuration/network",   "value": {
@@ -156,9 +142,9 @@ kubectl patch kubevirts -n kubevirt kubevirt --type=json -p='[{"op": "add", "pat
         }}]'
 ```
 
-### VM Macvtap Network Interface
-Set the VM network interface binding name to reference the one defined in the
-kubevirt CR.
+### VM 的 Macvtap 网络接口 {#vm-macvtap-network-interface}
+
+将 VM 网络接口的绑定名称设置为 kubevirt CR 中所定义的名称。
 
 ```yaml
 ---
@@ -214,8 +200,6 @@ spec:
         name: cloudinitdisk
 ```
 
-The multus `networkName` value should correspond with the name used in
-the [network attachment definition](#macvtap-networkattachmentdefinition) section.
+multus 的 `networkName` 值应当与[网络附加定义](#macvtap-networkattachmentdefinition)一节中使用的名称相对应。
 
-The `binding` value should correspond with the name used in the
-[registration](#macvtap-registration).
+`binding` 值应当与[注册](#macvtap-registration)中使用的名称相对应。

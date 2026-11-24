@@ -9,12 +9,12 @@ nav:
   - startup_scripts.md
   - windows_virtio_drivers.md
   - legacy_windows.md
-  - Monitoring:
+  - 监控:
     - component_monitoring.md
     - guest_agent_information.md
     - guest_operating_system_information.md
     - liveness_and_readiness_probes.md
-  - Workloads:
+  - 工作负载:
     - instancetypes.md
     - deploy_common_instancetypes.md
     - hook-sidecar.md

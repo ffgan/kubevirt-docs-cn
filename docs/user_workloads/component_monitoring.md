@@ -1,25 +1,16 @@
-# Component monitoring
+# 组件监控 {#component-monitoring}
 
-All KubeVirt system-components expose Prometheus metrics at their
-`/metrics` REST endpoint.
+所有 KubeVirt 系统组件都在其 `/metrics` REST 端点上暴露 Prometheus 指标。
 
-You can consult the complete and up-to-date metric list at [kubevirt/monitoring](https://github.com/kubevirt/monitoring/blob/main/docs/metrics.md).
+完整且最新的指标列表见 [kubevirt/monitoring](https://github.com/kubevirt/monitoring/blob/main/docs/metrics.md)。
 
-## Custom Service Discovery
+## 自定义服务发现 {#custom-service-discovery}
 
-Prometheus supports service discovery based on
-[Pods](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod)
-and
-[Endpoints](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#endpoints)
-out of the box. Both can be used to discover KubeVirt services.
+Prometheus 开箱即支持基于 [Pod](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#pod) 和 [端点](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#endpoints) 的服务发现。两者都可用于发现 KubeVirt 服务。
 
-All Pods which expose metrics are labeled with `prometheus.kubevirt.io`
-and contain a port-definition which is called `metrics`. In the KubeVirt
-release-manifests, the default `metrics` port is `8443`.
+所有暴露指标的 Pod 都带有标签 `prometheus.kubevirt.io`，并包含一个名为 `metrics` 的端口定义。在 KubeVirt 发布清单中，默认的 `metrics` 端口是 `8443`。
 
-The above labels and port informations are collected by a `Service`
-called `kubevirt-prometheus-metrics`. Kubernetes automatically creates a
-corresponding `Endpoint` with an equal name:
+上述标签和端口信息由 `Service`（名为 `kubevirt-prometheus-metrics`）收集。Kubernetes 会自动创建一个同名的对应 `Endpoint`：
 
 ```bash
 kubectl get endpoints -n kubevirt kubevirt-prometheus-metrics -o yaml
@@ -52,43 +43,27 @@ subsets:
     protocol: TCP
 ```
 
-By watching this endpoint for added and removed IPs to
-`subsets.addresses` and appending the `metrics` port from
-`subsets.ports`, it is possible to always get a complete list of
-ready-to-be-scraped Prometheus targets.
+通过监视此 endpoint，观察 `subsets.addresses` 中新增和移除的 IP，并附上 `metrics` 端口（来自 `subsets.ports`），就可以始终得到一份完整的、可供抓取的 Prometheus 目标列表。
 
-## Integrating with the prometheus-operator
+## 与 prometheus-operator 集成 {#integrating-with-the-prometheus-operator}
 
-The [prometheus-operator](https://github.com/coreos/prometheus-operator)
-can make use of the `kubevirt-prometheus-metrics` service to
-automatically create the appropriate Prometheus config.
+[prometheus-operator](https://github.com/coreos/prometheus-operator) 可以利用 `kubevirt-prometheus-metrics` 服务自动创建相应的 Prometheus 配置。
 
-KubeVirt's `virt-operator` checks if the `ServiceMonitor` custom
-resource exists when creating an install strategy for deployment.
-KubeVirt will automatically create a `ServiceMonitor` resource in the
-`monitorNamespace`, as well as an appropriate role and rolebinding in
-KubeVirt's namespace.
+KubeVirt 的 `virt-operator` 在为部署创建安装策略时，会检查 `ServiceMonitor` 自定义资源是否存在。KubeVirt 会自动创建 `ServiceMonitor` 资源，并将其放在 `monitorNamespace` 中，同时在 KubeVirt 的命名空间中创建相应的 role 和 rolebinding。
 
-Three settings are exposed in the `KubeVirt` custom resource to direct
-KubeVirt to create these resources correctly:
+`KubeVirt` 自定义资源中暴露了三项设置，用于指导 KubeVirt 正确创建这些资源：
 
--   `monitorNamespace`: The namespace that prometheus-operator runs in.
-    Defaults to `openshift-monitoring`.
+-   `monitorNamespace`：prometheus-operator 运行所在的命名空间。默认为 `openshift-monitoring`。
 
--   `monitorAccount`: The serviceAccount that prometheus-operator runs
-    with. Defaults to `prometheus-k8s`.
+-   `monitorAccount`：prometheus-operator 运行所用的 serviceAccount。默认为 `prometheus-k8s`。
 
--   `serviceMonitorNamespace`: The namespace that the serviceMonitor runs in.
-    Defaults to be `monitorNamespace` 
+-   `serviceMonitorNamespace`：serviceMonitor 运行所在的命名空间。默认是 `monitorNamespace` 
 
-Please note that if you decide to set `serviceMonitorNamespace` than this 
-namespace must be included in `serviceMonitorNamespaceSelector` field of 
-Prometheus spec.
+请注意，如果决定设置 `serviceMonitorNamespace`，则此命名空间必须包含在 Prometheus spec 的 `serviceMonitorNamespaceSelector` 字段中。
 
-If the prometheus-operator for a given deployment uses these defaults,
-then these values can be omitted.
+如果给定部署的 prometheus-operator 使用这些默认值，则可以省略这些值。
 
-An example of the KubeVirt resource depicting these default values:
+展示这些默认值的 KubeVirt 资源示例如下：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -99,26 +74,17 @@ spec:
   monitorNamespace: openshift-monitoring
   monitorAccount: prometheus-k8s
 ```
-## Integrating with the OKD cluster-monitoring-operator
+## 与 OKD cluster-monitoring-operator 集成 {#integrating-with-the-okd-cluster-monitoring-operator}
 
-After the
-[cluster-monitoring-operator](https://github.com/openshift/cluster-monitoring-operator)
-is up and running, KubeVirt will detect the existence of the
-`ServiceMonitor` resource. Because the definition contains the
-`openshift.io/cluster-monitoring` label, it will automatically be picked
-up by the cluster monitor.
+在 [cluster-monitoring-operator](https://github.com/openshift/cluster-monitoring-operator) 启动并运行之后，KubeVirt 会检测到 `ServiceMonitor` 资源的存在。由于该定义包含 `openshift.io/cluster-monitoring` 标签，集群监控会自动发现它。
 
-## Metrics about Virtual Machines
+## 关于虚拟机的指标 {#metrics-about-virtual-machines}
 
-The endpoints report metrics related to the runtime behaviour of the
-Virtual Machines. All the relevant metrics are prefixed with
-`kubevirt_vmi`.
+这些 endpoint 报告与虚拟机运行时行为相关的指标。所有相关指标都以 `kubevirt_vmi` 为前缀。
 
-The metrics have labels that allow to connect to the VMI objects they
-refer to. At minimum, the labels will expose `node`, `name` and
-`namespace` of the related VMI object.
+这些指标带有标签，可以把它们关联到所指向的 VMI 对象。这些标签至少会暴露相关 VMI 对象的 `node`、`name` 和 `namespace`。
 
-For example, reported metrics could look like
+例如，报告的指标可能如下所示
 
 ```
 kubevirt_vmi_memory_resident_bytes{domain="default_vm-test-01",name="vm-test-01",namespace="default",node="node01"} 2.5595904e+07
@@ -127,19 +93,14 @@ kubevirt_vmi_network_traffic_bytes_total{domain="default_vm-test-01",interface="
 kubevirt_vmi_vcpu_seconds_total{domain="default_vm-test-01",id="0",name="vm-test-01",namespace="default",node="node01",state="1"} 19
 ```
 
-Please note the `domain` label in the above example. This label is
-deprecated and it will be removed in a future release. You should
-identify the VMI using the `node`, `namespace`, `name` labels instead.
+请注意上面示例中的 `domain` 标签。该标签已弃用，并将在未来的发行版中移除。你应当改用 `node`、`namespace`、`name` 标签来标识 VMI。
 
-## Important Queries
+## 重要查询 {#important-queries}
 
-### Detecting connection issues for the REST client
+### 检测 REST 客户端的连接问题 {#detecting-connection-issues-for-the-rest-client}
 
-Use the following query to get a counter for all REST call which
-indicate connection issues:
+使用以下查询，获取表明连接问题的所有 REST 调用的计数器：
 
     rest_client_requests_total{code="<error>"}
 
-If this counter is continuously increasing, it is an indicator that the
-corresponding KubeVirt component has general issues to connect to the
-apiserver
+如果该计数器持续增长，则表明相应的 KubeVirt 组件在连接 apiserver 时存在普遍问题

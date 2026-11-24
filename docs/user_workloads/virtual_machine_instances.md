@@ -1,28 +1,25 @@
-# Virtual Machines Instances
+# 虚拟机实例 {#virtual-machines-instances}
 
-The `VirtualMachineInstance` type conceptionally has two parts:
+`VirtualMachineInstance` 类型在概念上包含两部分：
 
--   Information for making scheduling decisions
+-   用于做出调度决策的信息
 
--   Information about the virtual machine API
+-   关于虚拟机 API 的信息
 
-Every `VirtualMachineInstance` object represents a single running
-virtual machine instance.
+每个 `VirtualMachineInstance` 对象代表一个正在运行的虚拟机实例。
 
-## API Overview
+## API 概览 {#api-overview}
 
-With the installation of KubeVirt, new types are added to the Kubernetes
-API to manage Virtual Machines.
+安装 KubeVirt 后，Kubernetes API 中会新增用于管理虚拟机的类型。
 
-You can interact with the new resources (via `kubectl`) as you would
-with any other API resource.
+你可以像操作其他任何 API 资源一样（通过 `kubectl`）与这些新资源交互。
 
-## VirtualMachineInstance API
+## VirtualMachineInstance API {#virtualmachineinstance-api}
 
-> Note: A full API reference is available at
-> <https://kubevirt.io/api-reference/>.
+> 注意：完整的 API 参考位于
+> <https://kubevirt.io/api-reference/>。
 
-Here is an example of a VirtualMachineInstance object:
+以下是 VirtualMachineInstance 对象的示例：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -61,21 +58,18 @@ spec:
         chpasswd: { expire: False }
 ```
 
-This example uses a fedora cloud image in combination with cloud-init
-and an ephemeral empty disk with a capacity of `2Gi`. For the sake of
-simplicity, the volume sources in this example are ephemeral and don't
-require a provisioner in your cluster.
+此示例结合使用 fedora cloud 镜像与 cloud-init，以及一块容量为 `2Gi` 的临时空磁盘。为简单起见，此示例中的卷源是临时的，不需要集群中的制备器。
 
-## Additional Information
+## 更多信息 {#additional-information}
 
--   Using instancetypes and preferences with a VirtualMachine:
-    [Instancetypes and preferences](../user_workloads/instancetypes.md)
+-   在 VirtualMachine 中使用实例类型和偏好：
+    [实例类型和偏好](../user_workloads/instancetypes.md)
 
--   More information about persistent and ephemeral volumes:
-    [Disks and Volumes](../storage/disks_and_volumes.md)
+-   关于持久卷和临时卷的更多信息：
+    [磁盘和卷](../storage/disks_and_volumes.md)
 
--   How to access a VirtualMachineInstance via `console` or `vnc`:
-    [Console Access](../user_workloads/accessing_virtual_machines.md)
+-   如何通过 `console` 或 `vnc` 访问 VirtualMachineInstance：
+    [控制台访问](../user_workloads/accessing_virtual_machines.md)
 
--   How to customize VirtualMachineInstances with `cloud-init`:
-    [Cloud Init](../user_workloads/startup_scripts.md#cloud-init)
+-   如何使用 `cloud-init` 定制 VirtualMachineInstance：
+    [Cloud-init](../user_workloads/startup_scripts.md#cloud-init)

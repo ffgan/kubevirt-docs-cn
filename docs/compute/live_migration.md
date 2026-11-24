@@ -1,42 +1,28 @@
-# Live Migration
+# 实时迁移 {#live-migration}
 
-Live migration is a process during which a running Virtual Machine
-Instance moves to another compute node while the guest workload
-continues to run and remain accessible.
+实时迁移是这样一个过程：正在运行的虚拟机实例移动到另一个计算节点，与此同时客户机工作负载继续运行并保持可访问。
 
-## Enabling the live-migration support
+## 启用实时迁移支持 {#enabling-the-live-migration-support}
 
-Live migration is enabled by default in recent versions of KubeVirt. Versions
-prior to v0.56, it must be enabled in the feature gates. The
-[feature gates](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-field in the KubeVirt CR must be expanded by adding the `LiveMigration` to it.
+在较新版本的 KubeVirt 中，实时迁移默认启用。在 v0.56 之前的版本中，必须在功能门控里启用它。KubeVirt CR 中的[功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)字段必须通过添加 `LiveMigration` 来扩展。
 
-## Limitations
+## 限制 {#limitations}
 
-- Virtual machines using a PersistentVolumeClaim (PVC) must have a
-  shared ReadWriteMany (RWX) access mode to be live migrated, unless
-  the volume is also being migrated (see [volume migration](../storage/volume_migration.md)
-  and `status.migratedVolumes`).
+- 使用 PersistentVolumeClaim（PVC）的虚拟机必须具备共享的 ReadWriteMany（RWX）访问模式，才能进行实时迁移，除非该卷也正在被迁移（参见[卷迁移](../storage/volume_migration.md)和 `status.migratedVolumes`）。
 
-- Live migration is not allowed with a pod network binding of bridge
-  interface type ([interfaces and networks](../network/interfaces_and_networks.md#bridge))
+- 当 Pod 网络绑定为 bridge 接口类型时，不允许实时迁移（[接口和网络](../network/interfaces_and_networks.md#bridge)）。
 
-- Live migration requires ports `49152, 49153` to be available in the virt-launcher pod.
-  If these ports are explicitly specified in [masquerade interface](../network/interfaces_and_networks.md#masquerade), live migration will not function.
+- 实时迁移要求 virt-launcher Pod 中的端口 `49152, 49153` 可用。如果在[masquerade 接口](../network/interfaces_and_networks.md#masquerade)中显式指定了这些端口，实时迁移将无法工作。
 
-- Live migration requires the virt-launcher pod's primary network interface to have the same name on both source and target pods.
+- 实时迁移要求 virt-launcher Pod 的主网络接口在源 Pod 和目标 Pod 上的名称相同。
 
-- Post-copy live migration requires additional node-level permissions on
-  most environments. See [Node configuration for post-copy](#node-configuration-for-post-copy)
-  for details.
+- 后拷贝实时迁移在大多数环境中需要额外的节点级权限。详情请参阅[后拷贝的节点配置](#node-configuration-for-post-copy)。
 
-- Live migration of VMs with GPUs has limitations. See [Live migration with vGPUs](#live-migration-with-nvidia-vgpus).
+- 带有 GPU 的 VM 的实时迁移存在限制。请参阅[使用 vGPU 的实时迁移](#live-migration-with-nvidia-vgpus)。
 
-## Initiate live migration
+## 发起实时迁移 {#initiate-live-migration}
 
-Live migration is initiated by posting a VirtualMachineInstanceMigration
-(VMIM) object to the cluster. The example below starts a migration
-process for a virtual machine instance `vmi-fedora`
+实时迁移通过向集群提交一个 VirtualMachineInstanceMigration（VMIM）对象来发起。下面的示例会为虚拟机实例 `vmi-fedora` 启动迁移过程。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -47,27 +33,21 @@ spec:
   vmiName: vmi-fedora
 ```
 
-### Using virtctl to initiate live migration
-Live migration can also be initiated using virtctl
+### 使用 virtctl 发起实时迁移 {#using-virtctl-to-initiate-live-migration}
+
+也可以使用 virtctl 发起实时迁移。
+
 ```console
     virtctl migrate vmi-fedora
 ```
 
+## 迁移状态报告 {#migration-status-reporting}
 
-## Migration Status Reporting
+### 状况与迁移方法 {#condition-and-migration-method}
 
-### Condition and migration method
+启动虚拟机实例时，还会计算这台机器是否可以实时迁移。结果存放在 VMI 的 `VMI.status.conditions` 中。该计算基于 VMI 的多个参数。迁移不可 LiveMigratable 的 VMI 的请求会被拒绝。
 
-When starting a virtual machine instance, it has also been calculated
-whether the machine is live migratable. The result is stored in
-the VMI `VMI.status.conditions`. The calculation is based on
-multiple parameters of the VMI. Requests to migrate a non-LiveMigratable
-VMI will be rejected.
-
-The reported `Migration Method` is also calculated during VMI
-start. `BlockMigration` indicates that some of the VMI disks require
-copying from the source to the destination. `LiveMigration` means that
-only the instance memory will be copied.
+报告的 `Migration Method` 也会在 VMI 启动期间计算出来。`BlockMigration` 表示 VMI 的某些磁盘需要从源复制到目标。`LiveMigration` 表示只会复制实例内存。
 
 ```yaml
 Status:
@@ -77,13 +57,11 @@ Status:
   Migration Method: BlockMigration
 ```
 
-### Migration Status
+### 迁移状态 {#migration-status}
 
-The migration progress status is reported in the VMI `VMI.status`.
-Most importantly, it indicates whether the migration has been
-`Completed` or if it `Failed`.
+迁移进度状态报告在 VMI 的 `VMI.status` 中。最重要的是，它表明迁移是否已经 `Completed`，或者是否 `Failed`。
 
-Below is an example of a successful migration.
+下面是一次成功迁移的示例。
 
 ```
 Migration State:
@@ -108,13 +86,9 @@ Migration State:
     Target Pod:                              virt-launcher-testvmi-target
 ```
 
-## Canceling a live migration
+## 取消实时迁移 {#canceling-a-live-migration}
 
-Live migration can also be canceled by simply deleting the migration
-object. A successfully aborted migration will indicate that the abort
-has been requested `Abort Requested`, and that it succeeded:
-`Abort Status: Succeeded`. The migration in this case will be `Completed`
-and `Failed`.
+也可以通过简单地删除迁移对象来取消实时迁移。成功中止的迁移会表明已经请求中止，即 `Abort Requested`，并且中止已成功：`Abort Status: Succeeded`。在这种情况下，迁移会是 `Completed` 并且 `Failed`。
 
 ```
 Migration State:
@@ -141,23 +115,19 @@ Migration State:
     Target Pod:                              virt-launcher-testvmi-target
 ```
 
-### Using virtctl to cancel a live migration
-Live migration can also be canceled using virtctl, by specifying the name
-of a VMI which is currently being migrated
+### 使用 virtctl 取消实时迁移 {#using-virtctl-to-cancel-a-live-migration}
+
+也可以使用 virtctl 取消实时迁移，方法是指定当前正在被迁移的 VMI 的名称。
+
 ```console
     virtctl migrate-cancel vmi-fedora
 ```
 
-## Changing Cluster Wide Migration Configuration
+## 更改集群范围的迁移配置 {#changing-cluster-wide-migration-configuration}
 
-KubeVirt puts some limits in place, so that migrations don't overwhelm
-the cluster. By default, it is configured to only run `5` migrations in
-parallel with an additional limit of a maximum of `2` outbound
-migrations per node. Bandwidth per migration is unlimited by default
-(`0Mi`).
+KubeVirt 设置了一些限制，以免迁移压垮集群。默认情况下，它被配置为只并行运行 `5` 个迁移，另外还限制每个节点最多 `2` 个出站迁移。每次迁移的带宽默认不受限制（`0Mi`）。
 
-You can override these and other migration settings in the `kubevirt` CR.
-The following example shows the current defaults:
+你可以在 `kubevirt` CR 中覆盖这些设置以及其他迁移设置。下面的示例展示了当前的默认值：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -180,36 +150,30 @@ spec:
       unsafeMigrationOverride: false
 ```
 
-### Configuring Acceptable Levels of Workload Disruption
+### 配置可接受的工作负载中断级别 {#configuring-acceptable-levels-of-workload-disruption}
 
-The **AllowWorkloadDisruption** parameter enables administrators to define the
-acceptable level of workload disruption during a migration, specifically when it
-fails to converge within the specified `AcceptableCompletionTime`, which is determined by the `completionTimeoutPerGiB` configuration and the VM "size". This option
-provides a balance between ensuring migration completion and mitigating risks
-associated with different migration strategies.
+**AllowWorkloadDisruption** 参数让管理员能够定义迁移期间可接受的工作负载中断级别，特别是当迁移未能在指定的 `AcceptableCompletionTime` 内收敛时。该时间由 `completionTimeoutPerGiB` 配置以及 VM 的“大小”决定。此选项在确保迁移完成与降低不同迁移策略所带来的风险之间取得平衡。
 
-#### Understanding the AllowWorkloadDisruption
+#### 理解 AllowWorkloadDisruption {#understanding-the-allowworkloaddisruption}
 
-The behavior dictated by `AllowWorkloadDisruption` depends on its configuration:
+`AllowWorkloadDisruption` 所规定的行为取决于它的配置：
 
-- **When disabled**:
-  - Workloads are not disrupted during migration.
-  - If the migration does not converge within the `AcceptableCompletionTime`, it will be canceled and may need to be restarted.
-  - This approach minimizes workload disruption, however, "busy" workloads may not migrate in time, which increases the risk of repeated migration.
+- **禁用时**：
+  - 迁移期间工作负载不会被中断。
+  - 如果迁移未能在 `AcceptableCompletionTime` 内收敛，它会被取消，并且可能需要重新开始。
+  - 这种方式把工作负载中断降到最低，不过，“繁忙”的工作负载可能无法及时完成迁移，从而增加重复迁移的风险。
 
-- **When enabled**:
-  - The migration controller is allowed to disrupt the workload associated with long-running migrations to facilitate migration completion.
-  - When `AcceptableCompletionTime` threshold is reached, the migration controller will switch the migration into a post-copy
-    mode. If post-copy is not permitted, the migration controller will instead pause the corresponding Virtual Machine Instance to ensure migration
-    completion.
+- **启用时**：
+  - 允许迁移控制器中断与长时间运行的迁移相关联的工作负载，以促使迁移完成。
+  - 当达到 `AcceptableCompletionTime` 阈值时，迁移控制器会把迁移切换到后拷贝模式。如果不允许后拷贝，迁移控制器则会暂停相应的虚拟机实例，以确保迁移完成。
 
-#### Configuration
+#### 配置 {#configuration}
 
-To configure `AllowWorkloadDisruption`:
+要配置 `AllowWorkloadDisruption`：
 
-1. **Disabling Workload Disruption**:
-   - Leave `AllowWorkloadDisruption` unset or explicitly set it to `false`.
-   - Example:
+1. **禁用工作负载中断**：
+   - 不设置 `AllowWorkloadDisruption`，或将其显式设置为 `false`。
+   - 示例：
 
     ```yaml
     spec:
@@ -218,9 +182,9 @@ To configure `AllowWorkloadDisruption`:
          allowWorkloadDisruption: false
      ```
 
-2. **Enabling Workload Disruption**:
-   - Set `AllowWorkloadDisruption` to `true` to allow the migration controller to act after the `AcceptableCompletionTime` threshold.
-   - To enable post-copy, set `AllowPostCopy` to `true`. Otherwise, if paused mode is preferred, unset `AllowPostCopy` or explicitly set it to `false`:
+2. **启用工作负载中断**：
+   - 将 `AllowWorkloadDisruption` 设置为 `true`，以允许迁移控制器在达到 `AcceptableCompletionTime` 阈值之后采取行动。
+   - 要启用后拷贝，请将 `AllowPostCopy` 设置为 `true`。否则，如果更倾向于暂停模式，请不要设置 `AllowPostCopy`，或将其显式设置为 `false`：
 
     ```yaml
     spec:
@@ -230,124 +194,88 @@ To configure `AllowWorkloadDisruption`:
          allowPostCopy: true
      ```
 
-#### Key Considerations
+#### 关键考虑 {#key-considerations}
 
-- `AllowWorkloadDisruption` determines whether the migration controller can prioritize completing the migration over avoiding workload disruption.
-- Post-copy migration, when enabled, poses some risk of data loss if a failure occurs during the post-copy phase.
-- Post-copy requires additional node-level permissions on most environments. See [Node configuration for post-copy](#node-configuration-for-post-copy) for details.
-- Pausing the workload facilitates completion of the migration without risk of data loss but may result in temporary workload inactivity.
+- `AllowWorkloadDisruption` 决定迁移控制器能否把完成迁移放在避免工作负载中断之前。
+- 启用后拷贝迁移后，如果在后拷贝阶段发生故障，会带来一定的数据丢失风险。
+- 在大多数环境中，后拷贝需要额外的节点级权限。详情请参阅[后拷贝的节点配置](#node-configuration-for-post-copy)。
+- 暂停工作负载有助于在没有数据丢失风险的情况下完成迁移，但可能导致工作负载暂时处于不活动状态。
 
+请记住，这些配置中的大部分都可以被覆盖，并针对指定的一组 VM 进行微调。更多信息请参阅[迁移策略](../cluster_admin/migration_policies.md)。
 
-Bear in mind that most of these configuration can be overridden and fine-tuned to
-a specified group of VMs. For more information, please see [Migration Policies](../cluster_admin/migration_policies.md).
+## 理解不同的迁移策略 {#understanding-different-migration-strategies}
 
-## Understanding different migration strategies
-Live migration is a complex process. During a migration, the source VM needs to transfer its
-whole state (mainly RAM) to the target VM. If there are enough resources available, such as
-network bandwidth and CPU power, migrations should converge nicely. If this is not the scenario,
-however, the migration might get stuck without an ability to progress.
+实时迁移是一个复杂的过程。迁移期间，源 VM 需要把它的全部状态（主要是 RAM）传输到目标 VM。如果有足够的可用资源，例如网络带宽和 CPU 算力，迁移应当能够顺利收敛。如果情况并非如此，迁移可能会卡住，无法继续推进。
 
-The main factor that affects migrations from the guest perspective is its `dirty rate`, which is the
-rate by which the VM dirties memory. Guests with high dirty rate lead to a race during migration. On the
-one hand, memory would be transferred continuously to the target, and on the other, the same memory
-would get dirty by the guest. On such scenarios, one could consider to use more advanced migration
-strategies.
+从客户机角度看，影响迁移的主要因素是它的 `dirty rate`，也就是 VM 把内存写脏的速率。脏页率高的客户机会在迁移期间导致一场竞态。一方面，内存会持续传输到目标；另一方面，同一块内存又会被客户机写脏。在这类场景下，可以考虑使用更高级的迁移策略。
 
-Let's explain the 3 supported migration strategies as of today.
+下面说明目前支持的 3 种迁移策略。
 
-### Pre-copy
-Pre-copy is the default strategy. It should be used for most cases.
+### 预拷贝 {#pre-copy}
 
-The way it works is as following:
+预拷贝是默认策略。大多数情况都应当使用它。
 
-  1. The target VM is created, but the guest keeps running on the source VM.
-  2. The source starts sending chunks of VM state (mostly memory) to the target. This continues until
-  all of the state has been transferred to the target.
-  3. The guest starts executing on the target VM.
-  4. The source VM is removed.
+它的工作方式如下：
 
-Pre-copy is the safest and fastest strategy for most cases. Furthermore, it can be easily cancelled,
-can utilize multithreading, and more. If there is no real reason to use another strategy, this is
-definitely the strategy to go with.
+1. 创建目标 VM，但客户机继续在源 VM 上运行。
+2. 源开始向目标发送 VM 状态的数据块（主要是内存）。这一过程持续进行，直到全部状态都已传输到目标。
+3. 客户机开始在目标 VM 上执行。
+4. 源 VM 被移除。
 
-However, on some cases migrations might not converge easily, that is, by the time the chunk of source
-VM state would be received by the target VM, it would already be mutated by the source VM (which is
-the VM the guest executes on). There are many reasons for migrations to fail converging, such as a
-high dirty-rate or low resources like network bandwidth and CPU. On such scenarios, see the following
-alternative strategies below.
+对大多数情况而言，预拷贝是最安全也最快的策略。此外，它可以轻松取消，可以利用多线程，还有更多优点。如果没有真正的理由去使用另一种策略，这绝对是应当采用的策略。
 
-For virtual machines that explicitly set CPU resource limits, multithreaded migration is disabled and single-threaded migration will be used instead.
-### Post-copy
-In KubeVirt, migrations always start in pre-copy mode and may later
-switch to post-copy. Once in post-copy:
+不过，在某些情况下迁移可能不容易收敛。也就是说，当源 VM 状态的一块数据被目标 VM 接收到时，它可能已经被源 VM（即客户机正在其上执行的那台 VM）改写。迁移无法收敛有许多原因，例如脏页率很高，或者网络带宽和 CPU 等资源不足。在这类场景下，请参阅下面的替代策略。
 
-  1. The guest runs on the **target VM**.
-  2. The source continues sending chunks of VM state (mostly memory) to the target.
-  3. When the guest, running on the target VM, would access memory:
-    1. If the memory exists on the target VM, the guest can access it.
-    2. Otherwise, the target VM asks for a chunk of memory from the source VM.
-  4. Once all of the memory state is updated at the target VM, the source VM is removed.
+对于显式设置了 CPU 资源限制的虚拟机，多线程迁移会被禁用，改为使用单线程迁移。
 
-The main idea of post-copy is that the guest runs on the target VM while
-remaining memory is fetched on demand. This approach has advantages and disadvantages:
+### 后拷贝 {#post-copy}
 
-<u>advantages</u>:
+在 KubeVirt 中，迁移总是以预拷贝模式开始，之后可能会切换到后拷贝。一旦进入后拷贝：
 
-* The same memory chunk is never transferred twice. This is possible due to the fact that
-with post-copy it doesn't matter that a page had been dirtied since the guest is already running
-on the target VM.
-  * This means that a high dirty-rate has much less effect.
-* Consumes less network bandwidth.
+1. 客户机在**目标 VM**上运行。
+2. 源继续向目标发送 VM 状态的数据块（主要是内存）。
+3. 当正在目标 VM 上运行的客户机要访问内存时：
+    1. 如果这块内存已经存在于目标 VM 上，客户机就可以访问它。
+    2. 否则，目标 VM 会向源 VM 请求一块内存。
+4. 一旦全部内存状态都已在目标 VM 上更新完毕，就会移除源 VM。
 
-<u>disadvantages</u>:
+后拷贝的主要思想是：客户机在目标 VM 上运行，同时按需获取剩余内存。这种方法既有优点也有缺点：
 
-* When using post-copy, the VM state has no one source of truth. When the guest (running on the
-target VM) writes to memory, this memory is one part of the guest's state, but some other parts of
-it may still be updated only at the source VM. This situation is generally dangerous, since, for 
-example, if either the target or guest VMs crash the state cannot be recovered.
-* Slow warmup: when the guest starts executing, no memory is present at the target VM. Therefore,
-the guest would have to wait for a lot of memory in a short period of time.
-* Slower than pre-copy on most cases.
-* Harder to cancel a migration.
+<u>优点</u>：
 
-#### Node configuration for post-copy
+* 同一内存块永远不会被传输两次。这之所以可能，是因为使用后拷贝时，某一页曾经被写脏并不重要，因为客户机已经在目标 VM 上运行。
+  * 这意味着高脏页率的影响要小得多。
+* 消耗的网络带宽更少。
 
-Post-copy migration uses the `userfaultfd` syscall on the target node to
-fetch memory pages on demand from the source. Because the QEMU process
-runs unprivileged, additional permissions may be required depending on
-your environment.
+<u>缺点</u>：
 
-##### Kernel sysctl
+* 使用后拷贝时，VM 状态没有单一的事实来源。当客户机（在目标 VM 上运行）写入内存时，这块内存是客户机状态的一部分，但状态的另一些部分可能仍然只在源 VM 上得到更新。这种情况通常很危险，例如，如果目标 VM 或客户机 VM 崩溃，状态就无法恢复。
+* 预热缓慢：客户机开始执行时，目标 VM 上还不存在任何内存。因此，客户机不得不在很短的时间内等待大量内存。
+* 在大多数情况下比预拷贝更慢。
+* 更难取消迁移。
 
-The following sysctl must be enabled on every node that may receive a
-post-copy migration:
+#### 后拷贝的节点配置 {#node-configuration-for-post-copy}
+
+后拷贝迁移在目标节点上使用 `userfaultfd` 系统调用，以便按需从源获取内存页。由于 QEMU 进程以非特权方式运行，根据你的环境，可能需要额外的权限。
+
+##### 内核 sysctl {#kernel-sysctl}
+
+每一台可能接收后拷贝迁移的节点都必须启用以下 sysctl：
 
 ```
 vm.unprivileged_userfaultfd=1
 ```
 
-Supported versions of OpenShift/OKD already set this sysctl via the Machine Config
-Operator, so no action is needed there. On other Kubernetes
-distributions, persist the setting by adding the line to a file such as
-`/etc/sysctl.d/99-postcopy.conf` either manually or using your cluster's node
-configuration tooling (e.g. cloud-init, Ansible, or a DaemonSet).
+受支持版本的 OpenShift/OKD 已经通过 Machine Config Operator 设置了此 sysctl，因此在那里无需任何操作。在其他 Kubernetes 发行版上，请把这一行写入诸如 `/etc/sysctl.d/99-postcopy.conf` 的文件来持久化该设置，可以手动进行，也可以使用集群的节点配置工具（例如 cloud-init、Ansible 或 DaemonSet）。
 
 !!! warning
-    Enabling `vm.unprivileged_userfaultfd` allows VM processes to use the
-    `userfaultfd` syscall. Some security-hardened kernels disable it by
-    default.
+    启用 `vm.unprivileged_userfaultfd` 会允许 VM 进程使用 `userfaultfd` 系统调用。一些经过安全加固的内核默认会禁用它。
 
-##### Seccomp
+##### Seccomp {#seccomp}
 
-On clusters where seccomp is enforced, container runtimes such as CRI-O
-may block `userfaultfd` by default. The `KubevirtSeccompProfile`
-[feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-installs a seccomp profile that permits this syscall. This feature gate
-reached Beta in KubeVirt v1.7, but Beta feature gates are only enabled by
-default since v1.9 — on older versions it must be enabled explicitly.
+在强制执行 seccomp 的集群上，CRI-O 等容器运行时默认可能会阻止 `userfaultfd`。`KubevirtSeccompProfile` [功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)会安装一个允许此系统调用的 seccomp 配置文件。此功能门控在 KubeVirt v1.7 达到 Beta，但 Beta 功能门控从 v1.9 起才默认启用——在更早的版本上必须显式启用它。
 
-In addition to the feature gate, the KubeVirt CR must be configured to
-use the custom profile:
+除功能门控之外，还必须配置 KubeVirt CR 以使用该自定义配置文件：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -363,49 +291,32 @@ spec:
           localhostProfile: kubevirt/kubevirt.json
 ```
 
-##### SELinux
+##### SELinux {#selinux}
 
-On nodes with SELinux enforcing, the virt-launcher process may be
-denied `userfaultfd` depending on the `container_t` policy in use.
-Nodes running `container-selinux` v2.248 or later already include the
-necessary permission (`kernel_userfaultfd_use(container_domain)`). On
-older versions, administrators may need to create a custom SELinux
-policy module to permit this syscall for the relevant context.
+在 SELinux 处于 enforcing 模式的节点上，virt-launcher 进程可能会被拒绝 `userfaultfd`，具体取决于正在使用的 `container_t` 策略。运行 `container-selinux` v2.248 或更高版本的节点已经包含所需权限（`kernel_userfaultfd_use(container_domain)`）。在更早的版本上，管理员可能需要创建一个自定义 SELinux 策略模块，以便为相关上下文允许此系统调用。
 
-### Auto-converge
-Auto-converge is a technique to help pre-copy migrations converge faster without changing the core
-algorithm of how the migration works.
+### 自动收敛 {#auto-converge}
 
-Since a high dirty-rate is usually the most significant factor for migrations to not converge,
-auto-converge simply throttles the guest's CPU. If the migration would converge fast enough,
-the guest's CPU would not be throttled or throttled negligibly. But, if the migration would
-not converge fast enough, the CPU would be throttled more and more as time goes.
+自动收敛是一种帮助预拷贝迁移更快收敛的技术，同时不改变迁移工作方式的核心算法。
 
-This technique dramatically increases the probability of the migration converging eventually.
+由于高脏页率通常是迁移无法收敛的最重要因素，自动收敛只是对客户机的 CPU 进行节流。如果迁移能够足够快地收敛，客户机的 CPU 不会被节流，或者只会被忽略不计地节流。但是，如果迁移无法足够快地收敛，随着时间推移，CPU 会被越来越多地节流。
 
-## Using a different network for migrations
+这项技术会大幅提高迁移最终得以收敛的概率。
 
-Live migrations can be configured to happen on a different network than
-the one Kubernetes is configured to use.
-That potentially allows for more determinism, control and/or bandwidth,
-depending on use-cases.
+## 使用不同的网络进行迁移 {#using-a-different-network-for-migrations}
 
-### Creating a migration network on a cluster
+可以把实时迁移配置为发生在 Kubernetes 所配置使用的网络之外的另一个网络上。根据使用场景，这有可能带来更强的确定性、控制力以及/或者带宽。
 
-A separate physical network is required, meaning that every node on the
-cluster has to have at least 2 NICs, and the NICs that will be used for
-migrations need to be interconnected, i.e. all plugged to the same switch.
-The examples below assume that `eth1` will be used for migrations.
+### 在集群上创建迁移网络 {#creating-a-migration-network-on-a-cluster}
 
-It is also required for the Kubernetes cluster to have
-[multus](https://github.com/k8snetworkplumbingwg/multus-cni.git) installed.
+需要一张独立的物理网络。这意味着集群上的每个节点至少要有 2 块 NIC，并且将用于迁移的 NIC 必须互连，也就是全部接到同一台交换机上。下面的示例假定将使用 `eth1` 进行迁移。
 
-If the desired network doesn't include a DHCP server, then
-[whereabouts](https://github.com/k8snetworkplumbingwg/whereabouts) will
-be needed as well.
+Kubernetes 集群还必须安装 [multus](https://github.com/k8snetworkplumbingwg/multus-cni.git)。
 
-Finally, a NetworkAttachmentDefinition needs to be created in the
-namespace where KubeVirt is installed. Here is an example:
+如果期望的网络不包含 DHCP 服务器，那么还需要 [whereabouts](https://github.com/k8snetworkplumbingwg/whereabouts)。
+
+最后，需要在安装 KubeVirt 的命名空间中创建一个 NetworkAttachmentDefinition。下面是一个示例：
+
 ```yaml
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
@@ -426,10 +337,10 @@ spec:
     }'
 ```
 
-### Configuring KubeVirt to migrate VMIs over that network
+### 配置 KubeVirt 通过该网络迁移 VMI {#configuring-kubevirt-to-migrate-vmis-over-that-network}
 
-This is just a matter of adding the name of the
-NetworkAttachmentDefinition to the KubeVirt CR, like so:
+只需把 NetworkAttachmentDefinition 的名称添加到 KubeVirt CR 中，如下所示：
+
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: KubeVirt
@@ -442,21 +353,16 @@ spec:
       network: migration-network
 ```
 
-That change will trigger a restart of the virt-handler pods, as they
-get connected to that new network.
+这一更改会触发 virt-handler Pod 重启，因为它们会连接到这个新网络。
 
-From now on, migrations will happen over that network.
+从此以后，迁移将通过该网络进行。
 
-### Configuring KubeVirtCI for testing migration networks
+### 配置 KubeVirtCI 以测试迁移网络 {#configuring-kubevirtci-for-testing-migration-networks}
 
-Developers and people wanting to test the feature before deploying
-it on a real cluster might want to configure a dedicated migration
-network in KubeVirtCI.
+想在部署到真实集群之前测试此功能的开发者和其他人，可能希望在 KubeVirtCI 中配置一张专用的迁移网络。
 
-KubeVirtCI can simply be configured to include a virtual secondary
-network, as well as automatically install multus and whereabouts.
-The following environment variables just have to be declared before
-running `make cluster-up`:
+KubeVirtCI 可以简单地被配置为包含一个虚拟的辅助网络，并自动安装 multus 和 whereabouts。只需在运行 `make cluster-up` 之前声明以下环境变量：
+
 ```
 export KUBEVIRT_NUM_NODES=2;
 export KUBEVIRT_NUM_SECONDARY_NICS=1;
@@ -464,53 +370,27 @@ export KUBEVIRT_DEPLOY_ISTIO=true;
 export KUBEVIRT_WITH_CNAO=true
 ```
 
-## Migration timeouts
+## 迁移超时 {#migration-timeouts}
 
-Depending on the type, the live migration process will copy virtual
-machine memory pages and disk blocks to the destination. During this
-process non-locked pages and blocks are copied and become free for
-the instance to use again. To achieve a successful migration, it is
-assumed that the instance will write to the free pages and blocks
-(pollute the pages) at a lower rate than these are being copied.
+根据类型，实时迁移过程会把虚拟机内存页和磁盘块复制到目标。在此过程中，未锁定的页和块会被复制，并重新变为可供该实例再次使用的空闲资源。要成功完成迁移，这里假定实例写入这些空闲页和块（污染这些页）的速率低于它们被复制的速率。
 
-### Completion time
+### 完成时间 {#completion-time}
 
-In some cases the virtual machine can have a high dirty-rate, which
-means it will write to different memory pages / disk blocks at a
-higher rate than these can be copied over.
-This situation will prevent the migration process from completing
-in a reasonable amount of time.
+在某些情况下，虚拟机的脏页率可能很高，这意味着它写入不同内存页 / 磁盘块的速率高于这些页和块能够被复制过去的速率。这种情况会阻止迁移过程在合理的时间内完成。
 
-In this case, a timeout can be defined so that live migration will
-either be aborted or switched to post-copy mode (if it's enabled)
-if it is running for a long period of time.
+在这种情况下，可以定义一个超时，使得实时迁移如果运行了很长一段时间，就会被中止，或者切换到后拷贝模式（如果已启用后拷贝）。
 
-The timeout is calculated based on the size of
-the VMI, its memory and the ephemeral disks that are needed to be
-copied. The configurable parameter `completionTimeoutPerGiB`, which
-defaults to 150s, is the maximum amount of time per GiB of data allowed before the migration
-gets aborted / switched to post-copy mode.
-For example, with the default value, a VMI with 8GiB of memory will time-out after 1200 seconds.
+超时根据 VMI 的大小、它的内存以及需要被复制的临时磁盘来计算。可配置参数 `completionTimeoutPerGiB` 默认为 150s，表示每 GiB 数据在迁移被中止 / 切换到后拷贝模式之前所允许的最长时间。例如，使用默认值时，一台内存为 8GiB 的 VMI 会在 1200 秒后超时。
 
-### Progress timeout
+### 进度超时 {#progress-timeout}
 
-Live migrations will also abort when it notices that the "remaining bytes"
-in the migration are not making any progress. The time to wait for live migrations
-to make progress in transferring data is configurable by the `progressTimeout`
-parameter, which defaults to 150s. Since this timeout resets whenever *any*
-progress is made, this mechanism does not timeout migrations whose remaining
-bytes are fluctuating back-and-forth and is only useful for migrations that
-are completely stuck.
+当实时迁移发现迁移中的“剩余字节”没有任何进展时，也会中止。等待实时迁移在传输数据上取得进展的时间可以通过 `progressTimeout` 参数配置，默认值为 150s。由于只要产生了*任何*进展，此超时就会重置，因此该机制不会让剩余字节来回波动的迁移超时，它只对完全卡住的迁移有用。
 
-### Stall detection
+### 停滞检测 {#stall-detection}
 
-**FEATURE STATE:** KubeVirt v1.9 (Alpha)
+**功能状态：** KubeVirt v1.9（Alpha）
 
-Busy guests more often fail to converge because remaining bytes plateau or oscillate than because
-transfer is completely stuck. Stall detection covers that case: once remaining bytes stop making
-*net progress*, it switches the migration over near a local minimum instead of waiting for
-`completionTimeoutPerGiB`. This feature is alpha and must be enabled via the
-`MigrationStallDetection` feature gate.
+繁忙的客户机更常常因为剩余字节进入平台期或来回振荡而无法收敛，而不是因为传输完全卡住。停滞检测覆盖的就是这种情况：一旦剩余字节不再产生*净进展*，它就会在接近局部最小值的位置把迁移切换过去，而不是一直等待 `completionTimeoutPerGiB`。此功能处于 Alpha 阶段，必须通过 `MigrationStallDetection` 功能门控启用。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -525,42 +405,22 @@ spec:
         - MigrationStallDetection
 ```
 
-There are two important configuration options associated with stall detection:
+与停滞检测相关的重要配置选项有两个：
 
-- `maxDowntimeMs` (default 900): the maximum acceptable downtime for your workload, in milliseconds.
-  Only meaningful when `allowWorkloadDisruption` is false (the default). The stall detector will try
-  for a better downtime than this; if even this budget cannot be met, the migration aborts.
-  Configurable on the KubeVirt CR
-  ([MigrationConfiguration](https://kubevirt.io/api-reference/main/definitions.html#_v1_migrationconfiguration))
-  and on [MigrationPolicy](../cluster_admin/migration_policies.md)
-  ([MigrationPolicySpec](https://kubevirt.io/api-reference/main/definitions.html#_v1alpha1_migrationpolicyspec)).
-- `stallProgressTimeout` (default 40): how many seconds remaining bytes may plateau before the
-  migration is considered stalled. Higher values spend more time looking for a better switchover
-  point (longer migration, usually better downtime); lower values do the opposite. In alpha this
-  lives under `MigrationPolicy.spec.experimental.stallDetector`
-  ([ExperimentalMigrationOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_experimentalmigrationoptions)).
-  At graduation it is expected to repurpose the existing `progressTimeout` field.
+- `maxDowntimeMs`（默认 900）：你的工作负载可接受的最大停机时间，单位为毫秒。只有当 `allowWorkloadDisruption` 为 false（默认值）时才有意义。停滞检测器会尝试获得比这个值更好的停机时间；如果连这个预算也无法满足，迁移就会中止。可以在 KubeVirt CR（[MigrationConfiguration](https://kubevirt.io/api-reference/main/definitions.html#_v1_migrationconfiguration)）以及 [MigrationPolicy](../cluster_admin/migration_policies.md)（[MigrationPolicySpec](https://kubevirt.io/api-reference/main/definitions.html#_v1alpha1_migrationpolicyspec)）上配置。
+- `stallProgressTimeout`（默认 40）：剩余字节可以停留在平台期多少秒，之后迁移才被视为停滞。较大的值会花更多时间寻找更好的切换点（迁移更长，停机时间通常更好）；较小的值则相反。在 Alpha 阶段，它位于 `MigrationPolicy.spec.experimental.stallDetector`（[ExperimentalMigrationOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_experimentalmigrationoptions)）之下。待该功能毕业时，预计会改用现有的 `progressTimeout` 字段。
 
-Additional stall-detector options are also exposed under
-`MigrationPolicy.spec.experimental.stallDetector` in alpha; see
-[StallDetectorOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_stalldetectoroptions)
-for the full list. Only `stallProgressTimeout` is currently expected to graduate. The rest are
-exposed so the community can try different values if the defaults do not work well for them, and
-report whether there is a real need to keep any of those options exposed. Most of those other fields
-are technically dense and algorithm-specific; for details on what they do, see the
-[StallDetectorOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_stalldetectoroptions)
-API Reference or
-[VEP 248](https://github.com/kubevirt/enhancements/tree/main/veps/sig-compute/248-migration-convergence).
+其他停滞检测器选项在 Alpha 阶段也暴露在 `MigrationPolicy.spec.experimental.stallDetector` 之下；完整列表请参阅 [StallDetectorOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_stalldetectoroptions)。目前预计只有 `stallProgressTimeout` 会毕业。其余选项被暴露出来，是为了让社区在默认值不适合自己时尝试不同的值，并反馈是否真的有必要继续暴露其中任何一个选项。其余大多数字段技术上很密集，并且与具体算法相关；关于它们各自的作用，请参阅 [StallDetectorOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_stalldetectoroptions) API 参考或 [VEP 248](https://github.com/kubevirt/enhancements/tree/main/veps/sig-compute/248-migration-convergence)。
 
-`experimental.stallDetector` and `experimental.downtimeTuning` cannot be used on the same policy.
+`experimental.stallDetector` 和 `experimental.downtimeTuning` 不能在同一条策略上使用。
 
-### Downtime tuning
+### 停机时间调优 {#downtime-tuning}
 
-**FEATURE STATE:** KubeVirt v1.10 (Alpha)
+**功能状态：** KubeVirt v1.10（Alpha）
 
-Busy guests with moderate dirty rates often make migration progress but never converge: QEMU's estimated switchover time hovers just above the current `max_downtime`, so the migration keeps iterating until `completionTimeoutPerGiB` fires. Downtime tuning gradually raises `max_downtime` as memory-copy iterations progress, giving QEMU more room to switch over before existing timeout logic triggers post-copy, pause, or abort.
+脏页率适中的繁忙客户机常常能让迁移取得进展，但永远无法收敛：QEMU 估计的切换时间一直徘徊在当前 `max_downtime` 刚刚之上，于是迁移不断迭代，直到 `completionTimeoutPerGiB` 触发。停机时间调优会随着内存复制迭代的推进逐步提高 `max_downtime`，在现有超时逻辑触发后拷贝、暂停或中止之前，给 QEMU 更多的切换空间。
 
-The feature is alpha, opt-in per workload via [MigrationPolicy](../cluster_admin/migration_policies.md), and must be enabled via the `MigrationDowntimeTuning` feature gate.
+此功能处于 Alpha 阶段，按工作负载通过 [MigrationPolicy](../cluster_admin/migration_policies.md) 选择启用，并且必须通过 `MigrationDowntimeTuning` 功能门控启用。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -575,7 +435,7 @@ spec:
         - MigrationDowntimeTuning
 ```
 
-Activate tuning by setting `spec.experimental.downtimeTuning` on a matching `MigrationPolicy`. An empty object enables the algorithm with built-in defaults. Optionally set `maxDowntimeMs` on the same policy as the target switchover budget the ramp aims for (default 900). `experimental.stallDetector` and `experimental.downtimeTuning` cannot be used on the same policy.
+通过设置 `spec.experimental.downtimeTuning`，在匹配的 `MigrationPolicy` 上激活调优。空对象会以内置默认值启用该算法。也可以在同一条策略上设置 `maxDowntimeMs`，作为爬升所瞄准的目标切换预算（默认 900）。`experimental.stallDetector` 和 `experimental.downtimeTuning` 不能在同一条策略上使用。
 
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
@@ -591,27 +451,22 @@ spec:
     downtimeTuning: {}
 ```
 
-There are two important configuration options:
+有两个重要的配置选项：
 
-- `maxDowntimeMs` (default 900): the target maximum guest switchover pause in milliseconds. The algorithm ramps QEMU's `max_downtime` toward this value in equal steps; it is a tuning target, not a hard guarantee of observed downtime. Configurable on the KubeVirt CR
-  ([MigrationConfiguration](https://kubevirt.io/api-reference/main/definitions.html#_v1_migrationconfiguration))
-  and on [MigrationPolicy](../cluster_admin/migration_policies.md)
-  ([MigrationPolicySpec](https://kubevirt.io/api-reference/main/definitions.html#_v1alpha1_migrationpolicyspec)).
-- `downtimeTuning` (activated by presence; defaults below): controls how aggressively `max_downtime` is raised during the migration. In alpha this lives under `MigrationPolicy.spec.experimental`
-  ([DowntimeTuningOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_downtimetuningoptions)).
+- `maxDowntimeMs`（默认 900）：目标最大客户机切换暂停时间，单位为毫秒。算法以相等的步长把 QEMU 的 `max_downtime` 向这个值爬升；它是调优目标，并不是对观测到的停机时间的硬性保证。可以在 KubeVirt CR（[MigrationConfiguration](https://kubevirt.io/api-reference/main/definitions.html#_v1_migrationconfiguration)）以及 [MigrationPolicy](../cluster_admin/migration_policies.md)（[MigrationPolicySpec](https://kubevirt.io/api-reference/main/definitions.html#_v1alpha1_migrationpolicyspec)）上配置。
+- `downtimeTuning`（通过字段存在来激活；默认值见下文）：控制迁移期间提升 `max_downtime` 的激进程度。在 Alpha 阶段，它位于 `MigrationPolicy.spec.experimental`（[DowntimeTuningOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_downtimetuningoptions)）之下。
 
-With `downtimeTuning: {}`, the defaults are `initialMs: 150`, `steps: 7`, `startAfterIteration: 3`, `cooldownSeconds: 10`; see [DowntimeTuningOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_downtimetuningoptions) for what each option does.
+当使用 `downtimeTuning: {}` 时，默认值为 `initialMs: 150`、`steps: 7`、`startAfterIteration: 3`、`cooldownSeconds: 10`；各选项的作用请参阅 [DowntimeTuningOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_downtimetuningoptions)。
 
-For further details refer to
-[VEP 291](https://github.com/kubevirt/enhancements/tree/main/veps/sig-compute/291-dynamic-downtime-tuning).
+更多细节请参阅 [VEP 291](https://github.com/kubevirt/enhancements/tree/main/veps/sig-compute/291-dynamic-downtime-tuning)。
 
-### Compression
+### 压缩 {#compression}
 
-**FEATURE STATE:** KubeVirt v1.9 (Alpha)
+**功能状态：** KubeVirt v1.9（Alpha）
 
-Large-memory VMs or bandwidth-constrained environments often hit migration timeouts because the guest dirty rate exceeds the available link capacity. Compression reduces the amount of data sent over the network by compressing memory pages on the migration stream. This trades modest CPU overhead on the source node for lower bandwidth use and can help migrations converge that would otherwise time out. The feature is alpha and opt-in per workload via [MigrationPolicy](../cluster_admin/migration_policies.md).
+大内存 VM 或带宽受限的环境常常会碰到迁移超时，因为客户机脏页率超过了可用链路容量。压缩通过对迁移流上的内存页进行压缩来减少经网络发送的数据量。这是用源节点上适度的 CPU 开销换取更低的带宽占用，并且可以帮助那些否则会超时的迁移收敛。此功能处于 Alpha 阶段，并按工作负载通过 [MigrationPolicy](../cluster_admin/migration_policies.md) 选择启用。
 
-Set `spec.experimental.compression` to `zstd` on a `MigrationPolicy` that matches the target VMs. Omit the field or set it to `none` to leave compression disabled (the default).
+把 `spec.experimental.compression` 设置为 `zstd`，用在匹配目标 VM 的 `MigrationPolicy` 上。省略该字段，或将其设置为 `none`，即可让压缩保持禁用（这是默认行为）。
 
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
@@ -626,21 +481,17 @@ spec:
     compression: zstd
 ```
 
-There is only one configuration option:
+只有一个配置选项：
 
-- `compression` (default: `none`): when set to `zstd`, virt-launcher enables QEMU/libvirt zstd compression on the live migration data stream. In alpha this lives under `MigrationPolicy.spec.experimental`
-  ([ExperimentalMigrationOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_experimentalmigrationoptions)).
-  Only `zstd` is supported today; `none` explicitly disables compression for matched VMs.
+- `compression`（默认值：`none`）：设置为 `zstd` 时，virt-launcher 会在实时迁移数据流上启用 QEMU/libvirt zstd 压缩。在 Alpha 阶段，它位于 `MigrationPolicy.spec.experimental`（[ExperimentalMigrationOptions](https://kubevirt.io/api-reference/main/definitions.html#_v1_experimentalmigrationoptions)）之下。目前只支持 `zstd`；`none` 会为匹配到的 VM 显式禁用压缩。
 
-When compression is active, virt-launcher migration logs include `Migration compression enabled: method=zstd` and a `CompressionRatio` value in migration progress lines. Compression is compatible with multifd parallel channels (the default when no per-migration CPU limit is set), TLS, bandwidth limits, auto-converge, post-copy, and stall detection. For design details, see
-[VEP 246](https://github.com/kubevirt/enhancements/tree/main/veps/sig-compute/246-migration-compression).
+压缩处于活动状态时，virt-launcher 的迁移日志会包含 `Migration compression enabled: method=zstd`，并在迁移进度行中包含 `CompressionRatio` 值。压缩与 multifd 并行通道（未设置每次迁移 CPU 限制时的默认方式）、TLS、带宽限制、自动收敛、后拷贝以及停滞检测兼容。设计细节请参阅 [VEP 246](https://github.com/kubevirt/enhancements/tree/main/veps/sig-compute/246-migration-compression)。
 
-## Disabling secure migrations
+## 禁用安全迁移 {#disabling-secure-migrations}
 
-**FEATURE STATE:** KubeVirt v0.43
+**功能状态：** KubeVirt v0.43
 
-Sometimes it may be desirable to disable TLS encryption of migrations to
-improve performance. Use `disableTLS` to do that:
+有时为了提高性能，可能希望禁用迁移的 TLS 加密。使用 `disableTLS` 来做到这一点：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -654,41 +505,30 @@ spec:
       disableTLS: true
 ```
 
-**Note:** While this increases performance it may allow MITM attacks. Be careful.
+**注意：** 这样做虽然能提高性能，但可能允许 MITM 攻击。请务必小心。
 
-## Live migration with (NVIDIA) vGPUs
+## 使用（NVIDIA）vGPU 进行实时迁移 {#live-migration-with-nvidia-vgpus}
 
-**FEATURE STATE:** KubeVirt v1.9 (Alpha)
+**功能状态：** KubeVirt v1.9（Alpha）
 
-KubeVirt can live migrate a VirtualMachineInstance that has a single NVIDIA vGPU exposed as a
-mediated device (mdev).
+KubeVirt 可以对拥有单个 NVIDIA vGPU、并以中介设备（mdev）形式暴露的 VirtualMachineInstance 进行实时迁移。
 
-### Prerequisites
+### 前提条件 {#prerequisites}
 
-Before a vGPU-backed VMI can live migrate, complete all of the following:
+在由 vGPU 支持的 VMI 能够实时迁移之前，请完成以下全部事项：
 
-1. Install the NVIDIA Virtual GPU Manager (host driver) on every node that may run or receive
-   the VM. NVIDIA requires this driver before any mediated devices exist on the node. Install
-   it yourself or with the NVIDIA GPU Operator.
-2. Create the mediated device instances on those nodes. With the vendor driver already installed,
-   pick **one** creator so they do not conflict:
-   - KubeVirt's [mediated devices configuration](../compute/mediated_devices_configuration.md), which creates mdevs from the types the driver
-     exposes.
-   - The NVIDIA GPU Operator [vGPU Device Manager](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-kubevirt.html), or another vendor tool that creates mdevs. If an
-     external plugin owns creation, disable KubeVirt mdev management on those nodes
-     (`spec.configuration.mediatedDevicesConfiguration.enabled: false`).
-3. Allowlist the mdev type under `permittedHostDevices.mediatedDevices` and assign it to the VM as
-   described in [Host Devices Assignment](../compute/host-devices.md#listing-permitted-devices). If the NVIDIA GPU Operator (or another plugin) advertises
-   the resource, set `externalResourceProvider: true`. PCI GPU passthrough is not migratable; the
-   device must appear as a mediated device.
-4. Enable the `VGPULiveMigration` feature gate (see below).
+1. 在每一台可能运行或接收该 VM 的节点上安装 NVIDIA Virtual GPU Manager（宿主机驱动）。NVIDIA 要求在节点上存在任何中介设备之前先安装此驱动。你可以自行安装，也可以使用 NVIDIA GPU Operator 安装。
+2. 在这些节点上创建中介设备实例。厂商驱动已经安装之后，只选择**一个**创建者，以免它们互相冲突：
+   - KubeVirt 的[中介设备配置](../compute/mediated_devices_configuration.md)，它会根据驱动所暴露的类型创建 mdev。
+   - NVIDIA GPU Operator 的 [vGPU Device Manager](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-kubevirt.html)，或其他会创建 mdev 的厂商工具。如果由外部插件负责创建，请在这些节点上禁用 KubeVirt 的 mdev 管理（`spec.configuration.mediatedDevicesConfiguration.enabled: false`）。
+3. 按照[主机设备分配](../compute/host-devices.md#listing-permitted-devices)中的说明，在 `permittedHostDevices.mediatedDevices` 下将该 mdev 类型加入允许列表，并把它分配给 VM。如果 NVIDIA GPU Operator（或其他插件）通告了该资源，请设置 `externalResourceProvider: true`。PCI GPU 直通不可迁移；该设备必须以中介设备的形式出现。
+4. 启用 `VGPULiveMigration` 功能门控（见下文）。
 
-Source and destination hosts must also satisfy [NVIDIA's vGPU migration requirements](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/validated-platforms.html#red-hat-el-vgpu-migration-support). In alpha,
-KubeVirt does not enforce those constraints when choosing a target.
+源宿主机和目标宿主机还必须满足 [NVIDIA 的 vGPU 迁移要求](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/validated-platforms.html#red-hat-el-vgpu-migration-support)。在 Alpha 阶段，KubeVirt 在选择目标时不会强制这些约束。
 
-### Enabling vGPU live migration
+### 启用 vGPU 实时迁移 {#enabling-vgpu-live-migration}
 
-Enable the `VGPULiveMigration` feature gate in the KubeVirt CR:
+在 KubeVirt CR 中启用 `VGPULiveMigration` 功能门控：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -703,36 +543,22 @@ spec:
         - VGPULiveMigration
 ```
 
-Once enabled, migrate the VMI the same way as any other live-migratable VM (for example with a
-`VirtualMachineInstanceMigration` object or `virtctl migrate`).
+启用之后，请像迁移任何其他可实时迁移的 VM 一样迁移该 VMI（例如使用 `VirtualMachineInstanceMigration` 对象或 `virtctl migrate`）。
 
-### Limitations and requirements
+### 限制与要求 {#limitations-and-requirements}
 
-Alpha support is intentionally narrow. The following restrictions apply:
+Alpha 支持有意保持狭窄。以下限制适用：
 
-- **Single NVIDIA mdev vGPU only.** The VMI must request exactly one GPU that is a mediated device.
-  Live migration is not supported for:
-  - PCI GPU passthrough
-  - SR-IOV vGPUs
-  - VMs with multiple vGPUs (planned for Beta)
-- **Compatible guest OS.** The operating system running on the guest VM must be running either
-  a [supported version of Windows](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/validated-platforms.html#red-hat-el-windows-support) or a [supported version of Linux](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/validated-platforms.html#red-hat-el-linux-support).
-- **Compatible guest drivers.** The NVIDIA drivers running on the guest [must be compatible](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/release-notes.html) with the host Virtual GPU Manager.
-- **NVIDIA guest feature limits.** Migration fails if the guest has CUDA unified memory, debuggers,
-  or profilers enabled. See the NVIDIA link in [Prerequisites](#prerequisites) for the full vendor requirements.
-- **No post-copy.** Post-copy live migration is not available for VMs with a vGPU.
-- **Convergence and downtime.** Even an idle guest with a vGPU has a baseline memory dirty rate,
-  so pre-copy usually cannot meet QEMU's default ~300 ms downtime target. In practice most vGPU
-  migrations therefore need [`allowWorkloadDisruption`](#configuring-acceptable-levels-of-workload-disruption) (for example via a [MigrationPolicy](../cluster_admin/migration_policies.md)). Because
-  post-copy is unavailable for vGPUs, disruption means pausing the guest until the migration
-  finishes.
+- **仅限单个 NVIDIA mdev vGPU。** VMI 必须恰好请求一个作为中介设备的 GPU。以下情况不支持实时迁移：
+  - PCI GPU 直通
+  - SR-IOV vGPU
+  - 拥有多个 vGPU 的 VM（计划在 Beta 中支持）
+- **兼容的客户机操作系统。** 客户机 VM 上运行的操作系统必须运行[受支持的 Windows 版本](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/validated-platforms.html#red-hat-el-windows-support)或[受支持的 Linux 版本](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/validated-platforms.html#red-hat-el-linux-support)。
+- **兼容的客户机驱动。** 客户机上运行的 NVIDIA 驱动与宿主机 Virtual GPU Manager [必须兼容](https://docs.nvidia.com/vgpu/latest/grid-vgpu-release-notes-red-hat-el-kvm/release-notes.html)。
+- **NVIDIA 客户机功能限制。** 如果客户机启用了 CUDA 统一内存、调试器或性能分析器，迁移就会失败。完整的厂商要求请参阅[前提条件](#prerequisites)中的 NVIDIA 链接。
+- **不支持后拷贝。** 带有 vGPU 的 VM 不能使用后拷贝实时迁移。
+- **收敛与停机时间。** 即使是空闲的、带有 vGPU 的客户机也有基线内存脏页率，因此预拷贝通常无法达到 QEMU 默认约 300 ms 的停机时间目标。实践中，大多数 vGPU 迁移因此需要 [`allowWorkloadDisruption`](#configuring-acceptable-levels-of-workload-disruption)（例如通过[迁移策略](../cluster_admin/migration_policies.md)）。由于 vGPU 无法使用后拷贝，这里的中断意味着暂停客户机，直到迁移完成。
 
-  With that default path, switchover still waits for the migration completion timeout
-  (`completionTimeoutPerGiB` and VM size), which can leave the migration running for a long time
-  before the pause.
+  在这条默认路径上，切换仍然要等待迁移完成超时（`completionTimeoutPerGiB` 以及 VM 大小），这可能使迁移在暂停之前运行很长时间。
 
-  Enabling [stall detection](#stall-detection) (also alpha) changes that behavior: once remaining bytes plateau,
-  KubeVirt can switch over earlier instead of waiting out the completion timeout. Stall detection
-  also exposes `maxDowntimeMs`, which lets you keep `allowWorkloadDisruption` false and still converge
-  by raising the downtime budget up to a maximum acceptable downtime you choose; if even that limit
-  cannot be met, the migration aborts.
+  启用[停滞检测](#stall-detection)（同样处于 Alpha）会改变这一行为：一旦剩余字节进入平台期，KubeVirt 就可以更早切换，而不必把完成超时等完。停滞检测还会暴露 `maxDowntimeMs`，让你可以让 `allowWorkloadDisruption` 保持为 false，同时仍然通过把停机时间预算提高到你所选择的最大可接受停机时间来实现收敛；如果连这个上限也无法满足，迁移就会中止。

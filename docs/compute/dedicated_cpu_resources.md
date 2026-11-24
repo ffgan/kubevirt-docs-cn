@@ -1,59 +1,37 @@
-# Dedicated CPU resources
+# 专用 CPU 资源 {#dedicated-cpu-resources}
 
-Certain workloads, requiring a predictable latency and enhanced
-performance during its execution would benefit from obtaining dedicated
-CPU resources. KubeVirt, relying on the Kubernetes CPU manager, is able
-to pin guest's vCPUs to the host's pCPUs.
+某些工作负载在执行期间需要可预测的延迟和更高的性能，获得专用 CPU 资源会对它们有帮助。KubeVirt 依赖 Kubernetes CPU 管理器，能够将客户机的 vCPU 绑定到宿主机的 pCPU。
 
-## [Kubernetes CPU manager](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/)
+## [Kubernetes CPU 管理器](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/) {#kubernetes-cpu-manager}
 
-Kubernetes CPU manager is a mechanism that affects the scheduling of
-workloads, placing it on a host which can allocate `Guaranteed`
-resources and pin certain Pod's containers to host pCPUs, if the
-following requirements are met:
+Kubernetes CPU 管理器是一种影响工作负载调度的机制。它会把工作负载放置到能够分配 `Guaranteed` 资源的宿主机上，并在满足以下要求时，将某些 Pod 的容器绑定到宿主机 pCPU：
 
-* [Pod's QoS](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed) is Guaranteed
-	* resources requests and limits are equal
-	* all containers in the Pod express CPU and memory requirements
-* Requested number of CPUs is an Integer
+* [Pod 的 QoS](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed) 为 Guaranteed
+	* resources 的 requests 与 limits 相等
+	* Pod 中的所有容器都声明了 CPU 和内存需求
+* 请求的 CPU 数量为整数
 
-Additional information: 
+更多信息：
 
-* [Enabling the CPU manager on Kubernetes](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/)
-* [Enabling the CPU manager on OKD](https://docs.openshift.com/container-platform/4.10/scalability_and_performance/using-cpu-manager.html)
-* [Kubernetes blog explaining the feature](https://kubernetes.io/blog/2018/07/24/feature-highlight-cpu-manager/)
+* [在 Kubernetes 上启用 CPU 管理器](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/)
+* [在 OKD 上启用 CPU 管理器](https://docs.openshift.com/container-platform/4.10/scalability_and_performance/using-cpu-manager.html)
+* [介绍该功能的 Kubernetes 博客](https://kubernetes.io/blog/2018/07/24/feature-highlight-cpu-manager/)
 
-## Requesting dedicated CPU resources
+## 请求专用 CPU 资源 {#requesting-dedicated-cpu-resources}
 
-Setting `spec.domain.cpu.dedicatedCpuPlacement` to `true` in a VMI spec
-will indicate the desire to allocate dedicated CPU resource to the VMI
+在 VMI spec 中将 `spec.domain.cpu.dedicatedCpuPlacement` 设置为 `true`，即表示希望为该 VMI 分配专用 CPU 资源。
 
-Kubevirt will verify that all the necessary conditions are met, for the
-Kubernetes CPU manager to pin the virt-launcher container to dedicated
-host CPUs. Once, virt-launcher is running, the VMI's vCPUs will be
-pinned to the pCPUS that has been dedicated for the virt-launcher
-container.
+KubeVirt 会验证是否满足全部必要条件，以便 Kubernetes CPU 管理器将 virt-launcher 容器绑定到专用的宿主机 CPU。一旦 virt-launcher 运行，VMI 的 vCPU 就会被绑定到已为 virt-launcher 容器专用的 pCPU。
 
-Expressing the desired amount of VMI's vCPUs can be done by either
-setting the guest topology in `spec.domain.cpu` (`sockets`, `cores`,
-`threads`) or `spec.domain.resources.[requests/limits].cpu` to a whole
-number integer ([1-9]+) indicating the number of vCPUs
-requested for the VMI. Number of vCPUs is counted as
-`sockets * cores * threads` or if `spec.domain.cpu` is empty then it
-takes value from `spec.domain.resources.requests.cpu` or
-`spec.domain.resources.limits.cpu`.
+可以通过在 `spec.domain.cpu` 中设置客户机拓扑（`sockets`、`cores`、`threads`），或者将 `spec.domain.resources.[requests/limits].cpu` 设置为表示所请求 vCPU 数量的整数（[1-9]+），来表达期望的 VMI vCPU 数量。vCPU 数量按 `sockets * cores * threads` 计算；如果 `spec.domain.cpu` 为空，则取 `spec.domain.resources.requests.cpu` 或 `spec.domain.resources.limits.cpu` 的值。
 
-> **Note:** Users should not specify both `spec.domain.cpu` and
-> `spec.domain.resources.[requests/limits].cpu`
+> **注意：** 用户不应同时指定 `spec.domain.cpu` 和 `spec.domain.resources.[requests/limits].cpu`
 >
-> **Note:** `spec.domain.resources.requests.cpu` must be equal to
-> `spec.domain.resources.limits.cpu`
+> **注意：** `spec.domain.resources.requests.cpu` 必须等于 `spec.domain.resources.limits.cpu`
 >
-> **Note:** Multiple cpu-bound microbenchmarks show a significant
-> performance advantage when using `spec.domain.cpu.sockets` instead of
-> `spec.domain.cpu.cores`.
+> **注意：** 多项 CPU 密集型微基准测试表明，使用 `spec.domain.cpu.sockets` 时比使用 `spec.domain.cpu.cores` 具有显著的性能优势。
 
-All inconsistent requirements will be rejected.
+所有不一致的要求都会被拒绝。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -71,7 +49,7 @@ spec:
 [...]
 ```
 
-OR
+或者
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -87,24 +65,13 @@ spec:
 [...]
 ```
 
-## Requesting dedicated CPU for QEMU emulator
+## 为 QEMU 模拟器请求专用 CPU {#requesting-dedicated-cpu-for-qemu-emulator}
 
-A number of QEMU threads, such as QEMU main event loop, async I/O
-operation completion, etc., also execute on the same physical CPUs as
-the VMI's vCPUs. This may affect the expected latency of a vCPU. In
-order to enhance the real-time support in KubeVirt and provide improved
-latency, KubeVirt will allocate an additional dedicated CPU, exclusively
-for the emulator thread, to which it will be pinned. This will
-effectively "isolate" the emulator thread from the vCPUs of the VMI.
-In case `ioThreadsPolicy` is set to `auto` IOThreads will also be
-"isolated" and placed on the same physical CPU as the QEMU emulator thread.
+若干 QEMU 线程（例如 QEMU 主事件循环、异步 I/O 操作完成等）也会在与 VMI 的 vCPU 相同的物理 CPU 上执行。这可能影响 vCPU 的预期延迟。为了增强 KubeVirt 中的实时支持并改善延迟，KubeVirt 会额外分配一个专用 CPU，专供模拟器线程使用，并将该线程绑定到此 CPU。这会有效地将模拟器线程与 VMI 的 vCPU“隔离”。如果将 `ioThreadsPolicy` 设置为 `auto`，IOThreads 也会被“隔离”，并放置在与 QEMU 模拟器线程相同的物理 CPU 上。
 
-This functionality can be enabled by specifying
-`isolateEmulatorThread: true` inside VMI spec's `Spec.Domain.CPU`
-section. Naturally, this setting has to be specified in a combination
-with a `dedicatedCpuPlacement: true`.
+可以通过指定 `isolateEmulatorThread: true` 来启用此功能，该字段位于 VMI spec 的 `Spec.Domain.CPU` 部分。自然，该设置必须与 `dedicatedCpuPlacement: true` 组合指定。
 
-Example:
+示例：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -120,72 +87,49 @@ spec:
         memory: 2Gi
 ```
 
-### Compute Nodes with SMT Enabled
+### 启用了 SMT 的计算节点 {#compute-nodes-with-smt-enabled}
 
-When the following conditions are met:
+当满足以下条件时：
 
-- The compute node has [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading) enabled
-- Kubelet's CPUManager policy is set to static - [full-pcpus-only](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy-options)
-- The VM is configured to have an even number of CPUs
-- `dedicatedCpuPlacement` and `isolateEmulatorThread` are enabled
+- 计算节点已启用 [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading)
+- kubelet 的 CPUManager 策略设置为 static - [full-pcpus-only](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy-options)
+- VM 配置为具有偶数个 CPU
+- 已启用 `dedicatedCpuPlacement` 和 `isolateEmulatorThread`
 
-The VM is scheduled, but rejected by the kubelet with the following event:
+该 VM 会被调度，但会被 kubelet 拒绝，并出现以下事件：
 ```
 SMT Alignment Error: requested 3 cpus not multiple cpus per core = 2
 ```
 
-In order to address this issue:
+为了解决此问题：
 
-1. Enable the `AlignCPUs` feature gate in the KubeVirt CR.
-2. Add the following annotation to the Kubevirt CR:
+1. 在 KubeVirt CR 中启用 `AlignCPUs` 功能门控。
+2. 向 KubeVirt CR 添加以下注解：
 
 ```yaml
 alpha.kubevirt.io/EmulatorThreadCompleteToEvenParity:
 ```
 
-KubeVirt will then add one or two dedicated CPUs for the emulator threads, in a way that completes the total CPU count to be even.
+随后，KubeVirt 会为模拟器线程添加一个或两个专用 CPU，使 CPU 总数补齐为偶数。
 
-## Identifying nodes with a running CPU manager
+## 识别正在运行 CPU 管理器的节点 {#identifying-nodes-with-a-running-cpu-manager}
 
-At this time, [Kubernetes doesn't label the
-nodes](https://github.com/kubernetes/kubernetes/issues/66525) that has
-CPU manager running on it.
+目前，[Kubernetes 不会为节点打标签](https://github.com/kubernetes/kubernetes/issues/66525)以标明正在运行 CPU 管理器的节点。
 
-KubeVirt has a mechanism to identify which nodes has the CPU manager
-running and manually add a `cpumanager=true` label. This label will be
-removed when KubeVirt will identify that CPU manager is no longer
-running on the node. This automatic identification should be viewed as a
-temporary workaround until Kubernetes will provide the required
-functionality. Therefore, this feature should be manually enabled by
-activating the `CPUManager`
-[feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-to the KubeVirt CR.
+KubeVirt 有一种机制，可以识别哪些节点正在运行 CPU 管理器，并手动添加 `cpumanager=true` 标签。当 KubeVirt 识别到该节点上不再运行 CPU 管理器时，会移除此标签。在 Kubernetes 提供所需功能之前，这种自动识别应视为临时变通办法。因此，应通过在 KubeVirt CR 上激活 `CPUManager` [功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate) 来手动启用此功能。
 
-When automatic identification is disabled, cluster administrator may
-manually add the above label to all the nodes when CPU Manager is
-running.
+当自动识别被禁用时，集群管理员可以在 CPU Manager 运行时，手动为所有节点添加上述标签。
 
--   Nodes' labels are view-able: `kubectl describe nodes`
+-   可以查看节点标签：`kubectl describe nodes`
 
--   Administrators may manually label a missing node:
+-   管理员可以手动为遗漏的节点打标签：
     `kubectl label node [node_name] cpumanager=true`
 
 
-## Sidecar containers and CPU allocation overhead
+## 边车容器与 CPU 分配开销 {#sidecar-containers-and-cpu-allocation-overhead}
 
-**Note:** In order to run sidecar containers, KubeVirt requires the
-`Sidecar`
-[feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-to be enabled in KubeVirt's CR.
+**注意：** 要运行边车容器，KubeVirt 要求在 KubeVirt 的 CR 中启用 `Sidecar` [功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)。
 
-According to the Kubernetes CPU manager model, in order the POD would
-reach the required QOS level `Guaranteed`, all containers in the POD
-must express CPU and memory requirements. At this time, Kubevirt often
-uses a sidecar container to mount VMI's registry disk. It also uses a
-sidecar container of it's hooking mechanism. These additional resources
-can be viewed as an overhead and should be taken into account when
-calculating a node capacity.
+根据 Kubernetes CPU 管理器模型，为了使 Pod 达到所需的 QOS 级别 `Guaranteed`，Pod 中的所有容器都必须声明 CPU 和内存需求。目前，KubeVirt 经常使用边车容器来挂载 VMI 的镜像仓库磁盘。它还会使用其钩子机制的边车容器。这些额外资源可以视为开销，在计算节点容量时应加以考虑。
 
-**Note:** The current defaults for sidecar's resources: `CPU: 200m`
-`Memory: 64M` As the CPU resource is not expressed as a whole number,
-CPU manager will not attempt to pin the sidecar container to a host CPU.
+**注意：** 边车资源的当前默认值为：`CPU: 200m` `Memory: 64M`。由于 CPU 资源不是以整数表示，CPU 管理器不会尝试将边车容器绑定到宿主机 CPU。

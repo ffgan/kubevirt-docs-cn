@@ -1,12 +1,12 @@
 nav:
-  - Welcome: index.md
-  - Architecture: architecture
-  - Quickstarts: quickstarts.md
-  - Cluster Administration: cluster_admin
-  - User Workloads: user_workloads
-  - Compute: compute
-  - Network: network
-  - Storage: storage
-  - Release Notes: release_notes.md
+  - 欢迎: index.md
+  - 架构: architecture
+  - 快速开始: quickstarts.md
+  - 集群管理: cluster_admin
+  - 用户工作负载: user_workloads
+  - 计算: compute
+  - 网络: network
+  - 存储: storage
+  - 发行说明: release_notes.md
   - contributing.md
-  - Virtualization Debugging: debug_virt_stack
+  - 虚拟化调试: debug_virt_stack

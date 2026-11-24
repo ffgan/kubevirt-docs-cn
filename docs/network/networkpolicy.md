@@ -1,21 +1,12 @@
-# NetworkPolicy
+# NetworkPolicy {#networkpolicy}
 
-Before creating NetworkPolicy objects, make sure you are using a
-networking solution which supports NetworkPolicy. Network isolation is
-controlled entirely by NetworkPolicy objects. By default, all vmis in a
-namespace are accessible from other vmis and network endpoints. To
-isolate one or more vmis in a project, you can create NetworkPolicy
-objects in that namespace to indicate the allowed incoming connections.
+创建 NetworkPolicy 对象之前，请确认你使用的网络方案支持 NetworkPolicy。网络隔离完全由 NetworkPolicy 对象控制。默认情况下，命名空间中的所有 VMI 都可以被其他 VMI 和网络端点访问。要隔离项目中的一个或多个 VMI，可以在该命名空间中创建 NetworkPolicy 对象，以标明允许的入站连接。
 
-> Note: vmis and pods are treated equally by network policies, since
-> labels are passed through to the pods which contain the running vmi.
-> With other words, labels on vmis can be matched by `spec.podSelector`
-> on the policy.
+> 注意：网络策略对 VMI 和 Pod 一视同仁，因为标签会传递到承载正在运行的 VMI 的 Pod。换句话说，VMI 上的标签可以被策略中的 `spec.podSelector` 匹配。
 
-## Create NetworkPolicy to Deny All Traffic
+## 创建用于拒绝全部流量的 NetworkPolicy {#create-networkpolicy-to-deny-all-traffic}
 
-To make a project "deny by default" add a NetworkPolicy object that
-matches all vmis but accepts no traffic.
+要使项目“默认拒绝”，请添加一个匹配所有 VMI、但不接受任何流量的 NetworkPolicy 对象。
 
 ```yaml
 kind: NetworkPolicy
@@ -27,10 +18,9 @@ spec:
   ingress: []
 ```
 
-## Create NetworkPolicy to only Accept connections from vmis within namespaces
+## 创建仅接受来自命名空间内 VMI 连接的 NetworkPolicy {#create-networkpolicy-to-only-accept-connections-from-vmis-within-namespaces}
 
-To make vmis accept connections from other vmis in the same namespace,
-but reject all other connections from vmis in other namespaces:
+要使 VMI 接受来自同一命名空间内其他 VMI 的连接，并拒绝来自其他命名空间中 VMI 的所有其他连接：
 
 ```yaml
 kind: NetworkPolicy
@@ -44,10 +34,9 @@ spec:
     - podSelector: {}
 ```
 
-## Create NetworkPolicy to only allow HTTP and HTTPS traffic
+## 创建仅允许 HTTP 和 HTTPS 流量的 NetworkPolicy {#create-networkpolicy-to-only-allow-http-and-https-traffic}
 
-To enable only HTTP and HTTPS access to the vmis, add a NetworkPolicy
-object similar to:
+要只允许对 VMI 进行 HTTP 和 HTTPS 访问，请添加类似如下的 NetworkPolicy 对象：
 
 ```yaml
 kind: NetworkPolicy
@@ -64,10 +53,9 @@ spec:
       port: 8443
 ```
 
-## Create NetworkPolicy to deny traffic by labels
+## 创建按标签拒绝流量的 NetworkPolicy {#create-networkpolicy-to-deny-traffic-by-labels}
 
-To make one specific vmi with a label `type: test` to reject all traffic
-from other vmis, create:
+要使带有标签 `type: test` 的某一个特定 VMI 拒绝来自其他 VMI 的全部流量，请创建：
 
 ```yaml
 kind: NetworkPolicy
@@ -81,5 +69,4 @@ spec:
   ingress: []
 ```
 
-Kubernetes NetworkPolicy Documentation can be found here: [Kubernetes
-NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+Kubernetes NetworkPolicy 文档见此处：[Kubernetes NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/)

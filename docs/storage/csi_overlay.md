@@ -1,69 +1,69 @@
-# CSI Overlay for VM State PVCs
+# 用于 VM 状态 PVC 的 CSI 叠加 {#csi-overlay-for-vm-state-pvcs}
 
-The VM State PVC was originally introduced to provide persistent storage for VMs that require the use of TPM or EFI devices: 
+VM 状态 PVC 最初被引入，是为需要使用 TPM 或 EFI 设备的 VM 提供持久存储：
 
 * `spec.domain.devices.tpm.persistent: true`
 * `spec.domain.devices.efi.persistent: true`
 
-VM State PVCs currently only need to store a small amount of data, on the order of ~10MB. However, many storage providers require a minimum size requirement for PVCs varying from 1GB up to 50GB. When this requirement is applied across all VMs in the cluster, you end up with a lot of wasted storage in these VM State PVCs which can cause you to reach your storage and platform limits much faster.
+VM 状态 PVC 目前只需要存储少量数据，大约 ~10MB。然而，许多存储提供程序对 PVC 有最小大小要求，从 1GB 到 50GB 不等。当这一要求应用于集群中的所有 VM 时，这些 VM 状态 PVC 中就会产生大量被浪费的存储，从而可能让你更快触及存储和平台限制。
 
-The solution to this is to deploy a modified version of the Hostpath Provisioner (HPP) that will be "overlayed" atop a RWX Filesystem capable storage provider (such as NFS). 
+解决方案是部署一个经过修改的 Hostpath Provisioner（HPP），将其“叠加”在具备 RWX 文件系统能力的存储提供程序（例如 NFS）之上。
 
-We can achieve this overlay by leveraging HPP's [PVCTemplate storage pool](https://github.com/kubevirt/hostpath-provisioner-operator?tab=readme-ov-file#custom-resource-with-pvctemplate-storage-pool). This allows us to define a storage pool that uses a single RWX shared PVC. The underlying storage provider will create the RWX PVC at a network share location and the HPP operator will mount this volume on each node in the cluster. 
-Once the storage pool is set up, any new volumes using this setup will be provisioned by HPP and the resulting PVC will be created as a directory on top of the network share allowing it to be accessed on any node.
+我们可以通过利用 HPP 的 [PVCTemplate 存储池](https://github.com/kubevirt/hostpath-provisioner-operator?tab=readme-ov-file#custom-resource-with-pvctemplate-storage-pool) 来实现这种叠加。这允许我们定义一个使用单个 RWX 共享 PVC 的存储池。底层存储提供程序会在网络共享位置创建该 RWX PVC，HPP operator 会在集群的每个节点上挂载此卷。
+存储池设置完成后，任何使用此设置的新卷都将由 HPP 置备，生成的 PVC 会作为网络共享之上的一个目录被创建，从而可以在任意节点上访问。
 
-This allows VM State PVCs to bypass the minimum PVC size requirements imposed by some storage provisioners and eliminates the need to recreate these PVCs during a VM migration.
+这使 VM 状态 PVC 能够绕过某些存储置备器施加的最小 PVC 大小要求，并消除在 VM 迁移期间重新创建这些 PVC 的需要。
 
-Below are the steps to deploy and configure this CSI Overlay.
+下面是部署和配置此 CSI 叠加的步骤。
 
-## Deploy HPP Operator
+## 部署 HPP Operator {#deploy-hpp-operator}
 
-The hostpath provisioner operator requires [cert manager](https://github.com/cert-manager/cert-manager) to be installed before deploying the operator. This is because the operator has a validating webhook that verifies the contents of the CR are valid. Before deploying the operator, you need to install cert manager:
+hostpath provisioner operator 要求在部署该 operator 之前已安装 [cert-manager](https://github.com/cert-manager/cert-manager)。这是因为该 operator 有一个 validating webhook，用于验证 CR 的内容是否有效。在部署该 operator 之前，需要安装 cert-manager：
 
 ```bash
 kubectl create -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
 ```
 
-Ensure cert manager is fully operational
+确保 cert-manager 完全可用
 ```bash
 kubectl wait --for=condition=Available -n cert-manager --timeout=120s --all deployments
 ```
 
 
-Next, create the hostpath provisioner namespace:
+接下来，创建 hostpath provisioner 命名空间：
 ```bash
 kubectl create -f https://github.com/kubevirt/hostpath-provisioner-operator/releases/latest/download/namespace.yaml
 ```
 
-Now deploy the webhook
+现在部署 webhook
 ```bash
 kubectl create -f https://github.com/kubevirt/hostpath-provisioner-operator/releases/latest/download/webhook.yaml -n hostpath-provisioner
 ```
 
-Then create the operator
+然后创建该 operator
 ```bash
 kubectl create -f https://github.com/kubevirt/hostpath-provisioner-operator/releases/latest/download/operator.yaml -n hostpath-provisioner
 ```
 
-Wait for operator to be ready
+等待 operator 就绪
 ```bash
 kubectl rollout status -n hostpath-provisioner deployment/hostpath-provisioner-operator --timeout=120s
 ```
 
-## Deploy the HPP Custom Resource (CR)
-Now that the operator is installed, we need to deploy the hostpath provisioner CR to indicate we want to use the provisioner as a storage overlay solution.
+## 部署 HPP 自定义资源（CR） {#deploy-the-hpp-custom-resource-cr}
+既然 operator 已经安装，我们需要部署 hostpath provisioner CR，以表明我们希望将该 provisioner 用作存储叠加方案。
 
-We can do so by configuring the `storagePool` to use a `pvcTemplate` which defines a RWX PVC.
+我们可以通过把 `storagePool` 配置为使用定义了 RWX PVC 的 `pvcTemplate` 来做到这一点。
 
 !!! Note
-    The operator will only deploy and configure the overlay resources when the `pvcTemplate.accessModes` is set to `ReadWriteMany` in the `storagePool` definition 
-
-When the HPP Operator sees the storage pool configured this way, it will mount the RWX volume to each node in the cluster and will then create a new `StorageClass` that will provision new volumes from that storage pool. 
+    只有当 `pvcTemplate.accessModes` 设置为 `ReadWriteMany`（位于 `storagePool` 定义中）时，该 operator 才会部署并配置叠加资源
+    
+当 HPP Operator 看到存储池以这种方式配置时，它会把 RWX 卷挂载到集群中的每个节点，然后创建一个新的 `StorageClass`，用于从该存储池置备新卷。
 
 !!! Note 
-    You can define the name of the new storage class by setting the optional `overlayClassName` field in the `storagePool` definition. If none is provided the default name will be `hpp-overlay`.
+    可以通过设置可选的 `overlayClassName` 字段（位于 `storagePool` 定义中）来定义新存储类的名称。如果未提供，默认名称将是 `hpp-overlay`。
 
-Now when any new PVCs are configured to use this new storage class, their volumes will be created as new directories within the network share. (for this example at `/nfs-vol`)
+现在，当任何新的 PVC 被配置为使用这个新存储类时，它们的卷将作为网络共享内的新目录被创建。（在此示例中位于 `/nfs-vol`）
 
 
 
@@ -95,15 +95,15 @@ spec:
 END
 ```
 
-Wait for hotpath provisioner to be available
+等待 hotpath provisioner 可用
 ```bash
 kubectl wait hostpathprovisioners.hostpathprovisioner.kubevirt.io/hostpath-provisioner --for=condition=Available --timeout=480s
 ```
 
 
-## Modify KubeVirt CR
+## 修改 KubeVirt CR {#modify-kubevirt-cr}
 
-Once our modified HPP CR is deployed and our new overlay storage class is created, we need to set the `vmStateStorageClass` config variable within the KubeVirt CR to use this new overlay storage class. Now any new VMs that require a VM State PVC will employ this new overlay CSI technique.
+一旦我们修改后的 HPP CR 已部署并且新的叠加存储类已创建，就需要把 KubeVirt CR 中的 `vmStateStorageClass` 配置变量设置为使用这个新的叠加存储类。此后，任何需要 VM 状态 PVC 的新 VM 都将采用这种新的叠加 CSI 技术。
 
 ```bash
 kubectl edit kubevirt -n kubevirt
@@ -123,12 +123,12 @@ spec:
     vmStateStorageClass: hpp-overlay  # NOTE! this name needs to match with newly created overlay storage class .
 ```
 
-## Snapshot / Restore support
+## 快照 / 恢复支持 {#snapshot-restore-support}
 
-In order to take snapshots of VMs that use this CSI Overlay for their VM State PVCs, you must deploy a `volumesnapshotclass` to your cluster.
+要对使用此 CSI 叠加作为其 VM 状态 PVC 的 VM 创建快照，必须向集群部署一个 `volumesnapshotclass`。
 
 !!! Note 
-    The below snapshotclass is set up to point to storagepool named "nfs-backend" which is defined in the example CR above.
+    下面的 snapshotclass 被设置为指向名为 "nfs-backend" 的存储池，该存储池在上面的示例 CR 中定义。
 
 ```bash
 kubectl create -f https://github.com/kubevirt/hostpath-provisioner-operator/releases/latest/download/volumesnapshotclass.yaml

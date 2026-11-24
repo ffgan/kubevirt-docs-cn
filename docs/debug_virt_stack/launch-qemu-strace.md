@@ -1,22 +1,20 @@
-# Launch QEMU with strace
+# 使用 strace 启动 QEMU {#launch-qemu-with-strace}
 
-This guide explains how launch QEMU with a debugging tool in virt-launcher pod. This method can be useful to debug early failures or starting QEMU as a child of the debug tool relying on [ptrace](https://man7.org/linux/man-pages/man2/ptrace.2.html). The second point is particularly relevant when a process is operating in a non-privileged environment since otherwise, it would need root access to be able to ptrace the process.
+本指南说明如何在 virt-launcher Pod 中使用调试工具来启动 QEMU。此方法可用于调试早期故障，或者把 QEMU 作为依赖 [ptrace](https://man7.org/linux/man-pages/man2/ptrace.2.html) 的调试工具的子进程来启动。第二点在进程运行于非特权环境中时尤其重要，因为否则就需要 root 访问权限，才能对该进程进行 ptrace。
 
-[Ephemeral containers](https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/) are among the emerging techniques to overcome the lack of debugging tool inside the original image. This solution does, however, come with a number of limitations.  For example, it is possible to spawn a new container inside the same pod of the application to debug and share the same PID namespace. Though they share the same PID namespace, KubeVirt's usage of unprivileged containers makes it, for example, impossible to ptrace a running container. Therefore, this technique isn't appropriate for our needs.
+[临时容器](https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/)是弥补原始镜像中缺少调试工具的新兴技术之一。不过，这种方案也存在若干限制。例如，可以在待调试应用的同一个 Pod 内启动一个新容器，并共享同一个 PID 命名空间。尽管它们共享同一个 PID 命名空间，但由于 KubeVirt 使用非特权容器，例如就无法对正在运行的容器进行 ptrace。因此，这种技术并不适合我们的需求。
 
-Due to its security and image size reduction, KubeVirt container images are based on [distroless containers](https://github.com/GoogleContainerTools/distroless). These kinds of images are extremely beneficial for deployments, but they are challenging to troubleshoot because there is no package management, which prevents the installation of additional tools on the flight.
+出于安全性和缩减镜像体积的考虑，KubeVirt 容器镜像基于 [distroless 容器](https://github.com/GoogleContainerTools/distroless)。这类镜像对部署极为有益，但它们很难排查，因为没有软件包管理，而这会阻止在运行过程中安装额外的工具。
 
-Wrapping the QEMU binary in a script is one practical method for debugging QEMU launched by Libvirt. This script launches the QEMU as a child of this process together with the debugging tool (such as [strace](https://man7.org/linux/man-pages/man1/strace.1.html) or [valgrind](https://valgrind.org/)).
+把 QEMU 二进制文件包装进脚本，是调试由 libvirt 启动的 QEMU 的一种实用方法。该脚本把 QEMU 作为本进程的子进程，与调试工具（例如 [strace](https://man7.org/linux/man-pages/man1/strace.1.html) 或 [valgrind](https://valgrind.org/)）一起启动。
 
+最后需要添加的部分，是让 libvirt 使用包装后的脚本、而不是直接调用 QEMU 程序的配置。
 
-The final part that needs to be added is the configuration for Libvirt to use the wrapped script rather than calling the QEMU program directly.
+可以借助 [KubeVirt sidecar](https://github.com/kubevirt/kubevirt/tree/main/cmd/sidecars) 来修改生成的 XML。这使我们能够用包装脚本代替内置模拟器。
 
-It is possible to alter the generated XML with the help of [KubeVirt sidecars](https://github.com/kubevirt/kubevirt/tree/main/cmd/sidecars). This allows us to use the wrapping script in place of the built-in emulator.
+此配置背后的主要思路是：所有额外的工具、脚本以及最终的输出文件，都将存放在一个[持久卷声明（PVC）](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)中，本指南将其称为 `debug-tools`。我们希望调试的那个 virt-launcher Pod 会附加这个 PVC。
 
-The primary concept behind this configuration is that all of the additional tools, scripts, and final output files will be stored in a [PerstistentVolumeClaim (PVC)](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) that this guide refers to as `debug-tools`. The virt-launcher pod that we wish to debug will have this PVC attached to it.
-
-
-PVC:
+PVC：
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -31,17 +29,16 @@ spec:
       storage: 1Gi
 ```
 
-In this guide, we'll apply the above concepts to debug QEMU inside virt-launcher using strace without the need of build a custom virt-launcher image.
+在本指南中，我们将应用上述概念，使用 strace 调试 virt-launcher 内部的 QEMU，而无需构建自定义的 virt-launcher 镜像。
 
-You can see a full demo of this setup:
+你可以查看这一配置的完整演示：
 [![asciicast](https://asciinema.org/a/1Cm87DcjtUWprRrWPBzKfxVmp.svg)](https://asciinema.org/a/1Cm87DcjtUWprRrWPBzKfxVmp)
 
-## How to bring the debug tools and wrapping script into distroless containers
+## 如何把调试工具和包装脚本放进 distroless 容器 {#how-to-bring-the-debug-tools-and-wrapping-script-into-distroless-containers}
 
-This section provides an example of how to provide extra tools into the distroless container that will be supplied as a PVC using a Dockerfile.
-Although there are several ways to accomplish this, this covers a relatively simple technique. Alternatively, you could run a pod and manually populate the PVC by execing into the pod.
+本节举例说明如何使用 Dockerfile，把额外工具以 PVC 的形式提供到 distroless 容器之中。虽然有若干种方法可以做到这一点，这里介绍一种相对简单的技术。或者，你也可以运行一个 Pod，并通过 exec 进入该 Pod 来手动填充 PVC。
 
-Dockerfile:
+Dockerfile：
 ```dockerfile
 FROM quay.io/centos/centos:stream9 as build
 
@@ -56,9 +53,9 @@ RUN chown 107:107 ${DIR}/wrap_qemu_strace.sh
 RUN chown 107:107 ${DIR}/logs
 ```
 
-The directory `debug-tools` stores the content that will be later copied inside the `debug-tools` PVC. We are essentially adding the missing utilities in the custom directory with `yum install --installroot=${DIR}}`, and the parent image matches with the parent images of virt-launcher.
+目录 `debug-tools` 存放的是稍后会复制到 `debug-tools` PVC 内部的内容。我们实质上是用 `yum install --installroot=${DIR}}` 把所缺少的工具添加到自定义目录中，并且父镜像与 virt-launcher 的父镜像相匹配。
 
-The `wrap_qemu_strace.sh` is the wrapping script that will be used to launch QEMU with `strace` similarly as the example with `valgrind`.
+`wrap_qemu_strace.sh` 是用来以 `strace` 启动 QEMU 的包装脚本，做法与 `valgrind` 示例类似。
 ```bash
 #!/bin/bash
 
@@ -67,14 +64,14 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/var/run/debug/usr/lib64 /var/run/debug/usr/bin
         /usr/libexec/qemu-kvm $@
 ```
 
-It is important to set the dynamic library path `LD_LIBRARY_PATH` to the path where the PVC will be mounted in the virt-launcher container.
+重要的是把动态库路径 `LD_LIBRARY_PATH` 设置为该 PVC 将在 virt-launcher 容器中挂载到的路径。
 
-Then, you will simply need to build the image and your debug setup is ready. The Dockerfle and the script `wrap_qemu_strace.sh` need to be in the same directory where you run the command.
+然后，你只需要构建该镜像，你的调试环境就准备好了。Dockerfile 以及脚本 `wrap_qemu_strace.sh` 需要位于你运行该命令的同一目录中。
 ```console
 $ podman build -t debug .
 ```
 
-The second step is to populate the PVC. This can be easily achieved using a kubernetes [`Job`](https://kubernetes.io/docs/concepts/workloads/controllers/job/) like:
+第二步是填充 PVC。这可以轻松地借助 Kubernetes 的 [`Job`](https://kubernetes.io/docs/concepts/workloads/controllers/job/) 来完成，例如：
 ```yaml
 apiVersion: batch/v1
 kind: Job
@@ -99,13 +96,13 @@ spec:
   backoffLimit: 4
 ```
 
-The image referenced in the `Job` is the image we built in the previous step. Once applied this and the job completed, the`debug-tools` PVC is ready to be used.
+`Job` 中引用的镜像，就是我们在上一步构建的镜像。应用此项并且该 Job 完成后，`debug-tools` PVC 就可以使用了。
 
-## How to start qemu launched by a debugging tool (e.g strace)
+## 如何由调试工具（例如 strace）启动 QEMU {#how-to-start-qemu-launched-by-a-debugging-tool-eg-strace}
 
-This part is achieved by using ConfigMaps and a KubeVirt sidecar (more details in the section [Using ConfigMap to run custom script](https://github.com/kubevirt/kubevirt/tree/main/cmd/sidecars#using-configmap-to-run-custom-script)).
+这一部分通过 ConfigMap 和 KubeVirt sidecar 来实现（更多细节见[使用 ConfigMap 运行自定义脚本](https://github.com/kubevirt/kubevirt/tree/main/cmd/sidecars#using-configmap-to-run-custom-script)一节）。
 
-Configmap:
+ConfigMap：
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -120,11 +117,11 @@ data:
     cat $tempFile
 ```
 
-The script that replaces the QEMU binary with the wrapping script in the XML is stored in the configmap `my-config-map`. This script will run as a hook, as explained in full in the documentation for the KubeVirt sidecar.
+用于在 XML 中把 QEMU 二进制文件替换为包装脚本的脚本，存放在 ConfigMap `my-config-map` 中。该脚本将作为钩子运行，KubeVirt sidecar 的文档对此作了完整说明。
 
-Once all the objects created, we can finally run the guest to debug.
+所有对象都创建完成之后，我们终于可以运行要调试的客户机了。
 
-VMI:
+VMI：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachineInstance
@@ -164,16 +161,16 @@ spec:
     name: cloudinitdisk
 ```
 
-The VMI example is a simply VM instance declaration and the interesting parts are the annotations for the hook:
-* `image` refers to the sidecar-shim already built and shipped with KubeVirt
-* `pvc` refers to the PVC populated with the debug setup. The `name` refers to the claim name, the `volumePath` is the path inside the sidecar container where the volume is mounted while the `sharedComputePath` is the path of the same volume inside the compute container.
-* `configMap` refers to the confimap containing the script to modify the XML for the wrapping script
+该 VMI 示例是一个简单的 VM 实例声明，值得关注的部分是钩子的注解：
+* `image` 指的是已经构建并随 KubeVirt 一同发布的 sidecar-shim
+* `pvc` 指的是已填充调试环境的 PVC。`name` 指的是声明名称，`volumePath` 是该卷在 sidecar 容器内部的挂载路径，而 `sharedComputePath` 是同一卷在 compute 容器内部的路径。
+* `configMap` 指的是包含那段为包装脚本修改 XML 的脚本的 ConfigMap
 
-Once the VM is declared, the hook will modify the emulator section and Libvirt will call the wrapping script instead of QEMU directly.
+VM 一经声明，钩子就会修改 emulator 部分，libvirt 将调用包装脚本，而不是直接调用 QEMU。
 
-## How to fetch the output
+## 如何获取输出 {#how-to-fetch-the-output}
 
-The wrapping script configures `strace` to store the output in the PVC. In this way, it is possible to retrieve the output file in a later time, for example using an additional pod like:
+包装脚本把 `strace` 配置为将输出存放在 PVC 中。这样一来，就可以在之后的某个时间取回该输出文件，例如使用下面这样一个额外的 Pod：
 
 ```yaml
 apiVersion: v1
@@ -197,7 +194,7 @@ spec:
           name: populate
 ```
 
-It is then possible to copy the file locally with:
+然后，就可以把该文件复制到本地：
 ```console
 $ kubectl cp fetch-logs:/vol/logs/strace.out strace.out
 ```

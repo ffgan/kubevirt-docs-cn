@@ -1,25 +1,24 @@
-# KSM Management
+# KSM 管理 {#ksm-management}
 
-Kernel Samepage Merging ([KSM](http://www.linux-kvm.org/page/KSM))
-allows de-duplication of memory. KSM tries to find identical Memory Pages and merge
-those to free memory.
->Further Information:  
->- [KSM (Kernel Samepage Merging) feature](https://www.thomas-krenn.com/en/wiki/KSM_(Kernel_Samepage_Merging)_feature)  
->- [Kernel Same-page Merging (KSM)](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_tuning_and_optimization_guide/chap-ksm)
+内核同页合并（[KSM](http://www.linux-kvm.org/page/KSM)）
+允许对内存去重。KSM 尝试查找相同的内存页并将其合并，以释放内存。
+>更多信息：  
+>- [KSM（内核同页合并）功能](https://www.thomas-krenn.com/en/wiki/KSM_(Kernel_Samepage_Merging)_feature)  
+>- [内核同页合并（KSM）](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_tuning_and_optimization_guide/chap-ksm)
 
-## Enabling KSM through KubeVirt CR
-KSM can be enabled on nodes by `spec.configuration.ksmConfiguration` in the KubeVirt CR.  
-`ksmConfiguration` instructs on which nodes KSM will be enabled, exposing a `nodeLabelSelector`.  
-`nodeLabelSelector` is a [LabelSelector](https://github.com/kubernetes/apimachinery/blob/60180f072f73eafec72ef9f2c418a6bb1357d434/pkg/apis/meta/v1/types.go#L1195)
-and defines the filter, based on the node labels. If a node's labels match the label selector term,
-then on that node, KSM will be enabled.  
->**NOTE**  
->If `nodeLabelSelector` is nil KSM will not be enabled on any nodes.  
->Empty `nodeLabelSelector` will enable KSM on every node.  
+## 通过 KubeVirt CR 启用 KSM {#enabling-ksm-through-kubevirt-cr}
+可以通过 KubeVirt CR 中的 `spec.configuration.ksmConfiguration` 在节点上启用 KSM。  
+`ksmConfiguration` 指示在哪些节点上启用 KSM，并公开一个 `nodeLabelSelector`。  
+`nodeLabelSelector` 是一个 [LabelSelector](https://github.com/kubernetes/apimachinery/blob/60180f072f73eafec72ef9f2c418a6bb1357d434/pkg/apis/meta/v1/types.go#L1195)，
+并根据节点标签定义过滤器。如果节点的标签与标签选择器条件匹配，
+则会在该节点上启用 KSM。  
+>**注意**  
+>如果 `nodeLabelSelector` 为 nil，则不会在任何节点上启用 KSM。  
+>空的 `nodeLabelSelector` 将在每个节点上启用 KSM。  
 
-#### Examples:
+#### 示例： {#examples}
 
-- Enabling KSM on nodes in which the hostname is `node01` or `node03`:
+- 在主机名为 `node01` 或 `node03` 的节点上启用 KSM：
 ```yaml
 spec:
   configuration:
@@ -33,7 +32,7 @@ spec:
               - node03
 ```
 
-- Enabling KSM on nodes with labels `kubevirt.io/first-label: true`, `kubevirt.io/second-label: true`:
+- 在带有标签 `kubevirt.io/first-label: true`、`kubevirt.io/second-label: true` 的节点上启用 KSM：
 ```yaml
 spec:
   configuration:
@@ -44,7 +43,7 @@ spec:
           kubevirt.io/second-label: "true"
 ```
 
-- Enabling KSM on every node:
+- 在每个节点上启用 KSM：
 ```yaml
 spec:
   configuration:
@@ -53,28 +52,24 @@ spec:
 ```
 
 
-## Annotation and restore mechanism
+## 注解与恢复机制 {#annotation-and-restore-mechanism}
  
-On those nodes where KubeVirt enables the KSM via configuration, an annotation will be
-added (`kubevirt.io/ksm-handler-managed`).  
-This annotation is an internal record to keep track of which nodes are currently 
-managed by virt-handler, so that it is possible to distinguish which nodes should be restored
-in case of future ksmConfiguration changes.
+在 KubeVirt 通过配置启用 KSM 的那些节点上，会添加一个注解
+（`kubevirt.io/ksm-handler-managed`）。  
+此注解是一条内部记录，用于跟踪当前由 virt-handler 管理的节点，以便在将来 ksmConfiguration 发生变化时，能够区分哪些节点应当被恢复。
 
-Let's imagine this scenario:
+设想如下场景：
 
-1. There are 3 nodes in the cluster and one of them(`node01`) has KSM externally enabled.
-2. An admin patches the KubeVirt CR adding a ksmConfiguration which enables ksm for `node02` and `node03`.
-3. After a while, an admin patches again the KubeVirt CR deleting the ksmConfiguration.
+1. 集群中有 3 个节点，其中一个（`node01`）已从外部启用了 KSM。
+2. 管理员修补 KubeVirt CR，添加 ksmConfiguration，为 `node02` 和 `node03` 启用 ksm。
+3. 过一段时间后，管理员再次修补 KubeVirt CR，删除 ksmConfiguration。
 
-Thanks to the annotation, the virt-handler is able to disable ksm on only those nodes where it
-itself had enabled it(`node02` `node03`), leaving the others unchanged (`node01`).
+借助该注解，virt-handler 能够仅在它自己曾经启用过 ksm 的那些节点上停用 ksm（`node02` `node03`），而保持其他节点不变（`node01`）。
 
-## Node labelling
+## 节点标签 {#node-labelling}
 
-KubeVirt can discover on which nodes KSM is enabled and will mark them
-with a special label (`kubevirt.io/ksm-enabled`) with value `true`.
-This label can be used to schedule the vms in nodes with KSM enabled or not.
+KubeVirt 可以发现哪些节点启用了 KSM，并用特殊标签（`kubevirt.io/ksm-enabled`）标记它们，其值为 `true`。
+此标签可用于将 VM 调度到已启用或未启用 KSM 的节点上。
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine

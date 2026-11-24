@@ -1,79 +1,54 @@
-# Hook Sidecar Container
+# Hook Sidecar 容器 {#hook-sidecar-container}
 
-!!! warning "Deprecated since v1.9"
-    The Hook Sidecar mechanism is deprecated as of v1.9. The removal version is
-    not yet determined. Use the new [Plugins](../cluster_admin/plugins.md) mechanism
-    instead, which provides structured domain hooks, node hooks, and admission references.
+!!! warning "自 v1.9 起弃用"
+    Hook Sidecar 机制自 v1.9 起已弃用。移除版本尚未确定。请改用新的[插件](../cluster_admin/plugins.md)机制，它提供结构化的 domain hook、节点 hook 和准入引用。
 
-## Introduction
+## 简介 {#introduction}
 
-In KubeVirt, a Hook Sidecar container is a sidecar container (a secondary container that runs along with the main
-application container within the same Pod) used to apply customizations before the Virtual Machine is initialized. This
-ability is provided since configurable elements in the VMI specification do not cover all of the [libvirt domain
-XML](https://libvirt.org/formatdomain.html) elements.
+在 KubeVirt 中，Hook Sidecar 容器是一个 sidecar 容器（与主应用容器在同一个 Pod 中一起运行的辅助容器），用于在虚拟机初始化之前应用定制。之所以提供此能力，是因为 VMI 规范中的可配置元素并未覆盖全部 [libvirt domain XML](https://libvirt.org/formatdomain.html) 元素。
 
-The sidecar containers communicate with the main container over a socket with a gRPC protocol. There are two main
-sidecar hooks:
+sidecar 容器通过套接字以 gRPC 协议与主容器通信。主要有两种 sidecar hook：
 
-1. `onDefineDomain`: This hook helps to customize libvirt's XML and return the new XML over gRPC for the VM creation.
-2. `preCloudInitIso`: This hook helps to customize the cloud-init configuration. It operates on and returns JSON
-   formatted cloud-init data.
+1. `onDefineDomain`：此 hook 用于定制 libvirt 的 XML，并通过 gRPC 返回新的 XML，以供创建 VM。
+2. `preCloudInitIso`：此 hook 用于定制 cloud-init 配置。它处理并返回 JSON 格式的 cloud-init 数据。
 
-## Enabling `Sidecar` feature gate
+## 启用 `Sidecar` 功能门控 {#enabling-sidecar-feature-gate}
 
-`Sidecar` feature gate can be enabled by following the steps mentioned in
-[Activating feature gates](../cluster_admin/activating_feature_gates.md).
+可以按照[激活功能门控](../cluster_admin/activating_feature_gates.md)中提到的步骤启用 `Sidecar` 功能门控。
 
-In case of a development cluster created using kubevirtci, follow the steps mentioned in the 
-[developer doc](https://github.com/kubevirt/kubevirt/blob/main/docs/getting-started.md#compile-and-run-it) to enable 
-the feature gate.
+如果是使用 kubevirtci 创建的开发集群，请按照[开发者文档](https://github.com/kubevirt/kubevirt/blob/main/docs/getting-started.md#compile-and-run-it)中提到的步骤启用该功能门控。
 
-## Sidecar-shim container image
+## Sidecar-shim 容器镜像 {#sidecar-shim-container-image}
 
-To run a VM with custom modifications, the [sidecar-shim-image](https://quay.io/repository/kubevirt/sidecar-shim) 
-takes care of implementing the communication with the main container.
+要运行带有自定义修改的 VM，[sidecar-shim-image](https://quay.io/repository/kubevirt/sidecar-shim) 负责实现与主容器的通信。
 
-The image contains the `sidecar-shim` binary built using
-[`sidecar_shim.go`](https://github.com/kubevirt/kubevirt/blob/main/cmd/sidecars/sidecar_shim.go) which should be kept
-as the entrypoint of the container. This binary will search in `$PATH` for binaries named after the hook names (e.g
-`onDefineDomain` and `preCloudInitIso`) and run them. Users must provide the necessary arguments as command line options
-(flags).
+该镜像包含 `sidecar-shim` 二进制文件，它由 [`sidecar_shim.go`](https://github.com/kubevirt/kubevirt/blob/main/cmd/sidecars/sidecar_shim.go) 构建，并应保持为容器的入口点。该二进制文件会在 `$PATH` 中搜索以 hook 名称命名的二进制文件（例如 `onDefineDomain` 和 `preCloudInitIso`）并运行它们。用户必须以命令行选项（标志）的形式提供必要的参数。
 
-In the case of `onDefineDomain`, the arguments will be the VMI information as JSON string, (e.g `--vmi vmiJSON`) and
-the current domain XML (e.g `--domain domainXML`). It outputs the modified domain XML on the standard output.
+对于 `onDefineDomain`，参数是 JSON 字符串形式的 VMI 信息（例如 `--vmi vmiJSON`）以及当前的 domain XML（例如 `--domain domainXML`）。它把修改后的 domain XML 输出到标准输出。
 
-In the case of `preCloudInitIso`, the arguments will be the VMI information as JSON string, (e.g `--vmi vmiJSON`) and
-the CloudInitData (e.g `--cloud-init cloudInitJSON`). It outputs the modified CloudInitData (as JSON) on the standard ouput.
+对于 `preCloudInitIso`，参数是 JSON 字符串形式的 VMI 信息（例如 `--vmi vmiJSON`）以及 CloudInitData（例如 `--cloud-init cloudInitJSON`）。它把修改后的 CloudInitData（JSON 形式）输出到标准输出。
 
-Shell or python scripts can be used as alternatives to the binary, by making them available at the expected location 
-(`/usr/bin/onDefineDomain` or `/usr/bin/preCloudInitIso` depending upon the hook).
+可以把 Shell 或 python 脚本放到预期位置（根据 hook 的不同，为 `/usr/bin/onDefineDomain` 或 `/usr/bin/preCloudInitIso`），以此作为该二进制文件的替代。
 
-A prebuilt image named `sidecar-shim` capable of running Shell or Python scripts is shipped as part of KubeVirt releases.
+KubeVirt 发行版中附带一个名为 `sidecar-shim` 的预构建镜像，能够运行 Shell 或 Python 脚本。
 
-## Go, Python, Shell - pick any one
+## Go、Python、Shell——任选其一 {#go-python-shell-pick-any-one}
 
-Although a binary doesn't strictly need to be generated from Go code, and a script doesn't strictly need to be one
-among Shell or Python, for the purpose of this guide, we will use those as examples.
+虽然二进制文件并不严格要求由 Go 代码生成，脚本也并不严格要求必须是 Shell 或 Python 之一，但就本指南而言，我们将以它们为例。
 
-### Go binary
+### Go 二进制文件 {#go-binary}
 
-Example Go code modifiying the [SMBIOS system
-information](https://libvirt.org/formatdomain.html#smbios-system-information) can be found in the [KubeVirt
-repo](https://github.com/kubevirt/kubevirt/tree/main/cmd/sidecars/smbios). Binary generated from this code, when
-available under `/usr/bin/ondefinedomain` in the sidecar-shim-image, is run right before VMI creation and the baseboard
-manufacturer value is modified to reflect what's provided in the `smbios.vm.kubevirt.io/baseBoardManufacturer`
-annotation in [VMI spec](https://github.com/kubevirt/kubevirt/blob/main/examples/vmi-with-sidecar-hook.yaml).
+修改 [SMBIOS 系统信息](https://libvirt.org/formatdomain.html#smbios-system-information) 的 Go 代码示例可以在 [KubeVirt 仓库](https://github.com/kubevirt/kubevirt/tree/main/cmd/sidecars/smbios)中找到。由此代码生成的二进制文件，若在 sidecar-shim-image 中位于 `/usr/bin/ondefinedomain`，会在创建 VMI 之前立即运行，并把基板制造商的值修改为 [VMI spec](https://github.com/kubevirt/kubevirt/blob/main/examples/vmi-with-sidecar-hook.yaml) 里 `smbios.vm.kubevirt.io/baseBoardManufacturer` 注解所提供的内容。
 
-### Shell or Python script
+### Shell 或 Python 脚本 {#shell-or-python-script}
 
-If you pefer writing a shell or python script instead of a Go program, create a Kubernetes ConfigMap and use
-annotations to make sure the script is run before the VMI creation. The flow would be as below:
+如果你更愿意编写 shell 或 python 脚本而不是 Go 程序，请创建 Kubernetes ConfigMap，并使用注解确保该脚本在创建 VMI 之前运行。流程如下：
 
-1. Create a ConfigMap containing the shell or python script you want to run
-1. Create a VMI containing the annotation `hooks.kubevirt.io/hookSidecars` and mention the ConfigMap information in it.
-1. In this case a predefined image can be used to handle the communication with the main container.
+1. 创建一个 ConfigMap，其中包含你要运行的 shell 或 python 脚本
+1. 创建一个 VMI，其中包含注解 `hooks.kubevirt.io/hookSidecars`，并在其中写明 ConfigMap 信息。
+1. 在这种情况下，可以使用预定义镜像来处理与主容器的通信。
 
-#### ConfigMap with shell script
+#### 包含 shell 脚本的 ConfigMap {#configmap-with-shell-script}
 
 ```yaml
 apiVersion: v1
@@ -89,7 +64,7 @@ data:
     cat $tempFile
 ```
 
-#### ConfigMap with python script
+#### 包含 python 脚本的 ConfigMap {#configmap-with-python-script}
 
 ```yaml
 apiVersion: v1
@@ -133,9 +108,7 @@ data:
         main(sys.argv[4])
 ```
 
-After creating one of the above ConfigMap, create the VMI using the manifest in [this
-example](https://github.com/kubevirt/kubevirt/blob/main/examples/vmi-with-sidecar-hook-configmap.yaml). Of importance
-here is the ConfigMap information stored in the annotations:
+创建上述 ConfigMap 之一后，使用[此示例](https://github.com/kubevirt/kubevirt/blob/main/examples/vmi-with-sidecar-hook-configmap.yaml)中的清单创建 VMI。这里的重点是存储在注解中的 ConfigMap 信息：
 
 ```yaml
 annotations:
@@ -148,19 +121,13 @@ annotations:
     ]
 ```
 
+`name` 字段表示集群上包含你要执行的脚本的 ConfigMap 名称。`key` 字段表示 ConfigMap 中包含待执行脚本的键。最后，`hookPath` 表示你希望挂载该脚本的路径。它可以是 `/usr/bin/onDefineDomain` 或 `/usr/bin/preCloudInitIso`，取决于你要执行的 hook。
+如果需要自定义镜像，可以用 `"image"` 键指定一个可选值；如果省略，将使用与其他 KubeVirt 镜像一起构建的默认 Sidecar-shim 镜像。
+默认的 Sidecar-shim 镜像如果没有用自定义值覆盖，也会像其他镜像一样，按照[更新 KubeVirt 工作负载](../cluster_admin/updating_and_deletion/#updating-kubevirt-workloads)进行更新。
 
-The `name` field indicates the name of the ConfigMap on the cluster which contains the script you want to execute. The
-`key` field indicates the key in the ConfigMap which contains the script to be executed. Finally, `hookPath` indicates
-the path where you want the script to be mounted. It could be either of `/usr/bin/onDefineDomain` or
-`/usr/bin/preCloudInitIso` depending upon the hook you want to execute.
-An optional value can be specified with the `"image"` key if a custom image is needed, if omitted the default Sidecar-shim image built together with the other KubeVirt images will be used.
-The default Sidecar-shim image, if not override with a custom value, will also be updated as other images as for [Updating KubeVirt Workloads](../cluster_admin/updating_and_deletion/#updating-kubevirt-workloads).
+### 验证一切正常 {#verify-everything-works}
 
-### Verify everything works
-
-Whether you used the Go binary or a Shell/Python script from the above examples, you would be able to see the newly 
-created VMI have the modified baseboard manufacturer information. After creating the VMI, verify that it is in the 
-`Running` state, and connect to its console and see if the desired changes to baseboard manufacturer get reflected:
+无论你使用的是上述示例中的 Go 二进制文件还是 Shell/Python 脚本，都应当能看到新创建的 VMI 具有修改后的基板制造商信息。创建 VMI 之后，请验证它处于 `Running` 状态，连接到它的控制台，并查看基板制造商的预期变更是否已体现：
 
 ```shell
 # Once the VM is ready, connect to its display and login using name and password "fedora"

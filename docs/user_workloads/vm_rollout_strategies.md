@@ -1,17 +1,17 @@
-# VM Rollout Strategies
+# VM 滚动更新策略 {#vm-rollout-strategies}
 
-In KubeVirt, the VM rollout strategy defines how changes to a VM object affect a running guest.  
-In other words, it defines when and how changes to a VM object get propagated to its corresponding VMI object.
+在 KubeVirt 中，VM 滚动更新策略定义对 VM 对象的变更如何影响正在运行的客户机。  
+换句话说，它定义对 VM 对象的变更何时以及如何传播到对应的 VMI 对象。
 
-There are currently 2 rollout strategies: `LiveUpdate` and `Stage`.
-Only 1 can be specified and the default is `Stage`.
+目前有 2 种滚动更新策略：`LiveUpdate` 和 `Stage`。
+只能指定 1 种，默认是 `Stage`。
 
-## LiveUpdate
+## LiveUpdate {#liveupdate}
 
-The `LiveUpdate` VM rollout strategy tries to propagate VM object changes to running VMIs as soon as possible.  
-For example, changing the number of CPU sockets will trigger a [CPU hotplug](../compute/cpu_hotplug.md).
+`LiveUpdate` VM 滚动更新策略会尽快把 VM 对象的变更传播到正在运行的 VMI。  
+例如，更改 CPU socket 数量会触发 [CPU 热插拔](../compute/cpu_hotplug.md)。
 
-Enable the `LiveUpdate` VM rollout strategy in the KubeVirt CR:
+在 KubeVirt CR 中启用 `LiveUpdate` VM 滚动更新策略：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -21,9 +21,9 @@ spec:
     vmRolloutStrategy: "LiveUpdate"
 ```
 
-## Stage
+## Stage {#stage}
 
-The `Stage` VM rollout strategy stages every change made to the VM object until its next reboot.  
+`Stage` VM 滚动更新策略会暂存对 VM 对象所做的每一项变更，直到它下一次重启。  
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -33,18 +33,18 @@ spec:
     vmRolloutStrategy: "Stage"
 ```
 
-## RestartRequired condition
+## RestartRequired 状况 {#restartrequired-condition}
 
-Any change made to a VM object when the rollout strategy is `Stage` will trigger the `RestartRequired` VM condition.  
-When the rollout strategy is `LiveUpdate`, only non-propagatable changes will trigger the condition.
+当滚动更新策略为 `Stage` 时，对 VM 对象所做的任何变更都会触发 `RestartRequired` VM 状况。  
+当滚动更新策略为 `LiveUpdate` 时，只有无法传播的变更才会触发该状况。
 
-Once the `RestartRequired` condition is set on a VM object, no further changes can be propagated, even if the strategy is set to `LiveUpdate`.  
-Changes will become effective on next reboot, and the condition will be removed.
+一旦在 VM 对象上设置了 `RestartRequired` 状况，就无法再传播后续变更，即使策略设置为 `LiveUpdate` 也是如此。  
+变更将在下一次重启时生效，该状况也会被移除。
 
-## Limitations
+## 限制 {#limitations}
 
-The current implementation has the following limitations:
+当前实现有以下限制：
 
-- Once the `RestartRequired` condition is set, the only way to get rid of it is to restart the VM. In the future, we plan on implementing a way to get rid of it by reverting the VM template spec to its last non-RestartRequired state.
-- Cluster defaults are excluded from this logic. It means that changing a cluster-wide setting that impacts VM specs will not be live-updated, regardless of the rollout strategy.
-- The `RestartRequired` condition comes with a message stating what kind of change triggered the condition (CPU/memory/other). That message pertains only to the first change that triggered the condition. Additional changes that would usually trigger the condition will just get staged and no additional `RestartRequired` condition will be added.
+- 一旦设置了 `RestartRequired` 状况，消除它的唯一办法是重启 VM。未来我们计划实现一种办法：把 VM 模板 spec 还原到最近一次非 RestartRequired 状态，从而消除该状况。
+- 集群默认值不在此逻辑范围内。这意味着，更改会影响 VM spec 的集群范围设置时，无论滚动更新策略如何，都不会实时更新。
+- `RestartRequired` 状况附带一条消息，说明是哪类变更触发了该状况（CPU/内存/其他）。该消息只针对触发该状况的第一次变更。通常会触发该状况的后续变更只会暂存，不会再添加额外的 `RestartRequired` 状况。

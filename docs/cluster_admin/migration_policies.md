@@ -1,41 +1,29 @@
-# Migration Policies
+# 迁移策略 {#migration-policies}
 
-Migration policies provides a new way of applying migration configurations to Virtual Machines. The policies
-can refine Kubevirt CR's `MigrationConfiguration` that sets the cluster-wide migration configurations. This way,
-the cluster-wide settings serve as a default that can be refined (i.e. changed, removed or added) by the migration
-policy.
+迁移策略提供了一种将迁移配置应用到虚拟机的新方式。这些策略可以细化 Kubevirt CR 中用于设置集群范围迁移配置的 `MigrationConfiguration`。这样，集群范围的设置作为默认值，可以由迁移策略加以细化（即更改、移除或添加）。
 
-Please bear in mind that migration policies are in version `v1alpha1`. This means that this API is not fully stable
-yet and that APIs may change in the future.
+请注意，迁移策略目前处于 `v1alpha1` 版本。这意味着此 API 尚未完全稳定，并且 API 将来可能会发生变化。
 
-## Overview
+## 概述 {#overview}
 
-KubeVirt supports [Live Migrations](../compute/live_migration.md) of Virtual Machine workloads.
-Before migration policies were introduced, migration settings could be configurable only on the cluster-wide
-scope by editing [KubevirtCR's spec](https://kubevirt.io/api-reference/master/definitions.html#_v1_kubevirtspec)
-or more specifically [MigrationConfiguration](https://kubevirt.io/api-reference/master/definitions.html#_v1_migrationconfiguration)
-CRD.
+KubeVirt 支持虚拟机工作负载的[实时迁移](../compute/live_migration.md)。
+在引入迁移策略之前，迁移设置只能在集群范围内配置，方法是编辑 [KubevirtCR 的 spec](https://kubevirt.io/api-reference/master/definitions.html#_v1_kubevirtspec)，或更具体地说是 [MigrationConfiguration](https://kubevirt.io/api-reference/master/definitions.html#_v1_migrationconfiguration) CRD。
 
-Several aspects (although not all) of migration behaviour that can be customized are:
-- Bandwidth
-- Auto-convergence
-- Post/Pre-copy
-- Max number of parallel migrations
-- Timeout
+可以自定义的迁移行为的若干方面（尽管不是全部）包括：
+- 带宽
+- 自动收敛
+- 后拷贝/预拷贝
+- 最大并行迁移数
+- 超时
 
-Migration policies generalize the concept of defining migration configurations, so it would be
-possible to apply different configurations to specific groups of VMs.
+迁移策略泛化了定义迁移配置的概念，从而可以对特定的 VM 组应用不同的配置。
 
-Such capability can be useful for a lot of different use cases on which there is a need to differentiate
-between different workloads. Differentiation of different configurations could be needed because different
-workloads are considered to be in different priorities, security segregation, workloads with different
-requirements, help to converge workloads which aren't migration-friendly, and many other reasons.
+这种能力在许多需要区分不同工作负载的用例中都很有用。之所以需要区分不同配置，可能是因为不同工作负载被视为具有不同优先级、需要安全隔离、具有不同需求，需要帮助不适合迁移的工作负载完成收敛，以及许多其他原因。
 
-## API Examples
+## API 示例 {#api-examples}
 
-#### Migration Configurations
-Currently the MigrationPolicy spec will only include the following configurations from KubevirtCR's
-MigrationConfiguration (in the future more configurations that aren't part of Kubevirt CR are intended to be added):
+#### 迁移配置 {#migration-configurations}
+目前，MigrationPolicy 的 spec 只会包含来自 KubevirtCR 的 MigrationConfiguration 中的以下配置（将来打算添加更多不属于 Kubevirt CR 的配置）：
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
 kind: MigrationPolicy
@@ -46,17 +34,13 @@ spec:
     allowPostCopy: false
 ```
 
-All above fields are optional. When omitted, the configuration will be applied as defined in
-KubevirtCR's MigrationConfiguration. This way, KubevirtCR will serve as a configurable set of defaults for both
-VMs that are not bound to any MigrationPolicy and VMs that are bound to a MigrationPolicy that does not
-define all fields of the configurations.
+以上所有字段都是可选的。省略时，将按 KubevirtCR 的 MigrationConfiguration 中的定义应用配置。这样，KubevirtCR 将作为一组可配置的默认值，同时适用于未绑定任何 MigrationPolicy 的 VM，以及绑定到未定义全部配置字段的 MigrationPolicy 的 VM。
 
-#### Matching Policies to VMs
+#### 将策略匹配到 VM {#matching-policies-to-vms}
 
-Next in the spec are the selectors that define the group of VMs on which to apply the policy. The options to do so
-are the following.
+spec 中接下来是选择器，用于定义要应用该策略的 VM 组。可用方式如下。
 
-**This policy applies to the VMs in namespaces that have all the required labels:**
+**此策略适用于位于具有全部所需标签的命名空间中的 VM：**
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
 kind: MigrationPolicy
@@ -66,7 +50,7 @@ spec:
       hpc-workloads: true       # Matches a key and a value 
 ```
 
-**This policy applies for the VMs that have all the required labels:**
+**此策略适用于具有全部所需标签的 VM：**
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
 kind: MigrationPolicy
@@ -76,7 +60,7 @@ spec:
       workload-type: db       # Matches a key and a value 
 ```
 
-**It is also possible to combine the previous two:**
+**也可以将前两种方式组合起来：**
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
 kind: MigrationPolicy
@@ -88,7 +72,7 @@ spec:
       workload-type: db
 ```
 
-#### Full Manifest:
+#### 完整清单： {#full-manifest}
 
 ```yaml
 apiVersion: migrations.kubevirt.io/v1alpha1
@@ -109,21 +93,18 @@ spec:
     virtualMachineInstanceSelector:
       workload-type: db
 ```
-## Policies' Precedence
+## 策略的优先级 {#policies-precedence}
 
-It is possible that multiple policies apply to the same VMI. In such cases, the precedence is in the
-same order as the bullets above (VMI labels first, then namespace labels). It is not allowed to define
-two policies with the exact same selectors.
+多个策略可能适用于同一个 VMI。在这种情况下，优先级顺序与上面的条目相同（先是 VMI 标签，然后是命名空间标签）。不允许定义两个具有完全相同选择器的策略。
 
-If multiple policies apply to the same VMI:
-* The most detailed policy will be applied, that is, the policy with the highest number of matching labels
+如果多个策略适用于同一个 VMI：
+* 将应用最详细的策略，也就是匹配标签数量最多的策略
 
-* If multiple policies match to a VMI with the same number of matching labels, the policies will be sorted by the
-lexicographic order of the matching labels keys. The first one in this order will be applied.
+* 如果多个策略以相同数量的匹配标签匹配到某个 VMI，这些策略将按匹配标签键的字典序排序。将应用此顺序中的第一个。
 
-### Example
+### 示例 {#example}
 
-For example, let's imagine a VMI with the following labels:
+例如，设想一个具有以下标签的 VMI：
 
 * size: small
 
@@ -131,7 +112,7 @@ For example, let's imagine a VMI with the following labels:
 
 * gpu: nvidia
 
-And let's say the namespace to which the VMI belongs contains the following labels:
+并假设该 VMI 所属的命名空间包含以下标签：
 
 * priority: high
 
@@ -139,32 +120,32 @@ And let's say the namespace to which the VMI belongs contains the following labe
 
 * hpc-workload: true
 
-The following policies are listed by their precedence (high to low):
+以下策略按优先级从高到低列出：
 
-1) VMI labels: `{size: small, gpu: nvidia}`, Namespace labels: `{priority:high, bandwidth: medium}`
+1) VMI 标签：`{size: small, gpu: nvidia}`，命名空间标签：`{priority:high, bandwidth: medium}`
    
-  * Matching labels: 4, First key in lexicographic order: `bandwidth`.
+  * 匹配标签数：4，字典序中的第一个键：`bandwidth`。
 
-2) VMI labels: `{size: small, gpu: nvidia}`, Namespace labels: `{priority:high, hpc-workload:true}`
+2) VMI 标签：`{size: small, gpu: nvidia}`，命名空间标签：`{priority:high, hpc-workload:true}`
 
-  * Matching labels: 4, First key in lexicographic order: `gpu`.
+  * 匹配标签数：4，字典序中的第一个键：`gpu`。
 
-3) VMI labels: `{size: small, gpu: nvidia}`, Namespace labels: `{priority:high}`
+3) VMI 标签：`{size: small, gpu: nvidia}`，命名空间标签：`{priority:high}`
 
-  * Matching labels: 3, First key in lexicographic order: `gpu`.
+  * 匹配标签数：3，字典序中的第一个键：`gpu`。
 
-4) VMI labels: `{size: small}`, Namespace labels: `{priority:high, hpc-workload:true}`
+4) VMI 标签：`{size: small}`，命名空间标签：`{priority:high, hpc-workload:true}`
 
-  * Matching labels: 3, First key in lexicographic order: `hpc-workload`.
+  * 匹配标签数：3，字典序中的第一个键：`hpc-workload`。
 
-5) VMI labels: `{gpu: nvidia}`, Namespace labels: `{priority:high}`
+5) VMI 标签：`{gpu: nvidia}`，命名空间标签：`{priority:high}`
 
-  * Matching labels: 2, First key in lexicographic order: `gpu`.
+  * 匹配标签数：2，字典序中的第一个键：`gpu`。
 
-6) VMI labels: `{gpu: nvidia}`, Namespace labels: `{}`
+6) VMI 标签：`{gpu: nvidia}`，命名空间标签：`{}`
 
-  * Matching labels: 1, First key in lexicographic order: `gpu`.
+  * 匹配标签数：1，字典序中的第一个键：`gpu`。
 
-7) VMI labels: `{gpu: intel}`, Namespace labels: `{priority:high}`
+7) VMI 标签：`{gpu: intel}`，命名空间标签：`{priority:high}`
 
-  * VMI label does not match - policy cannot be applied.
+  * VMI 标签不匹配 - 无法应用该策略。

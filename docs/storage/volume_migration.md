@@ -1,15 +1,15 @@
-# Update volume strategy and volume migration
+# 更新卷策略与卷迁移 {#update-volume-strategy-and-volume-migration}
 
-Storage migration is possible while the VM is running by using the update volume strategy. Storage migration can be useful in the cases where the users need to change the underlying storage, for example, if the storage class has been deprecated, or there is a new more performant driver available.
+在 VM 运行期间，可以通过更新卷策略进行存储迁移。当用户需要更换底层存储时，存储迁移会很有用，例如存储类已被弃用，或者有新的、性能更好的驱动可用。
 
-This feature doesn't handle the volume creation or cover migration between storage classes, but rather implements a basic API which can be used by overlaying tools to perform more advanced migration planning.
+此功能不处理卷的创建，也不涵盖存储类之间的迁移，而是实现一个基本 API，上层工具可以用它来执行更高级的迁移规划。
 
-If `Migration` is specified as `updateVolumesStrategy`, KubeVirt will try to migrate the storage from the old volume set to the new one when the VirtualMachine spec is updated. The migration considers the changed volumes present into a single update. A single update may contain modifications to more than one volume, but sequential changes to the volume set will be handled as separate migrations.
+如果把 `Migration` 指定为 `updateVolumesStrategy`，当 VirtualMachine spec 被更新时，KubeVirt 会尝试把存储从旧卷集合迁移到新卷集合。迁移会考虑单次更新中出现的已变更卷。单次更新可以包含对多个卷的修改，但对卷集合的连续变更将作为各自独立的迁移来处理。
 
-Updates are declarative and [GitOps](https://kubevirt.io/user-guide/cluster_admin/gitops/) compatible. For example, a new version of the VM specification with the new volume set and the migration volume update strategy can be directly applied using `kubectl apply` or interactively editing the VM with `kubectl edit`
+更新是声明式的，并且与 [GitOps](https://kubevirt.io/user-guide/cluster_admin/gitops/) 兼容。例如，带有新卷集合和迁移卷更新策略的新版本 VM 规范，可以直接使用 `kubectl apply` 应用，或者使用 `kubectl edit` 交互式地编辑该 VM
 
-Example:
-Original VM with a datavolume and datavolume template:
+示例：
+带有 datavolume 和 datavolume 模板的原始 VM：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -62,7 +62,7 @@ spec:
         pod: {}
 ```
 
-The datavolume `src-dv` is migrated to the pvc `dest-pvc`:
+datavolume `src-dv` 被迁移到 pvc `dest-pvc`：
 ```yaml
 apiVersion: cdi.kubevirt.io/v1beta1
 kind: DataVolume
@@ -81,7 +81,7 @@ spec:
     storageClassName: rook-ceph
 ```
 
-by updating the VM:
+通过更新该 VM：
 ```diff
  apiVersion: kubevirt.io/v1
  kind: VirtualMachine
@@ -101,11 +101,11 @@ by updating the VM:
          name: datavolumedisk1
 ```
 
-### Using a PVC as the target volume
+### 使用 PVC 作为目标卷 {#using-a-pvc-as-the-target-volume}
 
-Regular PVCs (not created via DataVolumes) are fully supported for volume migration. In this case, the volumes section references the PVC using `persistentVolumeClaim` instead of `dataVolume`.
+未通过 DataVolume 创建的普通 PVC 完全支持卷迁移。在这种情况下，volumes 部分使用 `persistentVolumeClaim` 而不是 `dataVolume` 来引用该 PVC。
 
-First, create the destination PVC:
+首先，创建目标 PVC：
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -121,7 +121,7 @@ spec:
   storageClassName: rook-ceph
 ```
 
-Then update the VM to migrate from the source DataVolume to the destination PVC:
+然后更新该 VM，以把源 DataVolume 迁移到目标 PVC：
 ```diff
  apiVersion: kubevirt.io/v1
  kind: VirtualMachine
@@ -143,10 +143,10 @@ Then update the VM to migrate from the source DataVolume to the destination PVC:
          name: datavolumedisk1
 ```
 
-The destination volume may be of a different type or size than the source. It is possible to migrate from and to a block volume as well as a filesystem volume.
-The destination volume should be equal to or larger than the source volume. However, the additional difference in the size of the destination volume is not instantly visible within the VM and must be manually resized because the guest is unaware of the migration.
+目标卷的类型或大小可以与源不同。既可以迁移到块卷，也可以迁移到文件系统卷，并且可以从块卷或文件系统卷迁出。
+目标卷应当等于或大于源卷。然而，目标卷多出来的大小差异不会立即在 VM 内部可见，并且必须手动调整大小，因为客户机并不知道发生了迁移。
 
-The volume migration depends on the `LiveMigrate` workloadUpdateStrategy. To fully enable the feature, add the following to the KubeVirt CR:
+卷迁移依赖于 `LiveMigrate` workloadUpdateStrategy。要完全启用此功能，请把以下内容添加到 KubeVirt CR：
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: KubeVirt
@@ -158,18 +158,18 @@ spec:
     - LiveMigrate
 ```
 
-The volume migration progress can be monitored by watching the corresponding VirtualMachineInstanceMigration object using the label `kubevirt.io/volume-update-in-progress: <vm-name>`. Example:
+可以通过观察带有标签 `kubevirt.io/volume-update-in-progress: <vm-name>` 的相应 VirtualMachineInstanceMigration 对象来监控卷迁移进度。示例：
 ```bash
 $ kubectl get virtualmachineinstancemigrations -l kubevirt.io/volume-update-in-progress: vmi` --watch=true
 NAME                           PHASE       VMI
 kubevirt-workload-update-abcd  Running     vmi
 ```
 
-## Datavolume template
+## Datavolume 模板 {#datavolume-template}
 
-Updating a datavolume that is referenced by a datavolume template requires special caution. The volumes section must include a reference to the name of the datavolume template. This means that the datavolume templates must either be entirely deleted or updated as well.
+更新被 datavolume 模板引用的 datavolume 需要特别小心。volumes 部分必须包含对 datavolume 模板名称的引用。这意味着 datavolume 模板必须被整体删除，或者也一并更新。
 
-Example of updating the datavolume for the original VM in the first example:
+第一个示例中原始 VM 的 datavolume 更新示例：
 ```yaml
 apiVersion: cdi.kubevirt.io/v1beta1
 kind: DataVolume
@@ -238,58 +238,58 @@ spec:
         pod: {}
 ```
 
-## Volume migration cancellation
+## 卷迁移取消 {#volume-migration-cancellation}
 
-The users could, for various reasons, wish to stop and cancel the ongoing volume migration.
-Migration cancellations are also handled declaratively, thus users must restore the previous set of volumes, which will be read as a cancellation for the volume update and migration.
+用户可能出于各种原因希望停止并取消正在进行的卷迁移。
+迁移取消也是以声明方式处理的，因此用户必须恢复先前的卷集合，这将被读取为对卷更新和迁移的取消。
 
-A possible way to cancel the migration is to apply the old version of the VM declaration.
+一种可能的取消迁移方式是应用 VM 声明的旧版本。
 
-## Volume migration failure and recovery
+## 卷迁移失败与恢复 {#volume-migration-failure-and-recovery}
 
-If a volume migration fails, KubeVirt will continue to try to migrate until the volume update is cancelled. As a result, if the original failure was temporary, a subsequent migration could succeed; otherwise, KubeVirt continues to generate new migrations with exponential backoff time.
+如果卷迁移失败，KubeVirt 会继续尝试迁移，直到卷更新被取消。因此，如果最初的失败是暂时的，后续的迁移可能会成功；否则，KubeVirt 会继续以指数退避时间生成新的迁移。
 
-To recover from a persistent failure, users must revert the volume set to its original state, indicating the cancellation of the volume migration.
+要从持续的失败中恢复，用户必须把卷集合恢复到原来的状态，以表示取消卷迁移。
 
-### Manual recovery required
+### 需要手动恢复 {#manual-recovery-required}
 
-If for any reasons the VMI disappears, then the volume migration is not retried anymore. This might happen if the users inadvertently shutdown the VM or the VMI is accidentally deleted.
+如果 VMI 因任何原因消失，则不再重试卷迁移。如果用户无意中关闭了 VM，或者 VMI 被意外删除，就可能发生这种情况。
 
-However, in these situations, the VM spec is in an inconsistent state because the volume set contains the destination volumes but the copy was not successful, and users could fail to boot correctly the VM. For this reason the VM is marked with the condition `ManualRecoveryRequired` and KubeVirt will refuse to start a VM which has this condition.
+然而，在这些情况下，VM spec 处于不一致状态，因为卷集合包含目标卷，但复制并未成功，用户可能无法正确启动该 VM。因此，该 VM 会被标记为条件 `ManualRecoveryRequired`，KubeVirt 将拒绝启动具有此条件的 VM。
 
-In order to recover the VM spec, the users need to revert the volume set in the VM spec as it is the case for the volume migration cancellation.
+为了恢复 VM spec，用户需要恢复 VM spec 中的卷集合，就像卷迁移取消时那样。
 
-The volume migration information is stored in the VM status as well, and the users can see the full list of the migrated volumes which contain the source and destination names as well as the corresponding volume name.
+卷迁移信息也存储在 VM status 中，用户可以看到已迁移卷的完整列表，其中包含源名称和目标名称以及对应的卷名称。
 
-Users can find the whole list of migrated volumes in the VM status, which includes the source and destination names together with the associated volume name.
+用户可以在 VM status 中找到已迁移卷的完整列表，其中包括源名称和目标名称以及关联的卷名称。
 
-## Limitations
+## 限制 {#limitations}
 
-Only certain types of disks and volumes are supported to be migrated. For an invalid type of volume the RestartRequired condition is set and volumes will be replaced upon VM restart.
-Currently, the volume migration is supported between PersistentVolumeClaims and Datavolumes.
-Additionally, volume migration is forbidden if the disk is:
+只有某些类型的磁盘和卷支持被迁移。对于无效的卷类型，会设置 RestartRequired 条件，卷将在 VM 重启时被替换。
+目前，卷迁移支持在 PersistentVolumeClaim 与 Datavolume 之间进行。
+此外，如果磁盘属于以下情况，则禁止卷迁移：
 
-* shareable, since it cannot guarantee the data consistency with multiple writers
-* filesystem, since virtiofs doesn't currently support live-migration
-* lun, originally the disk might support SCSI protocol but the destination PVC class does not. This case isn't currently supported.
+* shareable，因为它无法保证多个写入者情况下的数据一致性
+* filesystem，因为 virtiofs 目前不支持实时迁移
+* lun，原先磁盘可能支持 SCSI 协议，但目标 PVC 类不支持。这种情况目前不受支持。
 
-Currently, KubeVirt only enables live migration between separate nodes. Volume migration relies on live migration; hence, live migrating storage on the same node is also not possible. Volume migration is possible between local storage, like between 2 PVCs with RWO access mode, but they need to be located on two different host.
+目前，KubeVirt 只支持在不同节点之间进行实时迁移。卷迁移依赖于实时迁移；因此，在同一节点上对存储进行实时迁移同样不可能。卷迁移可以在本地存储之间进行，例如在两个访问模式为 RWO 的 PVC 之间，但它们需要位于两台不同的宿主机上。
 
-## Cancellation of the volume update with the migration strategy
+## 使用迁移策略取消卷更新 {#cancellation-of-the-volume-update-with-the-migration-strategy}
 
-During volume migration, users can cancel the update by restoring the old set of volumes. For example, using the original VM definition.
+在卷迁移期间，用户可以通过恢复旧的卷集合来取消更新。例如，使用原始的 VM 定义。
 
-If the volume set does not exactly match the original set, the update will be treated as a new modification, and the current migration will not be cancelled.
+如果卷集合与原始集合并不完全匹配，该更新将被视为一次新的修改，当前迁移不会被取消。
 
-## Failures
+## 失败 {#failures}
 
-Volume migration might fail for a variety of reasons. The migration will be performed numerous times with an incremental timeout in order to potentially resolve temporary errors, such as connectivity problems.
+卷迁移可能因各种原因失败。迁移会以递增的超时时间执行多次，以便有可能解决暂时性错误，例如连接问题。
 
-If the failures persist and users want to stop the retries, they must cancel the volume update.
+如果失败持续存在，并且用户希望停止重试，他们必须取消卷更新。
 
-### Manual Recovery
+### 手动恢复 {#manual-recovery}
 
-If something goes wrong during the migration and the VM no longer runs, the 'ManualRecoveryRequired' condition is applied to the VM. For example, if the VM was mistakenly turned off during the migration or the VMI disappeared.
+如果迁移期间出现问题并且 VM 不再运行，会对该 VM 应用 'ManualRecoveryRequired' 条件。例如，如果 VM 在迁移期间被错误地关闭，或者 VMI 消失了。
 
 ```yaml
 status:
@@ -303,29 +303,29 @@ status:
 ```
 
 
-This condition prohibits the VM from being started while it is present because the VM volumes are inconsistent due to the unsuccessful copy during the update.
+当此条件存在时，它会禁止启动该 VM，因为更新期间复制未成功，导致 VM 卷不一致。
 
-The modified volumes remain in the VM definition, and users must manually restore the original volumes by canceling the update before starting the VM, and eventually retrying the update.
+修改后的卷仍保留在 VM 定义中，用户必须在启动 VM 之前通过取消更新来手动恢复原始卷，并最终重试该更新。
 
-#### Destination volumes restoration
+#### 目标卷的恢复 {#destination-volumes-restoration}
 
-There is a particular race condition that can occur during the migration which needs to be carefully verified before cancelling the update.
+迁移期间可能出现一种特殊的竞态条件，在取消更新之前需要仔细验证。
 
-In certain cases, the copy could have been completed but the migration is marked as failed. This case occurs when:
+在某些情况下，复制可能已经完成，但迁移被标记为失败。这种情况发生在：
 
-  1. The VirtualMachineInstanceMigration is in `Failed` state:
+  1. VirtualMachineInstanceMigration 处于 `Failed` 状态：
 ```sh
 $ kubectl get vmims -l kubevirt.io/volume-update-migration=vm
 NAME                             PHASE    VMI
 kubevirt-workload-update-qzfb5   Failed   vm
 ```
-  2. Libvirt reported the domain from paused to running in the target virt-launcher pod and KubeVirt sets the times when the domain started on the target:
+  2. Libvirt 报告目标 virt-launcher Pod 中的域从暂停变为运行，并且 KubeVirt 设置了域在目标上启动的时间：
 ```bash
 $ kubectl get vmi vmi-migratable -ojsonpath='{.status.migrationState.targetNodeDomainReadyTimestamp}'
 2025-01-14T08:29:07Z
 ```
-If the conditions described above are met, then the users must preserve the destination volumes and remove the `ManualRecoveryCondition` from the VM by patching the VM and removing the `updateVolumeStrategy` field. In this way the change will be interpreted as a remplacement of the volumes.
+如果满足上述条件，则用户必须保留目标卷，并从 VM 中移除 `ManualRecoveryCondition`，方法是修补该 VM 并移除 `updateVolumeStrategy` 字段。这样一来，该变更将被解释为卷的替换。
 ```bash
 $ kubectl patch vm vm-dv --type='json' -p='[{"op": "remove", "path": "/spec/updateVolumesStrategy"}]'
 ```
-Otherwise, the users needs to restore the source volumes, and eventually retry the migration.
+否则，用户需要恢复源卷，并最终重试迁移。

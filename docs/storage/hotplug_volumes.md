@@ -1,16 +1,16 @@
-# Hotplug Volumes
+# 热插拔卷 {#hotplug-volumes}
 
-KubeVirt supports hotplugging persistent volumes into running Virtual Machines. The volumes may be represented as disks, LUNs, or CD-ROMs.
+KubeVirt 支持向正在运行的虚拟机热插拔持久卷。这些卷可以表示为磁盘、LUN 或 CD-ROM。
 
-## Enabling hotplug volume support
+## 启用热插拔卷支持 {#enabling-hotplug-volume-support}
 
-Hotplug volume support must be enabled in the feature gates to be supported. The
-[feature gates](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-field in the KubeVirt CR must be expanded by adding the `DeclarativeHotplugVolumes` to it.
+必须在功能门控中启用热插拔卷支持，才能使用该功能。必须扩展 KubeVirt CR 中的
+[功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
+字段，向其中添加 `DeclarativeHotplugVolumes`。
 
-> **_NOTE:_**  `DeclarativeHotplugVolumes` is incompatible with the the deprecated `HotplugVolumes` feature gate. If both are declared, `HotplugVolumes` will have precedence until the time that `HotplugVolumes` is retired.
+> **_NOTE:_**  `DeclarativeHotplugVolumes` 与已弃用的 `HotplugVolumes` 功能门控不兼容。如果两者都被声明，在 `HotplugVolumes` 被停用之前，`HotplugVolumes` 将具有优先权。
 
-## Supported disk busses
+## 支持的磁盘总线 {#supported-disk-busses}
 
 |       |  sata  | virtio |  scsi  |
 |-------|--------|--------|--------|
@@ -18,26 +18,26 @@ field in the KubeVirt CR must be expanded by adding the `DeclarativeHotplugVolum
 | disk  |        |    X   |    X   |
 | lun   |        |        |    X   |
 
-The scsi bus should be used if a large number of disks will be hotplugged concurrently. There are a limited number of VirtIO ports available. The scsi bus is [very close in performance](https://mpolednik.github.io/2017/01/23/virtio-blk-vs-virtio-scsi/) to virtio.
+如果要并发热插拔大量磁盘，应使用 scsi 总线。可用的 VirtIO 端口数量有限。scsi 总线在[性能上非常接近](https://mpolednik.github.io/2017/01/23/virtio-blk-vs-virtio-scsi/) virtio。
 
-## Available VirtIO Ports
+## 可用的 VirtIO 端口 {#available-virtio-ports}
 
-The following table lists the minimum number of VirtIO ports that will be available for hotplug disks.
+下表列出了可用于热插拔磁盘的 VirtIO 端口的最小数量。
 
-| Memory | Ports |
+| 内存 | 端口 |
 |:------:|:-----:|
 |  <= 2G |   3   |
 |  > 2G  |   6   |
 
-> **_NOTE:_**  available VirtIO ports are reduced for each [hotplug network interface](../network/hotplug/interfaces.md)
+> **_NOTE:_**  每增加一个[热插拔网络接口](../network/hotplug/interfaces.md)，可用的 VirtIO 端口就会减少
 
-## Declarative API
+## 声明式 API {#declarative-api}
 
-Hotplug [DataVolume](./disks_and_volumes.md/#persistentvolumeclaim) and [PersistentVolumeClaim](./disks_and_volumes.md/#persistentvolumeclaim) volumes may be defined for VirtualMachines in a declarative, GitOps compatible way.
+可以以声明式、与 GitOps 兼容的方式，为 VirtualMachine 定义热插拔 [DataVolume](./disks_and_volumes.md/#persistentvolumeclaim) 和 [PersistentVolumeClaim](./disks_and_volumes.md/#persistentvolumeclaim) 卷。
 
-### Virtual Machine Definition
+### 虚拟机定义 {#virtual-machine-definition}
 
-The following VirtualMachine has no persistent disks and an empty CD-ROM.
+下面的 VirtualMachine 没有持久磁盘，并有一个空的 CD-ROM。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -66,9 +66,9 @@ spec:
         name: disk0
 ```
 
-### Test Volume
+### 测试卷 {#test-volume}
 
-The following yaml will create volume containing a copy of VirtualMachine's root disk
+下面的 yaml 将创建一个卷，其中包含 VirtualMachine 根磁盘的副本
 
 ```yaml
 apiVersion: cdi.kubevirt.io/v1beta1
@@ -85,9 +85,9 @@ spec:
         storage: 300Mi
 ```
 
-### Inject CD-ROM
+### 插入 CD-ROM {#inject-cd-rom}
 
-To inject a CD-ROM into a running VirtualMachine, a `cdrom` type disk must be declared on the VM when it is started. Then at any time later, a hotplug volume may be added to the `spec.template.spec.volumes` section of the VirtualMachine.
+要把 CD-ROM 插入正在运行的 VirtualMachine，必须在 VM 启动时声明一个 `cdrom` 类型的磁盘。此后任何时候，都可以把热插拔卷添加到 VirtualMachine 的 `spec.template.spec.volumes` 部分。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -120,13 +120,13 @@ spec:
         name: cdrom
 ```
 
-### Eject CD-ROM
+### 弹出 CD-ROM {#eject-cd-rom}
 
-Remove the `cdrom` volume from the `spec.template.spec.volumes` section of the VirtualMachine.
+移除 `cdrom` 卷，将其从 VirtualMachine 的 `spec.template.spec.volumes` 部分删除。
 
-### Hotplug Disk/LUN
+### 热插拔磁盘/LUN {#hotplug-disklun}
 
-To hotplug a disk/LUN into a running VirtualMachine, a new disk/LUN must be added to the `spec.template.spec.domain.devices.disks` section of the VM as well as a new volume in `spec.template.spec.volumes`.
+要把磁盘/LUN 热插拔到正在运行的 VirtualMachine，必须在 VM 的 `spec.template.spec.domain.devices.disks` 部分添加新的磁盘/LUN，并在 `spec.template.spec.volumes` 中添加新卷。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -162,53 +162,53 @@ spec:
         name: disk1
 ```
 
-### Unplug Disk/LUN
+### 拔出磁盘/LUN {#unplug-disklun}
 
-Remove `disk1` from the `spec.template.spec.domain.devices.disks` section of the VirtualMachine and remove `disk1` from `spec.template.spec.volumes`
+把 `disk1` 从 VirtualMachine 的 `spec.template.spec.domain.devices.disks` 部分移除，并移除 `disk1`（来自 `spec.template.spec.volumes`）
 
-## Virtctl support
+## virtctl 支持 {#virtctl-support}
 
-Volumes may also be added to VirtualMachines with virtctl. Virtctl is also the only way to hotplug a volume directly into a VirtualMachineInstance. Virtctl does not support CD-ROM inject/eject.
+也可以使用 virtctl 向 VirtualMachine 添加卷。virtctl 也是把卷直接热插拔到 VirtualMachineInstance 的唯一方式。virtctl 不支持 CD-ROM 的插入/弹出。
 
-> **_NOTE:_** the `--persist` flag for `virtctl addvolume` and `virtctl removevolume` has been deprecated and will be removed in a future release. The default behavior for these commands will be to alway persist hotplug changes to both VirtualMachineInstance and owner VirtualMachine (if one exists)
+> **_NOTE:_** `--persist` 标志用于 `virtctl addvolume` 和 `virtctl removevolume`，已被弃用，并将在未来的发行版中移除。这些命令的默认行为将是始终把热插拔变更同时持久化到 VirtualMachineInstance 和所属的 VirtualMachine（如果存在）
 
-### Add a disk to a VirtualMachine
+### 向 VirtualMachine 添加磁盘 {#add-a-disk-to-a-virtualmachine}
 
 ```bash
 $ virtctl addvolume testvm --volume-name=hotplug-disk
 ```
 
-### Add a disk to a VirtualMachineInstance
+### 向 VirtualMachineInstance 添加磁盘 {#add-a-disk-to-a-virtualmachineinstance}
 
-You can only hotplug a disk to a VirtualMachineInstance (VMI) if it was created independent of a higher level resource. For instance, this operation will fail if the VMI is owned by a VirtualMachine.
+只有当 VirtualMachineInstance（VMI）独立于更高层资源创建时，才能向其热插拔磁盘。例如，如果该 VMI 由 VirtualMachine 拥有，此操作将失败。
 
 ```bash
 $ virtctl addvolume testvmi --volume-name=hotplug-disk
 ```
 
-### Add a LUN to a VirtualMachine
+### 向 VirtualMachine 添加 LUN {#add-a-lun-to-a-virtualmachine}
 
 ```bash
 $ virtctl addvolume testvm --volume-name=hotplug-disk --disk-type=lun
 ```
 
-### Additional `addvolume` args
+### 其他 `addvolume` 参数 {#additional-addvolume-args}
 
-`--bus <bus type>` to specify the disk/LUN bus
+`--bus <bus type>` 用于指定磁盘/LUN 总线
 
-`--cache <cache type>` to specify the disk cache type (default|none|writethrough|writeback|directsync)
+`--cache <cache type>` 用于指定磁盘缓存类型（default|none|writethrough|writeback|directsync）
 
-`--serial <serial>` to specify the disk serial number (canonical way to identify a particular disk in the guest)
+`--serial <serial>` 用于指定磁盘序列号（在客户机中识别特定磁盘的规范方式）
 
-### Unplug a disk/LUN from a VirtualMachine
+### 从 VirtualMachine 拔出磁盘/LUN {#unplug-a-disklun-from-a-virtualmachine}
 
 ```bash
 $ virtctl removevolume testvm --volume-name=hotplug-disk
 ```
 
-### VolumeStatus
+### VolumeStatus {#volumestatus}
 
-VMI objects have a `status.VolumeStatus` field. This is an array containing each disk, hotplugged or not. For example:
+VMI 对象有一个 `status.VolumeStatus` 字段。这是一个数组，包含每个磁盘，无论是否为热插拔。例如：
 
 ```yaml
 volumeStatus:
@@ -236,6 +236,6 @@ volumeStatus:
   target: sda
 ```
 
-In this example, `vda` is the container disk that contains the OS. As you can see it just contains the name and target used when assigning them to the VM. The target is the value passed to QEMU when specifying the disks. The target value is unique for the VM and does *NOT* represent the naming inside the guest. For instance for a Windows Guest OS the target has no meaning. The same will be true for hotplugged volumes. The target is just a unique identifier meant for QEMU, inside the guest the disk can be assigned a different name.
+在此示例中，`vda` 是包含操作系统的容器磁盘。可以看到，它只包含在把它们分配给 VM 时使用的名称和 target。target 是在指定磁盘时传递给 QEMU 的值。target 值对 VM 是唯一的，并且 *并不* 代表客户机内部的命名。例如，对于 Windows 客户机操作系统，target 没有意义。热插拔卷也是如此。target 只是一个供 QEMU 使用的唯一标识符，在客户机内部，磁盘可以被分配不同的名称。
 
-The `hotplugVolume` has some extra information that regular volume statuses do not have. The `attachPodName` is the name of the pod that was used to attach the volume to the node that the VMI is running on. If this pod is deleted it will also stop the VMI as we cannot guarantee that the volume will remain attached to the node. The other fields are similar to conditions and indicate the status of the hotplug process. Once a Volume is ready, it can be used by the VM.
+`hotplugVolume` 具有常规卷状态所没有的一些额外信息。`attachPodName` 是用于把卷挂接到 VMI 正在运行的节点上的 Pod 的名称。如果此 Pod 被删除，它也会停止该 VMI，因为我们无法保证该卷会保持挂接到该节点。其他字段类似于条件，并指示热插拔过程的状态。一旦卷就绪，VM 就可以使用它。

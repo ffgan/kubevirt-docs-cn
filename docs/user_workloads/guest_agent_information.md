@@ -1,16 +1,16 @@
-# Guest Agent information
+# 客户机代理信息 {#guest-agent-information}
 
-Guest Agent (GA) is an optional component that can run inside of Virtual Machines.
-The GA provides plenty of additional runtime information about the running operating system (OS).
-More technical detail about available GA commands is available [here](https://qemu.weilnetz.de/doc/3.1/qemu-ga-ref.html).
+客户机代理（GA）是可以在虚拟机内部运行的可选组件。
+GA 提供大量关于正在运行的操作系统（OS）的额外运行时信息。
+关于可用 GA 命令的更多技术细节见[此处](https://qemu.weilnetz.de/doc/3.1/qemu-ga-ref.html)。
 
 
-## Guest Agent info in Virtual Machine status
+## 虚拟机状态中的客户机代理信息 {#guest-agent-info-in-virtual-machine-status}
 
-GA presence in the Virtual Machine is signaled with a condition in the VirtualMachineInstance status.
-The condition tells that the GA is connected and can be used.
+虚拟机中是否存在 GA，由 VirtualMachineInstance 状态中的一个状况来表明。
+该状况说明 GA 已连接并可以使用。
 
-GA condition on VirtualMachineInstance
+VirtualMachineInstance 上的 GA 状况
 
 ```yaml
 status:
@@ -21,15 +21,15 @@ status:
     type: AgentConnected
 ```
 
-When the GA is connected, additional OS information is shown in the status.
-This information comprises:
+当 GA 已连接时，状态中会显示额外的 OS 信息。
+这些信息包括：
 
-   - guest info, which contains OS runtime data
-   - interfaces info, which shows QEMU interfaces merged with GA interfaces info.
+   - 客户机信息，其中包含 OS 运行时数据
+   - 接口信息，其中显示与 GA 接口信息合并后的 QEMU 接口。
 
-Below is the example of the information shown in the VirtualMachineInstance status.
+下面是 VirtualMachineInstance 状态中所显示信息的示例。
 
-GA info with merged into status
+合并进状态的 GA 信息
 
 ```yaml
 status:
@@ -52,32 +52,32 @@ status:
     name: default
 ```
 
-When the Guest Agent is not present in the Virtual Machine, the Guest Agent information is not shown. No error is reported because the Guest Agent is an optional component.
+当虚拟机中不存在客户机代理时，不会显示客户机代理信息。由于客户机代理是可选组件，因此不会报告错误。
 
-The infoSource field indicates where the info is gathered from. Valid values:
+infoSource 字段表明信息从何处收集。有效值：
 
-   - domain: the info is based on the domain spec
-   - guest-agent: the info is based on Guest Agent report
-   - domain, guest-agent: the info is based on both the domain spec and the Guest Agent report
+   - domain：信息基于 domain spec
+   - guest-agent：信息基于客户机代理报告
+   - domain, guest-agent：信息同时基于 domain spec 和客户机代理报告
 
-## Guest Agent info available through the API
+## 通过 API 获取的客户机代理信息 {#guest-agent-info-available-through-the-api}
 
-The data shown in the VirtualMachineInstance status are a subset of the information available.
-The rest of the data is available via the REST API exposed in the Kubernetes `kube-api` server.
+VirtualMachineInstance 状态中显示的数据只是可用信息的子集。
+其余数据可通过 Kubernetes `kube-api` 服务器暴露的 REST API 获取。
 
-There are three new subresources added to the VirtualMachineInstance object:
+VirtualMachineInstance 对象新增了三个子资源：
 
     - guestosinfo
     - userlist
     - filesystemlist
 
 
-The whole GA data is returned via `guestosinfo` subresource available behind the API endpoint.
+完整的 GA 数据通过 API 端点背后的 `guestosinfo` 子资源返回。
 
     /apis/subresources.kubevirt.io/v1/namespaces/{namespace}/virtualmachineinstances/{name}/guestosinfo
 
 
-GuestOSInfo sample data:
+GuestOSInfo 示例数据：
 
 ```json
 {
@@ -111,13 +111,13 @@ GuestOSInfo sample data:
 }
 ```
 
-Items FSInfo and UserList are capped to the max capacity of 10 items, as a precaution for VMs with thousands of users.
+FSInfo 和 UserList 项的最大容量被限制为 10 项，以防虚拟机拥有成千上万的用户。
 
-Full list of Filesystems is available through the subresource `filesystemlist` which is available as endpoint.
+文件系统的完整列表可通过作为端点提供的子资源 `filesystemlist` 获取。
 
     /apis/subresources.kubevirt.io/v1/namespaces/{namespace}/virtualmachineinstances/{name}/filesystemlist
 
-Filesystem sample data:
+文件系统示例数据：
 
 ```json
 {
@@ -134,11 +134,11 @@ Filesystem sample data:
 }
 ```
 
-Full list of the Users is available through the subresource `userlist` which is available as endpoint.
+用户的完整列表可通过作为端点提供的子资源 `userlist` 获取。
 
     /apis/subresources.kubevirt.io/v1/namespaces/{namespace}/virtualmachineinstances/{name}/userlist
 
-Userlist sample data:
+Userlist 示例数据：
 
 ```json
 {
@@ -152,4 +152,4 @@ Userlist sample data:
 }
 ```
 
-User LoginTime is in fractional seconds since epoch time. It is left for the consumer to convert to the desired format.
+用户的 LoginTime 是自纪元时间起的小数秒。转换到所需格式的工作留给使用方完成。

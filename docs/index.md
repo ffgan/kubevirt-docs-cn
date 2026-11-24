@@ -3,58 +3,57 @@ hide:
   - navigation
 ---
 
-# Welcome
+# 欢迎 {#welcome}
 
-The KubeVirt User Guide is divided into the following sections:
+KubeVirt 用户指南分为以下部分：
 
-* Architecture: Technical and conceptual overview of KubeVirt components
-* Quickstarts: A list of resources to help you learn KubeVirt basics
-* Cluster Administration: Cluster-level administration concepts and tasks
-* User Workloads: Creating, customizing, using, and monitoring virtual machines 
-* Compute: Resource allocation and optimization for the virtualization layer
-* Network: Concepts and tasks for the networking and service layers 
-* Storage: Concepts and tasks for the storage layer, including importing and exporting.
-* Release Notes: The release notes for all KubeVirt releases
-* Contributing: How you can contribute to this guide or the KubeVirt project 
-* Virtualization Debugging: How to debug your KubeVirt cluster and virtual resources
+* 架构：KubeVirt 组件的技术与概念概述
+* 快速开始：帮助你学习 KubeVirt 基础知识的资源列表
+* 集群管理：集群级别的管理概念与任务
+* 用户工作负载：创建、自定义、使用和监控虚拟机
+* 计算：虚拟化层的资源分配与优化
+* 网络：网络层与服务层的概念与任务
+* 存储：存储层的概念与任务，包括导入和导出。
+* 发行说明：所有 KubeVirt 发行版的发行说明
+* 贡献：如何为本指南或 KubeVirt 项目做贡献
+* 虚拟化调试：如何调试你的 KubeVirt 集群和虚拟资源
 
-## Try it out
+## 试一试 {#try-it-out}
 
-- Kubevirt on Killercoda: <https://killercoda.com/kubevirt>
+- Killercoda 上的 KubeVirt：<https://killercoda.com/kubevirt>
 
-- Kubevirt on Minikube: <https://kubevirt.io/quickstart_minikube/>
+- Minikube 上的 KubeVirt：<https://kubevirt.io/quickstart_minikube/>
 
-- Kubevirt on Kind: <https://kubevirt.io/quickstart_kind/>
+- Kind 上的 KubeVirt：<https://kubevirt.io/quickstart_kind/>
 
-- Kubevirt on cloud providers: <https://kubevirt.io/quickstart_cloud/>
+- 云提供商上的 KubeVirt：<https://kubevirt.io/quickstart_cloud/>
 
-## KubeVirt Labs
+## KubeVirt 实验 {#kubevirt-labs}
 
-- [Use KubeVirt](https://kubevirt.io/labs/kubernetes/lab1.html)
+- [使用 KubeVirt](https://kubevirt.io/labs/kubernetes/lab1.html)
 
-- [Experiment with Containerized Data Importer (CDI)](https://kubevirt.io/labs/kubernetes/lab2.html)
+- [体验 Containerized Data Importer（CDI）](https://kubevirt.io/labs/kubernetes/lab2.html)
 
-- [Experiment with KubeVirt Upgrades](https://kubevirt.io/labs/kubernetes/lab3.html)
+- [体验 KubeVirt 升级](https://kubevirt.io/labs/kubernetes/lab3.html)
 
-- [Live Migration](https://kubevirt.io/labs/kubernetes/migration.html)
+- [实时迁移](https://kubevirt.io/labs/kubernetes/migration.html)
 
-## Getting help
+## 获取帮助 {#getting-help}
 
-- File a bug: <https://github.com/kubevirt/kubevirt/issues>
+- 提交缺陷：<https://github.com/kubevirt/kubevirt/issues>
 
-- Mailing list: <https://groups.google.com/forum/#!forum/kubevirt-dev>
+- 邮件列表：<https://groups.google.com/forum/#!forum/kubevirt-dev>
 
-- Slack: <https://kubernetes.slack.com/messages/virtualization>
+- Slack：<https://kubernetes.slack.com/messages/virtualization>
 
-## Developer
+## 开发者 {#developer}
 
-- Start contributing: [Contributing](./contributing.md)
+- 开始贡献：[贡献](./contributing.md)
 
-- API Reference: <http://kubevirt.io/api-reference/>
+- API 参考：<http://kubevirt.io/api-reference/>
 
-## Privacy
+## 隐私 {#privacy}
 
-- Check our privacy policy at: <https://kubevirt.io/privacy/>
+- 请在以下地址查看我们的隐私政策：<https://kubevirt.io/privacy/>
 
-- We do use <https://netlify.com> Open Source Plan for Rendering Pull
-  Requests to the documentation repository
+- 我们使用 <https://netlify.com> 的开源计划来渲染文档仓库的拉取请求

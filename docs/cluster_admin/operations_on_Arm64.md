@@ -1,23 +1,23 @@
-# Arm64 Operations
+# Arm64 操作 {#arm64-operations}
 
-This page summarizes all operations that are not supported on Arm64.
+本页汇总所有在 Arm64 上不受支持的操作。
 
-## Hotplug Network Interfaces
+## 热插拔网络接口 {#hotplug-network-interfaces}
 
-Hotplug Network Interfaces are not supported on Arm64, because the image ghcr.io/k8snetworkplumbingwg/multus-cni:snapshot-thick does not support for the Arm64 platform. For more information please refer to https://github.com/k8snetworkplumbingwg/multus-cni/pull/1027.
+热插拔网络接口在 Arm64 上不受支持，因为镜像 ghcr.io/k8snetworkplumbingwg/multus-cni:snapshot-thick 不支持 Arm64 平台。更多信息请参阅 https://github.com/k8snetworkplumbingwg/multus-cni/pull/1027。
 
-## Hugepages support
+## 大页支持 {#hugepages-support}
 
-Hugepages feature is not supported on Arm64. The hugepage mechanism differs between X86_64 and Arm64. Now we only verify KubeVirt on 4k pagesize systems.
+大页功能在 Arm64 上不受支持。大页机制在 X86_64 与 Arm64 之间有所不同。目前我们只在 4k 页大小的系统上验证 KubeVirt。
 
-## Export API
+## 导出 API {#export-api}
 
-Export API is partially supported on the Arm64 platform. As CDI is not supported yet, the export of DataVolumes and MemoryDump are not supported on Arm64.
+导出 API 在 Arm64 平台上部分受支持。由于 CDI 尚不受支持，DataVolume 和 MemoryDump 的导出在 Arm64 上不受支持。
 
-## Virtual machine memory dump
+## 虚拟机内存转储 {#virtual-machine-memory-dump}
 
-As explained above, MemoryDump requires CDI, and is not yet supported on Arm64.
+如上所述，MemoryDump 需要 CDI，目前在 Arm64 上尚不受支持。
 
-## Mediated devices and virtual GPUs
+## 中介设备与虚拟 GPU {#mediated-devices-and-virtual-gpus}
 
-This is not verified on Arm64 platform.
+此项尚未在 Arm64 平台上验证。

@@ -1,18 +1,12 @@
-# Running legacy Windows versions
+# 运行旧版 Windows {#running-legacy-windows-versions}
 
-Legacy Windows versions like Windows XP or Windows Server 2003 are unable to
-boot on KubeVirt out of the box. This is due to the combination of the Q35
-machine-type and a 64-Bit PCI hole reported to the guest,
-that is not supported by these operating systems.
+Windows XP 或 Windows Server 2003 等旧版 Windows 无法在 KubeVirt 上开箱即用地启动。这是因为 Q35 机器类型与向客户机报告的 64 位 PCI 空洞组合在一起，而这些操作系统并不支持这种组合。
 
-To run legacy Windows versions on KubeVirt, reporting of the 64-Bit PCI hole
-needs to be disabled. This can be achieved by adding the
-`kubevirt.io/disablePCIHole64` annotation with a value of `true` to a
-`VirtualMachineInstance`'s annotations.
+要在 KubeVirt 上运行旧版 Windows，需要禁用对 64 位 PCI 空洞的报告。这可以通过添加 `kubevirt.io/disablePCIHole64` 注解（值为 `true`）到 `VirtualMachineInstance` 的注解中来实现。
 
-## Example
+## 示例 {#example}
 
-With this `VirtualMachine` definition a legacy Windows guest is able to boot:
+使用此 `VirtualMachine` 定义，旧版 Windows 客户机即可启动：
 
 ```yaml
 apiVersion: kubevirt.io/v1

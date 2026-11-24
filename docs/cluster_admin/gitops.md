@@ -1,20 +1,13 @@
-# Managing KubeVirt with GitOps
+# 使用 GitOps 管理 KubeVirt {#managing-kubevirt-with-gitops}
 
-The GitOps way uses Git repositories as a single source of truth to deliver
-infrastructure as code. Automation is employed to keep the desired and the live
-state of clusters in sync at all times. This means any change to a repository
-is automatically applied to one or more clusters while changes to a cluster will
-be automatically reverted to the state described in the single source of truth.
+GitOps 方式使用 Git 仓库作为单一事实来源来交付基础设施即代码。自动化用于始终保持集群的期望状态与实际状态同步。这意味着对仓库的任何更改都会自动应用到一个或多个集群，而对集群的更改会被自动还原为单一事实来源中所描述的状态。
 
-With GitOps the separation of testing and production environments, improving
-the availability of applications and working with multi-cluster environments
-becomes considerably easier.
+借助 GitOps，分离测试环境与生产环境、提高应用可用性以及在多集群环境中工作都会变得容易得多。
 
-## Demo repository
+## 演示仓库 {#demo-repository}
 
-A demo with detailed explanation on how to manage KubeVirt with GitOps can be
-found [here](https://github.com/0xFelix/gitops-demo).
+关于如何使用 GitOps 管理 KubeVirt 的详细说明演示见
+[此处](https://github.com/0xFelix/gitops-demo)。
 
-The demo is using [Open Cluster Management](https://open-cluster-management.io/)
-and [ArgoCD](https://argoproj.github.io/cd/) to deploy KubeVirt and virtual 
-machines across multiple clusters.
+该演示使用 [Open Cluster Management](https://open-cluster-management.io/)
+和 [ArgoCD](https://argoproj.github.io/cd/) 在多个集群中部署 KubeVirt 和虚拟机。

@@ -1,14 +1,12 @@
-# Filesystems, Disks and Volumes
+# 文件系统、磁盘和卷 {#filesystems-disks-and-volumes}
 
-Making persistent storage in the cluster (**volumes**) accessible to VMs consists of three parts. First, volumes are specified in `spec.volumes`. Second, disks are added to the VM by specifying them in `spec.domain.devices.disks`. Finally, a reference to the specified volume is added to the disk specification by name.
+让集群中的持久化存储（**卷**）可供 VM 访问，这一过程由三个部分组成。首先，在 `spec.volumes` 中指定卷。其次，通过在 `spec.domain.devices.disks` 中指定磁盘，把磁盘添加到 VM。最后，按名称把对所指定卷的引用添加到磁盘规格中。
 
-## Disks
+## 磁盘 {#disks}
 
-Like all other vmi devices a `spec.domain.devices.disks` element has a
-mandatory `name`, and furthermore, the disk's `name` must reference the
-`name` of a volume inside `spec.volumes`.
+与所有其他 VMI 设备一样，`spec.domain.devices.disks` 元素具有必填的 `name`，并且磁盘的 `name` 必须引用某个卷的 `name`，该卷位于 `spec.volumes` 中。
 
-A disk can be made accessible via four different types:
+磁盘可以通过四种不同类型供访问：
 
 -   [**lun**](#lun)
 
@@ -18,19 +16,15 @@ A disk can be made accessible via four different types:
 
 -   [**fileystems**](#filesystems)
 
-All possible configuration options are available in the [Disk API
-Reference](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_disk).
+所有可用的配置选项见[磁盘 API 参考](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_disk)。
 
-All types allow you to specify the `bus` attribute. The `bus` attribute
-determines how the disk will be presented to the guest operating system.
+所有类型都允许指定 `bus` 属性。`bus` 属性决定磁盘如何呈现给客户机操作系统。
 
-### lun
+### lun {#lun}
 
-A `lun` disk will expose the volume as a LUN device to the VM. This
-allows the VM to execute arbitrary SCSI command passthrough.
+`lun` 磁盘会把卷作为 LUN 设备暴露给 VM。这允许 VM 执行任意 SCSI 命令透传。
 
-A minimal example which attaches a `PersistentVolumeClaim` named `mypvc`
-as a `lun` device to the VM:
+将 `PersistentVolumeClaim`（名为 `mypvc`）作为 `lun` 设备挂接到 VM 的最小示例如下：
 
 ```yaml
 metadata:
@@ -52,10 +46,10 @@ spec:
       persistentVolumeClaim:
         claimName: mypvc
 ```
-#### persistent reservation
-It is possible to reserve a LUN through the SCSI Persistent Reserve commands.
-In order to issue privileged SCSI ioctls, the VM requires enabling
-persistent reservation on the disk:
+
+#### 持久预留 {#persistent-reservation}
+
+可以通过 SCSI Persistent Reserve 命令预留 LUN。为了发出特权 SCSI ioctl，VM 需要在磁盘上启用持久预留：
 
 ```yaml
 devices:
@@ -65,7 +59,7 @@ devices:
       reservation: true
 ```
 
-This feature requires enabling persistent reservation in the KubeVirt configuration:
+此功能需要在 KubeVirt 配置中启用持久预留：
 
 ```yaml
 configuration:
@@ -73,17 +67,13 @@ configuration:
     enabled: true
 ```
 
-> **Note:** The persistent reservation feature enables an additional privileged
-> component to be deployed together with virt-handler. Because this feature allows
-> for sensitive security procedures, it is disabled by default and requires cluster
-> administrator configuration.
+> **注意：** 持久预留功能会额外部署一个与 virt-handler 一同运行的特权组件。由于此功能涉及敏感的安全操作，它默认禁用，并且需要集群管理员进行配置。
 
-### disk
+### disk {#disk}
 
-A `disk` disk will expose the volume as an ordinary disk to the VM.
+`disk` 磁盘会把卷作为普通磁盘暴露给 VM。
 
-A minimal example which attaches a `PersistentVolumeClaim` named `mypvc`
-as a `disk` device to the VM:
+将 `PersistentVolumeClaim`（名为 `mypvc`）作为 `disk` 设备挂接到 VM 的最小示例如下：
 
 ```yaml
 metadata:
@@ -106,8 +96,7 @@ spec:
         claimName: mypvc
 ```
 
-You can set the disk `bus` type, overriding the defaults, which in turn
-depends on the chipset the VM is configured to use:
+可以设置磁盘的 `bus` 类型以覆盖默认值，而默认值又取决于 VM 所配置使用的芯片组：
 
 ```yaml
 metadata:
@@ -132,13 +121,12 @@ spec:
       persistentVolumeClaim:
         claimName: mypvc
 ```
-### cdrom
 
-A `cdrom` disk will expose the volume as a cdrom drive to the VM. It is
-read-only by default.
+### cdrom {#cdrom}
 
-A minimal example which attaches a `PersistentVolumeClaim` named `mypvc`
-as a `cdrom` device to the VM:
+`cdrom` 磁盘会把卷作为光驱暴露给 VM。默认情况下它是只读的。
+
+将 `PersistentVolumeClaim`（名为 `mypvc`）作为 `cdrom` 设备挂接到 VM 的最小示例如下：
 
 ```yaml
 metadata:
@@ -165,23 +153,13 @@ spec:
         claimName: mypvc
 ```
 
-### filesystems
-A `filesystem` device will expose the volume as a filesystem to the VM.
-`filesystems` rely on `virtiofs` to make visible external filesystems to `KubeVirt` VMs.
-Further information about `virtiofs` can be found at the [Official Virtiofs Site](https://virtio-fs.gitlab.io/).
+### filesystems {#filesystems}
 
-Compared with `disk`, `filesystems` allow changes in the source to be dynamically reflected in the volumes inside the VM.
-For instance, if a given `configMap` is shared with `filesystems` any change made on it will be reflected in the
-VMs.
+`filesystem` 设备会把卷作为文件系统暴露给 VM。`filesystems` 依赖 `virtiofs`，使外部文件系统对 `KubeVirt` VM 可见。有关 `virtiofs` 的更多信息见 [Virtiofs 官方网站](https://virtio-fs.gitlab.io/)。
 
-Additionally, `filesystem` devices must be mounted inside the VM.
-This can be done through [cloudInitNoCloud](#cloudinitnocloud) or manually connecting to the VM shell and targeting the same
-command.
-The main challenge is to understand how the device tag used to identify the new filesystem and mount it with the
-`mount -t virtiofs [device tag] [path]` command.
-For that purpose, the tag is assigned to the filesystem in the VM spec `spec.domain.devices.filesystems.name`.
-For instance, if in a given VM spec is `spec.domain.devices.filesystems.name: foo`, the required command inside the VM
-to mount the filesystem in the `/tmp/foo` path will be `mount -t virtiofs foo /tmp/foo`:
+与 `disk` 相比，`filesystems` 允许源端的变更动态反映到 VM 内部的卷中。例如，如果某个 `configMap` 通过 `filesystems` 共享，对其所做的任何更改都会反映到 VM 中。
+
+此外，必须在 VM 内部挂载 `filesystem` 设备。可以通过 [cloudInitNoCloud](#cloudinitnocloud) 完成，也可以手动连接到 VM shell 并执行相同的命令。主要难点在于理解用于标识新文件系统的设备标签，以及如何用 `mount -t virtiofs [device tag] [path]` 命令挂载它。为此，该标签在 VM 规格的 `spec.domain.devices.filesystems.name` 中分配给文件系统。例如，如果某个 VM 规格中是 `spec.domain.devices.filesystems.name: foo`，那么在 VM 内部把文件系统挂载到 `/tmp/foo` 路径所需的命令是 `mount -t virtiofs foo /tmp/foo`：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -219,26 +197,23 @@ spec:
           claimName: mypvc
         name: foo
 ```
-> **Note:** As stated, `filesystems` rely on `virtiofs`. Moreover, `virtiofs` requires kernel linux support to work in
-> the VM.
-> To check if the linux image of the VM has the required support, you can address the following command: `modprobe virtiofs`.
-> If the command output is `modprobe: FATAL: Module virtiofs not found`, **the linux image of the VM does not support virtiofs**.
-> Also, you can check if the kernel version is up to 5.4 in any linux distribution or up to 4.18 in centos/rhel.
-> To check this, you can target the following command: `uname -r`.
 
-Refer to section [Sharing Directories with VMs](#sharing-directories-with-vms) for usage examples of `filesystems`.
+> **注意：** 如前所述，`filesystems` 依赖 `virtiofs`。此外，`virtiofs` 需要 Linux 内核支持才能在 VM 中工作。要检查 VM 的 Linux 镜像是否具备所需支持，可以执行以下命令：`modprobe virtiofs`。如果命令输出为 `modprobe: FATAL: Module virtiofs not found`，**则该 VM 的 Linux 镜像不支持 virtiofs**。此外，还可以检查内核版本在任意 Linux 发行版上是否达到 5.4，或在 CentOS/RHEL 上是否达到 4.18。要检查这一点，可以执行以下命令：`uname -r`。
 
-### error policy
+有关 `filesystems` 的用法示例，请参阅[与 VM 共享目录](#sharing-directories-with-vms)一节。
 
-The error policy controls how the hypervisor should behave when an IO error occurs on a disk read or write. The default behaviour is to stop the guest and a Kubernetes event is generated. However, it is possible to change the value to either:
+### 错误策略 {#error-policy}
 
-- `report`: the error is reported in the guest
-- `ignore`: the error is ignored, but the read/write failure goes undetected
-- `enospace`: error when there isn't enough space on the disk
+错误策略控制当磁盘读写发生 IO 错误时，虚拟化管理程序应如何表现。默认行为是停止客户机，并生成一个 Kubernetes 事件。不过，可以把该值更改为以下之一：
 
-The error policy can be specified per disk or lun.
+- `report`：错误会在客户机中报告
+- `ignore`：忽略错误，但读写失败不会被察觉
+- `enospace`：磁盘空间不足时出错
 
-Example:
+可以为每个 disk 或 lun 指定错误策略。
+
+示例：
+
 ```yaml
 spec:
   domain:
@@ -254,9 +229,9 @@ spec:
         errorPolicy: "report"
 ```
 
-## Volumes
+## 卷 {#volumes}
 
-Supported volume sources are
+支持的卷源有
 
 -   [**cloudInitNoCloud**](#cloudinitnocloud)
 
@@ -282,17 +257,13 @@ Supported volume sources are
 
 -   [**downwardMetrics**](#downwardmetrics)
 
-All possible configuration options are available in the [Volume API
-Reference](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_volume).
+所有可用的配置选项见[卷 API 参考](https://kubevirt.github.io/api-reference/master/definitions.html#_v1_volume)。
 
-### cloudInitNoCloud
+### cloudInitNoCloud {#cloudinitnocloud}
 
-Allows attaching `cloudInitNoCloud` data-sources to the VM. If the VM
-contains a proper cloud-init setup, it will pick up the disk as a
-user-data source.
+允许把 `cloudInitNoCloud` 数据源挂接到 VM。如果 VM 包含正确的 cloud-init 配置，它会把该磁盘用作 user-data 源。
 
-A simple example which attaches a `Secret` as a cloud-init `disk`
-datasource may look like this:
+将 `Secret` 作为 cloud-init `disk` 数据源挂接的简单示例如下：
 
 ```yaml
 metadata:
@@ -319,14 +290,12 @@ spec:
         secretRef:
           name: testsecret
 ```
-### cloudInitConfigDrive
 
-Allows attaching `cloudInitConfigDrive` data-sources to the VM. If the
-VM contains a proper cloud-init setup, it will pick up the disk as a
-user-data source.
+### cloudInitConfigDrive {#cloudinitconfigdrive}
 
-A simple example which attaches a `Secret` as a cloud-init `disk`
-datasource may look like this:
+允许把 `cloudInitConfigDrive` 数据源挂接到 VM。如果 VM 包含正确的 cloud-init 配置，它会把该磁盘用作 user-data 源。
+
+将 `Secret` 作为 cloud-init `disk` 数据源挂接的简单示例如下：
 
 ```yaml
 metadata:
@@ -354,41 +323,23 @@ spec:
           name: testsecret
 ```
 
-The `cloudInitConfigDrive` can also be used to configure VMs with Ignition.
-You just need to replace the cloud-init data by the Ignition data.
+`cloudInitConfigDrive` 也可用于通过 Ignition 配置 VM。只需用 Ignition 数据替换 cloud-init 数据即可。
 
-### persistentVolumeClaim
+### persistentVolumeClaim {#persistentvolumeclaim}
 
-Allows connecting a `PersistentVolumeClaim` to a VM disk.
+允许把 `PersistentVolumeClaim` 连接到 VM 磁盘。
 
-Use a PersistentVolumeClaim when the VirtualMachineInstance's disk needs
-to persist after the VM terminates. This allows for the VM's data to
-remain persistent between restarts.
+当 VirtualMachineInstance 的磁盘需要在 VM 终止后仍然保留时，使用 PersistentVolumeClaim。这样，VM 的数据可以在重启之间保持持久。
 
-A `PersistentVolume` can be in "filesystem" or "block" mode:
+`PersistentVolume` 可以处于 "filesystem" 或 "block" 模式：
 
--   Filesystem: For KubeVirt to be able to consume the disk present on a
-    PersistentVolume's filesystem, the disk must be named `disk.img` and
-    be placed in the root path of the filesystem. Currently the disk is
-    also required to be in raw format. **> Important:** The
-    `disk.img` image file needs to be owned by the user-id `107` in
-    order to avoid permission issues.
+-   Filesystem：为了让 KubeVirt 能够使用 PersistentVolume 文件系统上已有的磁盘，该磁盘必须命名为 `disk.img`，并放置在文件系统的根路径下。目前还要求磁盘为 raw 格式。**> 重要：** `disk.img` 镜像文件需要由用户 ID `107` 拥有，以避免权限问题。
 
-    > **Note:** If the `disk.img` image file has not been created manually
-    > before starting a VM then it will be created automatically with the
-    > `PersistentVolumeClaim` size. Since not every storage provisioner
-    > provides volumes with the exact usable amount of space as requested (e.g.
-    > due to filesystem overhead), KubeVirt tolerates up to 10% less available
-    > space. This can be configured with the
-    > `developerConfiguration.pvcTolerateLessSpaceUpToPercent` value in the
-    > KubeVirt CR (`kubectl edit kubevirt kubevirt -n kubevirt`).
+    > **注意：** 如果在启动 VM 之前尚未手动创建 `disk.img` 镜像文件，则会按 `PersistentVolumeClaim` 的大小自动创建。由于并非每个存储置备器都会提供与所请求完全一致的可用空间（例如由于文件系统开销），KubeVirt 最多容忍可用空间少 10%。这可以通过 KubeVirt CR 中的 `developerConfiguration.pvcTolerateLessSpaceUpToPercent` 值进行配置（`kubectl edit kubevirt kubevirt -n kubevirt`）。
 
--   Block: Use a block volume for consuming raw block devices. Note: you
-    need to enable the `BlockVolume`
-    [feature gate](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate).
+-   Block：使用块卷来消费原始块设备。注意：需要启用 `BlockVolume` [功能门控](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)。
 
-A simple example which attaches a `PersistentVolumeClaim` as a `disk`
-may look like this:
+将 `PersistentVolumeClaim` 作为 `disk` 挂接的简单示例如下：
 
 ```yaml
 metadata:
@@ -410,19 +361,12 @@ spec:
         claimName: mypvc
 ```
 
-#### Thick and thin volume provisioning
+#### 厚置备与瘦置备 {#thick-and-thin-volume-provisioning}
 
-Sparsification can make a disk thin-provisioned, in other words it allows to
-convert the freed space within the disk image into free space back on the host.
-The [fstrim](https://man7.org/linux/man-pages/man8/fstrim.8.html#:~:text=fstrim%20is%20used%20on%20a,unused%20blocks%20in%20the%20filesystem)
-utility can be used on a mounted filesystem to discard the blocks not used by the filesystem.
-In order to be able to sparsify a disk inside the guest, the disk needs to be configured in the
-[libvirt xml](https://libvirt.org/formatdomain.html) with the option `discard=unmap`.
-In KubeVirt, every disk is passed as default with this option enabled. It is
-possible to check if the trim configuration is supported in the guest by
-running`lsblk -D`, and check the discard options supported on every disk.
+稀疏化可以使磁盘变为瘦置备，也就是说，它可以把磁盘镜像内部释放的空间转换回宿主机上的空闲空间。[fstrim](https://man7.org/linux/man-pages/man8/fstrim.8.html#:~:text=fstrim%20is%20used%20on%20a,unused%20blocks%20in%20the%20filesystem) 工具可在已挂载的文件系统上使用，以丢弃文件系统未使用的块。为了能够稀疏化客户机内部的磁盘，需要在 [libvirt XML](https://libvirt.org/formatdomain.html) 中用选项 `discard=unmap` 配置该磁盘。在 KubeVirt 中，每块磁盘在传递时默认都启用了此选项。可以在客户机中运行 `lsblk -D`，检查是否支持 trim 配置，并查看每块磁盘支持的 discard 选项。
 
-Example:
+示例：
+
 ```bash
 $ lsblk -D
 NAME   DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO
@@ -434,16 +378,10 @@ vda         512      512B       2G         0
 └─vda1        0      512B       2G         0
 ```
 
-However, in certain cases like preallocaton or when the disk is thick
-provisioned, the option needs to be disabled. The disk's PVC has to be marked
-with an annotation that contains `/storage.preallocation` or
-`/storage.thick-provisioned`, and set to true. If the volume is preprovisioned
-using [CDI](https://github.com/kubevirt/containerized-data-importer) and the
-[preallocation](https://github.com/kubevirt/containerized-data-importer/blob/main/doc/preallocation.md)
-is enabled, then the PVC is automatically annotated with: `cdi.kubevirt.io/storage.preallocation: true`
-and the discard passthrough option is disabled.
+不过，在某些情况下，例如预分配，或者磁盘是厚置备时，需要禁用该选项。磁盘的 PVC 必须带有包含 `/storage.preallocation` 或 `/storage.thick-provisioned` 的注解，并设置为 true。如果卷是使用 [CDI](https://github.com/kubevirt/containerized-data-importer) 预先置备的，并且启用了[预分配](https://github.com/kubevirt/containerized-data-importer/blob/main/doc/preallocation.md)，那么 PVC 会自动加上注解 `cdi.kubevirt.io/storage.preallocation: true`，并且 discard 透传选项会被禁用。
 
-Example of a PVC definition with the annotation to disable discard passthrough:
+带有用于禁用 discard 透传的注解的 PVC 定义示例：
+
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -461,23 +399,20 @@ spec:
       storage: 1Gi
 ```
 
-#### disk expansion
+#### 磁盘扩容 {#disk-expansion}
 
-For some storage methods, Kubernetes may support expanding storage in-use (allowVolumeExpansion feature).
-KubeVirt can respond to it by making the additional storage available for the virtual machines.
+对于某些存储方式，Kubernetes 可能支持对正在使用的存储进行扩容（allowVolumeExpansion 特性）。KubeVirt 可以对此作出响应，使增加的存储可供虚拟机使用。
 
-This feature does two things:
-- Notify the virtual machine about size changes
-- If the disk is a Filesystem PVC, the matching file is expanded
-  to the remaining size (while reserving some space for file system overhead).
+此特性会做两件事：
 
-#### Statically provisioned block PVCs
+- 通知虚拟机大小已发生变化
+- 如果磁盘是 Filesystem PVC，则把对应的文件扩展到剩余大小（同时为文件系统开销预留一些空间）。
 
-To use an externally managed local block device from a host ( e.g. /dev/sdb , zvol, LVM, etc... ) in a VM directly,
-you would need a provisioner that supports block devices, such as OpenEBS LocalPV.
+#### 静态置备的块 PVC {#statically-provisioned-block-pvcs}
 
-Alternatively, local volumes can be provisioned by hand.
-I.e. the following PVC:
+要在 VM 中直接使用来自宿主机、由外部管理的本地块设备（例如 /dev/sdb、zvol、LVM 等），需要一个支持块设备的置备器，例如 OpenEBS LocalPV。
+
+也可以手动置备本地卷。也就是说，下面这个 PVC：
 
 ```yaml
 apiVersion: v1
@@ -494,7 +429,7 @@ spec:
       storage: 100Gi
 ```
 
-can claim a PersistentVolume pre-created by a cluster admin like so:
+可以申领由集群管理员预先创建的 PersistentVolume，如下所示：
 
 ```yaml
 apiVersion: storage.k8s.io/v1
@@ -526,18 +461,13 @@ spec:
     path: /dev/sdb
 ```
 
-#### dataVolume
+#### dataVolume {#datavolume}
 
-DataVolumes are a way to automate importing virtual machine disks onto
-PVCs during the virtual machine's launch flow. Without using a
-DataVolume, users have to prepare a PVC with a disk image before
-assigning it to a VM or VMI manifest. With a DataVolume, both the PVC
-creation and import is automated on behalf of the user.
+DataVolume 是一种在虚拟机启动流程期间把虚拟机磁盘自动导入到 PVC 上的方式。如果不使用 DataVolume，用户必须先准备好带有磁盘镜像的 PVC，然后才能把它分配给 VM 或 VMI 清单。使用 DataVolume 时，PVC 的创建和数据导入都会代用户自动完成。
 
-#### DataVolume VM Behavior
+#### DataVolume 的 VM 行为 {#datavolume-vm-behavior}
 
-DataVolumes can be defined in the VM spec directly by adding the
-DataVolumes to the `dataVolumeTemplates` list. Below is an example.
+可以在 VM 规格中直接定义 DataVolume，方法是把 DataVolume 添加到 `dataVolumeTemplates` 列表。下面是一个示例。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -579,33 +509,17 @@ spec:
           url: http://cdi-http-import-server.kubevirt/images/alpine.iso
 ```
 
-You can see the DataVolume defined in the dataVolumeTemplates section
-has two parts. The **source** and **pvc**
+可以看到，dataVolumeTemplates 部分中定义的 DataVolume 包含两个部分：**source** 和 **pvc**。
 
-The **source** part declares that there is a disk image living on an
-http server that we want to use as a volume for this VM. The **pvc**
-part declares the spec that should be used to create the PVC that hosts
-the **source** data.
+**source** 部分声明，有一个位于 http 服务器上的磁盘镜像，我们希望把它用作此 VM 的卷。**pvc** 部分声明用于创建承载 **source** 数据的 PVC 的规格。
 
-When this VM manifest is posted to the cluster, as part of the launch
-flow a PVC will be created using the spec provided and the source data
-will be automatically imported into that PVC before the VM starts. When
-the VM is deleted, the storage provisioned by the DataVolume will
-automatically be deleted as well.
+当此 VM 清单被提交到集群时，作为启动流程的一部分，会使用所提供的规格创建 PVC，并在 VM 启动之前把源数据自动导入该 PVC。当 VM 被删除时，由 DataVolume 置备的存储也会被自动删除。
 
-#### DataVolume VMI Behavior
+#### DataVolume 的 VMI 行为 {#datavolume-vmi-behavior}
 
-For a VMI object, DataVolumes can be referenced as a volume source for
-the VMI. When this is done, it is expected that the referenced
-DataVolume exists in the cluster. The VMI will consume the DataVolume,
-but the DataVolume's life-cycle will not be tied to the VMI.
+对于 VMI 对象，可以把 DataVolume 作为该 VMI 的卷源来引用。这样做时，期望所引用的 DataVolume 已经存在于集群中。VMI 会使用该 DataVolume，但 DataVolume 的生命周期不会与该 VMI 绑定。
 
-Below is an example of a DataVolume being referenced by a VMI. It is
-expected that the DataVolume *alpine-datavolume* was created prior to
-posting the VMI manifest to the cluster. It is okay to post the VMI
-manifest to the cluster while the DataVolume is still having data
-imported. KubeVirt knows not to start the VMI until all referenced
-DataVolumes have finished their clone and import phases.
+下面是 VMI 引用 DataVolume 的示例。期望在把 VMI 清单提交到集群之前，已经创建了 DataVolume *alpine-datavolume*。在 DataVolume 仍在导入数据时把 VMI 清单提交到集群也没有问题。KubeVirt 会等到所有被引用的 DataVolume 都完成其克隆和导入阶段之后，才启动 VMI。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -633,43 +547,27 @@ spec:
       name: alpine-datavolume
 ```
 
-#### Enabling DataVolume support.
+#### 启用 DataVolume 支持 {#enabling-datavolume-support}
 
-A DataVolume is a custom resource provided by the Containerized Data
-Importer (CDI) project. KubeVirt integrates with CDI in order to provide
-users a workflow for dynamically creating PVCs and importing data into
-those PVCs.
+DataVolume 是由 Containerized Data Importer（CDI）项目提供的自定义资源。KubeVirt 与 CDI 集成，以便为用户提供动态创建 PVC 并把数据导入这些 PVC 的工作流。
 
-In order to take advantage of the DataVolume volume source on a VM or
-VMI, CDI must be installed.
+要在 VM 或 VMI 上使用 DataVolume 卷源，必须安装 CDI。
 
-**Installing CDI**
+**安装 CDI**
 
-Go to the [CDI release
-page](https://github.com/kubevirt/containerized-data-importer/releases)
+前往 [CDI 发行页面](https://github.com/kubevirt/containerized-data-importer/releases)。
 
-Pick the latest stable release and post the corresponding
-cdi-controller-deployment.yaml manifest to your cluster.
+选择最新的稳定发行版，并把对应的 cdi-controller-deployment.yaml 清单提交到你的集群。
 
-### ephemeral
+### ephemeral {#ephemeral}
 
-An ephemeral volume is a local COW (copy on write) image that uses a
-network volume as a read-only backing store. With an ephemeral volume,
-the network backing store is never mutated. Instead all writes are
-stored on the ephemeral image which exists on local storage. KubeVirt
-dynamically generates the ephemeral images associated with a VM when the
-VM starts, and discards the ephemeral images when the VM stops.
+临时卷是一个本地 COW（写时复制）镜像，它使用网络卷作为只读后备存储。使用临时卷时，网络后备存储从不会被改写。所有写入都存储在位于本地存储上的临时镜像中。KubeVirt 会在 VM 启动时动态生成与该 VM 关联的临时镜像，并在 VM 停止时丢弃这些临时镜像。
 
-Ephemeral volumes are useful in any scenario where disk persistence is
-not desired. The COW image is discarded when VM reaches a final state
-(e.g., succeeded, failed).
+临时卷适用于任何不需要磁盘持久化的场景。当 VM 到达终态（例如 succeeded、failed）时，COW 镜像会被丢弃。
 
-Currently, only `PersistentVolumeClaim` may be used as a backing store
-of the ephemeral volume.
+目前，只有 `PersistentVolumeClaim` 可以用作临时卷的后备存储。
 
-Up-to-date information on supported backing stores can be found in the
-[KubeVirt
-API](http://kubevirt.io/api-reference/master/definitions.html#_v1_ephemeralvolumesource).
+有关受支持后备存储的最新信息见 [KubeVirt API](http://kubevirt.io/api-reference/master/definitions.html#_v1_ephemeralvolumesource)。
 
 ```yaml
 metadata:
@@ -692,50 +590,33 @@ spec:
           claimName: mypvc
 ```
 
-### containerDisk
+### containerDisk {#containerdisk}
 
-**containerDisk was originally registryDisk, please update your code
-when needed.**
+**containerDisk 最初是 registryDisk，请在需要时更新你的代码。**
 
-The `containerDisk` feature provides the ability to store and distribute
-VM disks in the container image registry. `containerDisks` can be
-assigned to VMs in the disks section of the VirtualMachineInstance spec.
+`containerDisk` 特性提供在容器镜像仓库中存储和分发 VM 磁盘的能力。可以在 VirtualMachineInstance 规格的 disks 部分把 `containerDisks` 分配给 VM。
 
-No network shared storage devices are utilized by `containerDisks`. The
-disks are pulled from the container registry and reside on the local
-node hosting the VMs that consume the disks.
+`containerDisks` 不使用任何网络共享存储设备。磁盘从容器仓库拉取，并驻留在承载使用这些磁盘的 VM 的本地节点上。
 
-#### When to use a containerDisk
+#### 何时使用 containerDisk {#when-to-use-a-containerdisk}
 
-`containerDisks` are ephemeral storage devices that can be assigned to
-any number of active VirtualMachineInstances. This makes them an ideal
-tool for users who want to replicate a large number of VM workloads that
-do not require persistent data. `containerDisks` are commonly used in
-conjunction with VirtualMachineInstanceReplicaSets.
+`containerDisks` 是可以分配给任意数量活动 VirtualMachineInstance 的临时存储设备。对于希望复制大量不需要持久数据的 VM 工作负载的用户来说，它们是理想的工具。`containerDisks` 通常与 VirtualMachineInstanceReplicaSet 一起使用。
 
-#### When Not to use a containerDisk
+#### 何时不使用 containerDisk {#when-not-to-use-a-containerdisk}
 
-`containerDisks` are not a good solution for any workload that requires
-persistent root disks across VM restarts.
+对于任何需要根磁盘在 VM 重启后仍然持久的工作负载，`containerDisks` 都不是好的方案。
 
-If the disk must persist across VM restarts or stops, use a PVC or a [dataVolume](#datavolume) instead.
+如果磁盘必须在 VM 重启或停止后仍然保留，请改用 PVC 或 [dataVolume](#datavolume)。
 
-#### containerDisk Workflow Example
+#### containerDisk 工作流示例 {#containerdisk-workflow-example}
 
-Users can inject a VirtualMachineInstance disk into a container image in
-a way that is consumable by the KubeVirt runtime. Disks must be placed
-into the `/disk` directory inside the container. Raw and qcow2 formats
-are supported. Qcow2 is recommended in order to reduce the container
-image's size. `containerdisks` can and should be based on `scratch`. No
-content except the image is required.
+用户可以把 VirtualMachineInstance 磁盘注入容器镜像，使其能够被 KubeVirt 运行时使用。磁盘必须放在容器内的 `/disk` 目录中。支持 raw 和 qcow2 格式。建议使用 qcow2，以减小容器镜像的大小。`containerdisks` 可以且应当基于 `scratch`。除镜像之外不需要其他内容。
 
-> **Note:** Prior to kubevirt 0.20, the containerDisk image needed to
-> have **kubevirt/container-disk-v1alpha** as base image.
+> **注意：** 在 kubevirt 0.20 之前，containerDisk 镜像需要以 **kubevirt/container-disk-v1alpha** 作为基础镜像。
 
-> **Note:** The containerDisk needs to be readable for the user with the UID
-> 107 (qemu).
+> **注意：** containerDisk 需要对 UID 为 107（qemu）的用户可读。
 
-Example: Inject a local VirtualMachineInstance disk into a container image.
+示例：把本地 VirtualMachineInstance 磁盘注入容器镜像。
 
     cat << END > Dockerfile
     FROM scratch
@@ -744,18 +625,18 @@ Example: Inject a local VirtualMachineInstance disk into a container image.
 
     docker build -t vmidisks/fedora25:latest .
 
-Example: Inject a remote VirtualMachineInstance disk into a container image.
+示例：把远程 VirtualMachineInstance 磁盘注入容器镜像。
 
     cat << END > Dockerfile
     FROM scratch
     ADD --chown=107:107 https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 /disk/
     END
 
-Example: Upload the ContainerDisk container image to a registry.
+示例：把 ContainerDisk 容器镜像上传到仓库。
 
     docker push vmidisks/fedora25:latest
 
-Example: Attach the ContainerDisk as an ephemeral disk to a VM.
+示例：把 ContainerDisk 作为临时磁盘挂接到 VM。
 
 ```yaml
 metadata:
@@ -777,19 +658,13 @@ spec:
         image: vmidisks/fedora25:latest
 ```
 
-Note that a `containerDisk` is file-based and therefore cannot be
-attached as a `lun` device to the VM.
+请注意，`containerDisk` 是基于文件的，因此不能作为 `lun` 设备挂接到 VM。
 
-#### Custom disk image path
+#### 自定义磁盘镜像路径 {#custom-disk-image-path}
 
-ContainerDisk also allows to store disk images in any folder, when
-required. The process is the same as previous. The main difference is,
-that in custom location, kubevirt does not scan for any image. It is
-your responsibility to provide full path for the disk image. Providing
-image `path` is optional. When no `path` is provided, kubevirt searches
-for disk images in default location: `/disk`.
+ContainerDisk 也允许在需要时把磁盘镜像存储在任意文件夹中。流程与前面相同。主要区别在于，对于自定义位置，kubevirt 不会扫描任何镜像。你需要自行提供磁盘镜像的完整路径。提供镜像 `path` 是可选的。未提供 `path` 时，kubevirt 会在默认位置 `/disk` 中搜索磁盘镜像。
 
-Example: Build container disk image:
+示例：构建容器磁盘镜像：
 
     cat << END > Dockerfile
     FROM scratch
@@ -799,7 +674,7 @@ Example: Build container disk image:
     docker build -t vmidisks/fedora25:latest .
     docker push vmidisks/fedora25:latest
 
-Create VMI with container disk pointing to the custom location:
+创建指向自定义位置的容器磁盘的 VMI：
 
 ```yaml
 metadata:
@@ -822,14 +697,11 @@ spec:
         path: /custom-disk-path/fedora25.qcow2
 ```
 
-### emptyDisk
+### emptyDisk {#emptydisk}
 
-An `emptyDisk` works similar to an `emptyDir` in Kubernetes. An extra
-sparse `qcow2` disk will be allocated and it will live as long as the
-VM. Thus it will survive guest side VM reboots, but not a VM
-re-creation. The disk `capacity` needs to be specified.
+`emptyDisk` 的工作方式类似于 Kubernetes 中的 `emptyDir`。系统会分配一块额外的稀疏 `qcow2` 磁盘，其寿命与 VM 相同。因此，它能在客户机侧 VM 重启后仍然保留，但在重新创建 VM 后不会保留。需要指定磁盘的 `capacity`。
 
-Example: Boot cirros with an extra `emptyDisk` with a size of `2GiB`:
+示例：使用一块额外的 `emptyDisk` 启动 cirros，其大小为 `2GiB`：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -858,31 +730,22 @@ spec:
       emptyDisk:
         capacity: 2Gi
 ```
-#### When to use an emptyDisk
 
-Ephemeral VMs very often come with read-only root images and limited
-tmpfs space. In many cases this is not enough to install application
-dependencies and provide enough disk space for the application data.
-While this data is not critical and thus can be lost, it is still needed
-for the application to function properly during its lifetime. This is
-where an `emptyDisk` can be useful. An emptyDisk is often used and
-mounted somewhere in `/var/lib` or `/var/run`.
+#### 何时使用 emptyDisk {#when-to-use-an-emptydisk}
 
-### hostDisk
+临时 VM 常常带有只读根镜像和有限的 tmpfs 空间。在许多情况下，这不足以安装应用依赖，也无法为应用数据提供足够的磁盘空间。这些数据并不关键，因此可以丢失，但在应用的生命周期内，仍然需要它们，应用才能正常运行。这时 `emptyDisk` 就能派上用场。emptyDisk 经常被使用，并挂载在 `/var/lib` 或 `/var/run` 中的某处。
 
-A `hostDisk` volume type provides the ability to create or use a disk
-image located somewhere on a node. It works similar to a `hostPath` in
-Kubernetes and provides two usage types:
+### hostDisk {#hostdisk}
 
--   `DiskOrCreate` if a disk image does not exist at a given location
-    then create one
+`hostDisk` 卷类型提供在节点上某处创建或使用磁盘镜像的能力。它的工作方式类似于 Kubernetes 中的 `hostPath`，并提供两种用法：
 
--   `Disk` a disk image must exist at a given location
+-   `DiskOrCreate`：如果给定位置不存在磁盘镜像，则创建一个
 
-Note: you need to enable the HostDisk feature gate.
+-   `Disk`：给定位置必须已存在磁盘镜像
 
-Example: Create a 1Gi disk image located at /data/disk.img and attach it
-to a VM.
+注意：需要启用 HostDisk 功能门控。
+
+示例：创建位于 /data/disk.img 的 1Gi 磁盘镜像，并将其挂接到 VM。
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -913,32 +776,21 @@ spec:
 status: {}
 ```
 
-> Note: This does not always work as expected. Instead you may want to consider creating a [PersistentVolume](#persistentvolumeclaim)
+> 注意：这并不总是按预期工作。你可能需要考虑改为创建 [PersistentVolume](#persistentvolumeclaim)。
 
-### configMap
-A `configMap` is a reference to a
-[ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/)
-in Kubernetes.
-A `configMap` can be presented to the VM as `disks` or as a `filesystem`. Each method is described in the following
-sections.
+### configMap {#configmap}
 
-#### As a disk
-By using disk, an extra `iso` disk will be allocated which has to be
-mounted on a VM. To mount the `configMap` users can use `cloudInit` and
-the disk's serial number. The `name` needs to be set for a reference to
-the created kubernetes `ConfigMap`.
+`configMap` 是对 Kubernetes 中 [ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/) 的引用。`configMap` 可以作为 `disks` 或 `filesystem` 呈现给 VM。下面各节分别描述每种方法。
 
-> **Note:** Currently, ConfigMap update is not propagate into the VMI. If
-> a ConfigMap is updated, only a pod will be aware of changes, not
-> running VMIs.
+#### 作为磁盘 {#as-a-disk}
 
-> **Note:** Due to a Kubernetes CRD
-> [issue](https://github.com/kubernetes/kubernetes/issues/68466), you
-> cannot control the paths within the volume where ConfigMap keys are
-> projected.
+使用 disk 时，会分配一块额外的 `iso` 磁盘，必须把它挂载到 VM 上。要挂载 `configMap`，用户可以使用 `cloudInit` 和磁盘的序列号。需要设置 `name`，以引用所创建的 Kubernetes `ConfigMap`。
 
-Example: Attach the `configMap` to a VM and use `cloudInit` to mount the
-`iso` disk:
+> **注意：** 目前，ConfigMap 的更新不会传播到 VMI。如果 ConfigMap 被更新，只有 Pod 会感知到变更，正在运行的 VMI 不会。
+
+> **注意：** 由于 Kubernetes CRD [问题](https://github.com/kubernetes/kubernetes/issues/68466)，你无法控制 ConfigMap 键被投射到卷内的路径。
+
+示例：把 `configMap` 挂接到 VM，并使用 `cloudInit` 挂载 `iso` 磁盘：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -987,12 +839,11 @@ spec:
 status: {}
 ```
 
-#### As a filesystem
+#### 作为文件系统 {#as-a-filesystem}
 
-By using filesystem, `configMaps` are shared through `virtiofs`. In contrast with using disk for sharing `configMaps`,
-`filesystem` allows you to dynamically propagate changes on `configMaps` to VMIs (i.e. the VM does not need to be rebooted).
+使用 filesystem 时，`configMaps` 通过 `virtiofs` 共享。与使用 disk 共享 `configMaps` 相比，`filesystem` 允许把 `configMaps` 上的变更动态传播到 VMI（也就是说，VM 无需重启）。
 
-To share a given `configMap`, the following VM definition could be used:
+要共享给定的 `configMap`，可以使用以下 VM 定义：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1038,31 +889,19 @@ spec:
     name: config-fs
 ```
 
-### secret
+### secret {#secret}
 
-A `secret` is a reference to a
-[Secret](https://kubernetes.io/docs/concepts/configuration/secret/) in
-Kubernetes.
-A `secret` can be presented to the VM as disks or as a filesystem. Each method is described in the following
-sections.
+`secret` 是对 Kubernetes 中 [Secret](https://kubernetes.io/docs/concepts/configuration/secret/) 的引用。`secret` 可以作为磁盘或文件系统呈现给 VM。下面各节分别描述每种方法。
 
-#### As a disk
-By using disk, an extra `iso` disk will be allocated which has to be
-mounted on a VM. To mount the `secret` users can use `cloudInit` and the
-disks serial number. The `secretName` needs to be set for a reference to
-the created kubernetes `Secret`.
+#### 作为磁盘 {#as-a-disk_1}
 
-> **Note:** Currently, Secret update propagation is not supported. If a
-> Secret is updated, only a pod will be aware of changes, not running
-> VMIs.
+使用 disk 时，会分配一块额外的 `iso` 磁盘，必须把它挂载到 VM 上。要挂载 `secret`，用户可以使用 `cloudInit` 和磁盘序列号。需要设置 `secretName`，以引用所创建的 Kubernetes `Secret`。
 
-> **Note:** Due to a Kubernetes CRD
-> [issue](https://github.com/kubernetes/kubernetes/issues/68466), you
-> cannot control the paths within the volume where Secret keys are
-> projected.
+> **注意：** 目前不支持 Secret 更新传播。如果 Secret 被更新，只有 Pod 会感知到变更，正在运行的 VMI 不会。
 
-Example: Attach the `secret` to a VM and use `cloudInit` to mount the
-`iso` disk:
+> **注意：** 由于 Kubernetes CRD [问题](https://github.com/kubernetes/kubernetes/issues/68466)，你无法控制 Secret 键被投射到卷内的路径。
+
+示例：把 `secret` 挂接到 VM，并使用 `cloudInit` 挂载 `iso` 磁盘：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1111,12 +950,11 @@ spec:
 status: {}
 ```
 
-#### As a filesystem
+#### 作为文件系统 {#as-a-filesystem_1}
 
-By using filesystem, `secrets` are shared through `virtiofs`. In contrast with using disk for sharing `secrets`,
-`filesystem` allows you to dynamically propagate changes on `secrets` to VMIs (i.e. the VM does not need to be rebooted).
+使用 filesystem 时，`secrets` 通过 `virtiofs` 共享。与使用 disk 共享 `secrets` 相比，`filesystem` 允许把 `secrets` 上的变更动态传播到 VMI（也就是说，VM 无需重启）。
 
-To share a given `secret`, the following VM definition could be used:
+要共享给定的 `secret`，可以使用以下 VM 定义：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1162,24 +1000,18 @@ spec:
       name: app-secret-fs
 ```
 
-### serviceAccount
+### serviceAccount {#serviceaccount}
 
-A `serviceAccount` volume references a Kubernetes
-[`ServiceAccount`](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/).
-A `serviceAccount` can be presented to the VM as disks or as a filesystem. Each method is described in the following
-sections.
+`serviceAccount` 卷引用 Kubernetes [`ServiceAccount`](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)。`serviceAccount` 可以作为磁盘或文件系统呈现给 VM。下面各节分别描述每种方法。
 
-#### As a disk
-By using disk, a new `iso` disk will be allocated with the content of the service
-account (`namespace`, `token` and `ca.crt`), which needs to be mounted
-in the VM. For automatic mounting, see the `configMap` and `secret`
-examples above.
+#### 作为磁盘 {#as-a-disk_2}
 
-> **Note:** Currently, ServiceAccount update propagation is not supported. If a
-> ServiceAccount is updated, only a pod will be aware of changes, not running
-> VMIs.
+使用 disk 时，会分配一块新的 `iso` 磁盘，其中包含服务账号的内容（`namespace`、`token` 和 `ca.crt`），需要在 VM 中挂载它。有关自动挂载，请参见上面的 `configMap` 和 `secret` 示例。
 
-Example:
+> **注意：** 目前不支持 ServiceAccount 更新传播。如果 ServiceAccount 被更新，只有 Pod 会感知到变更，正在运行的 VMI 不会。
+
+示例：
+
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachineInstance
@@ -1210,12 +1042,11 @@ spec:
       serviceAccountName: default
 ```
 
-#### As a filesystem
+#### 作为文件系统 {#as-a-filesystem_2}
 
-By using filesystem, `serviceAccounts` are shared through `virtiofs`. In contrast with using disk for sharing `serviceAccounts`,
-`filesystem` allows you to dynamically propagate changes on `serviceAccounts` to VMIs (i.e. the VM does not need to be rebooted).
+使用 filesystem 时，`serviceAccounts` 通过 `virtiofs` 共享。与使用 disk 共享 `serviceAccounts` 相比，`filesystem` 允许把 `serviceAccounts` 上的变更动态传播到 VMI（也就是说，VM 无需重启）。
 
-To share a given `serviceAccount`, the following VM definition could be used:
+要共享给定的 `serviceAccount`，可以使用以下 VM 定义：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1261,27 +1092,22 @@ spec:
         serviceAccountName: default
 ```
 
-### downwardMetrics
+### downwardMetrics {#downwardmetrics}
 
-`downwardMetrics` expose a limited set of VM and host metrics to the
-guest. The format is compatible with [vhostmd](https://github.com/vhostmd/vhostmd).
+`downwardMetrics` 向客户机暴露有限的一组 VM 和宿主机指标。其格式与 [vhostmd](https://github.com/vhostmd/vhostmd) 兼容。
 
-Getting a limited set of host and VM metrics is in some cases required to allow
-third-parties diagnosing performance issues on their appliances. One prominent
-example is SAP HANA.
+在某些情况下，需要获取有限的一组宿主机和 VM 指标，以便第三方诊断其设备上的性能问题。一个突出的例子是 SAP HANA。
 
-In order to expose `downwardMetrics` to VMs, the methods `disk` and `virtio-serial port` are supported.
+为了向 VM 暴露 `downwardMetrics`，支持 `disk` 和 `virtio-serial port` 这两种方法。
 
-> **Note:** The **DownwardMetrics** feature gate
-> [must be enabled](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate)
-> to use the metrics. Available starting with KubeVirt v0.42.0.
+> **注意：** 要使用这些指标，[必须启用](../cluster_admin/activating_feature_gates.md#how-to-activate-a-feature-gate) **DownwardMetrics** 功能门控。从 KubeVirt v0.42.0 开始可用。
 
-#### Disk
+#### 磁盘 {#disk_1}
 
-A volume is created, and it is exposed to the guest as a raw block volume.
-KubeVirt will update it periodically (by default, every 5 seconds).
+会创建一个卷，并把它作为原始块卷暴露给客户机。KubeVirt 会定期更新它（默认每 5 秒一次）。
 
-Example:
+示例：
+
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachineInstance
@@ -1313,18 +1139,13 @@ spec:
     downwardMetrics: {}
 ```
 
-#### Virtio-serial port
+#### Virtio 串口 {#virtio-serial-port}
 
-This method uses a virtio-serial port to expose the metrics data to the VM.
-KubeVirt creates a port named `/dev/virtio-ports/org.github.vhostmd.1` inside the VM, in which the Virtio Transport protocol
-is supported. `downwardMetrics` can be retrieved from this port.
-See [vhostmd documentation](https://github.com/vhostmd/vhostmd/blob/master/README) under `Virtio Transport` for further
-information.
+此方法使用 virtio 串口向 VM 暴露指标数据。KubeVirt 会在 VM 内部创建一个名为 `/dev/virtio-ports/org.github.vhostmd.1` 的端口，该端口支持 Virtio Transport 协议。可以从该端口获取 `downwardMetrics`。更多信息见 [vhostmd 文档](https://github.com/vhostmd/vhostmd/blob/master/README) 中的 `Virtio Transport`。
 
-To expose the metrics using a virtio-serial port, a `downwardMetrics` device must be added (i.e.,
-`spec.domain.devices.downwardMetrics: {}`).
+要使用 virtio 串口暴露指标，必须添加 `downwardMetrics` 设备（即 `spec.domain.devices.downwardMetrics: {}`）。
 
-Example:
+示例：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1352,9 +1173,10 @@ spec:
     containerDisk:
       image: quay.io/containerdisks/fedora:latest
 ```
-#### Accessing Metrics Data
 
-To access the DownwardMetrics shared with a disk or a virtio-serial port, the `vm-dump-metrics` tool can be used:
+#### 访问指标数据 {#accessing-metrics-data}
+
+要访问通过磁盘或 virtio 串口共享的 DownwardMetrics，可以使用 `vm-dump-metrics` 工具：
 
 ```xml
 $ sudo dnf install -y vm-dump-metrics
@@ -1375,69 +1197,38 @@ $ sudo vm-dump-metrics
 </metrics>
 ```
 
-`vm-dump-metrics` is useful as a standalone tool to verify the serial port is working and to inspect the metrics.
-However, applications that consume metrics will usually connect to the virtio-serial port themselves.
+`vm-dump-metrics` 作为独立工具，可用于验证串口是否正常工作并检查指标。不过，消费指标的应用通常会自己连接到 virtio 串口。
 
-> **Note:** The tool `vm-dump-metrics` provides the option `--virtio` in case the virtio-serial port is used.
-> Please, refer to `vm-dump-metrics --help` for further information.
+> **注意：** 在使用 virtio 串口的情况下，工具 `vm-dump-metrics` 提供 `--virtio` 选项。更多信息请参阅 `vm-dump-metrics --help`。
 
-## High Performance Features
+## 高性能特性 {#high-performance-features}
 
-### IOThreads
+### IOThreads {#iothreads}
 
-Libvirt has the ability to use IOThreads for dedicated disk access (for
-supported devices). These are dedicated event loop threads that perform
-block I/O requests and improve scalability on SMP systems. KubeVirt
-exposes this libvirt feature through the `ioThreadsPolicy` setting.
-Additionally, each `Disk` device exposes a `dedicatedIOThread` setting.
-This is a boolean that indicates the specified disk should be allocated
-an exclusive IOThread that will never be shared with other disks.
+Libvirt 能够使用 IOThreads 进行专用磁盘访问（适用于受支持的设备）。这些是执行块 I/O 请求的专用事件循环线程，可以提高 SMP 系统上的可扩展性。KubeVirt 通过 `ioThreadsPolicy` 设置暴露这一 libvirt 特性。此外，每个 `Disk` 设备都暴露 `dedicatedIOThread` 设置。这是一个布尔值，表示应为指定磁盘分配一个永不与其他磁盘共享的独占 IOThread。
 
-Currently valid policies are `shared`, `auto` and `supplementalPool`. If `ioThreadsPolicy`
-is omitted entirely, use of IOThreads will be disabled. However, if any
-disk requests a dedicated IOThread, `ioThreadsPolicy` will be enabled
-and default to `shared`.
+当前有效的策略有 `shared`、`auto` 和 `supplementalPool`。如果完全省略 `ioThreadsPolicy`，则会禁用 IOThreads。不过，如果任何磁盘请求专用 IOThread，则会启用 `ioThreadsPolicy`，并默认为 `shared`。
 
-#### Shared
+#### 共享 {#shared}
 
-An `ioThreadsPolicy` of `shared` indicates that KubeVirt should use one
-thread that will be shared by all disk devices. This policy stems from
-the fact that large numbers of IOThreads is generally not useful as
-additional context switching is incurred for each thread.
+`ioThreadsPolicy` 为 `shared` 表示 KubeVirt 应使用一个由所有磁盘设备共享的线程。这一策略源于这样一个事实：大量 IOThreads 通常并无益处，因为每个线程都会带来额外的上下文切换。
 
-Disks with `dedicatedIOThread` set to `true` will not use the shared
-thread, but will instead be allocated an exclusive thread. This is
-generally useful if a specific Disk is expected to have heavy I/O
-traffic, e.g. a database spindle.
+`dedicatedIOThread` 设置为 `true` 的磁盘不会使用共享线程，而是会被分配一个独占线程。如果预期某块特定磁盘会有繁重的 I/O 流量，例如数据库磁盘，这通常很有用。
 
-#### Auto
+#### 自动 {#auto}
 
-`auto` IOThreads indicates that KubeVirt should use a pool of IOThreads
-and allocate disks to IOThreads in a round-robin fashion. The pool size
-is generally limited to twice the number of VCPU's allocated to the VM.
-This essentially attempts to dedicate disks to separate IOThreads, but
-only up to a reasonable limit. This would come in to play for systems
-with a large number of disks and a smaller number of CPU's for instance.
+`auto` IOThreads 表示 KubeVirt 应使用一个 IOThread 池，并以轮询方式把磁盘分配给 IOThread。池大小通常限制为分配给 VM 的 VCPU 数量的两倍。这本质上是尝试把磁盘专用到各自的 IOThread，但只到一个合理的上限。例如，对于磁盘数量很多而 CPU 数量较少的系统，这一点就会发挥作用。
 
-As a caveat to the size of the IOThread pool, disks with
-`dedicatedIOThread` will always be guaranteed their own thread. This
-effectively diminishes the upper limit of the number of threads
-allocated to the rest of the disks. For example, a VM with 2 CPUs would
-normally use 4 IOThreads for all disks. However if one disk had
-`dedicatedIOThread` set to true, then KubeVirt would only use 3
-IOThreads for the shared pool.
+关于 IOThread 池大小有一个限制：带有 `dedicatedIOThread` 的磁盘始终保证拥有自己的线程。这实际上会降低分配给其余磁盘的线程数量上限。例如，一台有 2 个 CPU 的 VM 通常会为所有磁盘使用 4 个 IOThread。但如果有一块磁盘把 `dedicatedIOThread` 设置为 true，那么 KubeVirt 只会为共享池使用 3 个 IOThread。
 
-There is always guaranteed to be at least one thread for disks that will
-use the shared IOThreads pool. Thus if a sufficiently large number of
-disks have dedicated IOThreads assigned, `auto` and `shared` policies
-would essentially result in the same layout.
+对于将使用共享 IOThread 池的磁盘，始终保证至少有一个线程。因此，如果有足够多的磁盘被分配了专用 IOThread，`auto` 和 `shared` 策略实际上会产生相同的布局。
 
-#### SupplementalPool
+#### SupplementalPool {#supplementalpool}
 
-`supplementalPool` IOthreads enables users to set the number of IOthreads
-and adds the corresponding extra CPUs to the pod.
+`supplementalPool` IOThreads 允许用户设置 IOThread 的数量，并把相应的额外 CPU 添加到 Pod。
 
-The number of IOThreads can be specified under the field `ioThreads`:
+IOThread 的数量可以在 `ioThreads` 字段下指定：
+
 ```yaml
 spec:
   domain:
@@ -1446,44 +1237,21 @@ spec:
       supplementalPoolThreadCount: 4
 ```
 
-In the case the dedicatedCpuPlacement is set to `true`, then the pod uses
-dedicated CPUs and each iothread is pinned to each additional cpu.
-In this way, vCPUs and IOThreads are scheduled each on separate pCPUs
-and they do not interfere with each other. If dedicatedCpuPlacement is false,
-then the iothreads aren't pinned, and the vcpu threads and iothreads float
-on the entire set of cpus.
+如果 dedicatedCpuPlacement 设置为 `true`，则 Pod 使用专用 CPU，并且每个 iothread 都绑定到每个额外的 CPU。这样，vCPU 和 IOThread 各自调度到独立的 pCPU 上，彼此不会互相干扰。如果 dedicatedCpuPlacement 为 false，则 iothread 不会被绑定，vcpu 线程和 iothread 会在整组 CPU 上浮动。
 
-This policy consumes extra CPUs resources, therefore, it needs to be set carefully
-when the workload requires high parallelization of IO.
-Under the hood, it uses the virtqueue mapping from QEMU, and from the heuristics, the
-ideal number of IOThreads is among 4-8, depending on the type of workload.
-This number depends on multiple factors, and needs to be determined by running
-some performance measurements. More details on the feature can be found
-[at this blog](https://developers.redhat.com/articles/2024/09/05/scaling-virtio-blk-disk-io-iothread-virtqueue-mapping#how_iothread_virtqueue_mapping_works).
+此策略会消耗额外的 CPU 资源，因此当工作负载需要高度并行的 IO 时，需要谨慎设置。在底层，它使用来自 QEMU 的 virtqueue 映射；根据经验，理想的 IOThread 数量在 4 到 8 之间，具体取决于工作负载类型。这个数字取决于多个因素，需要通过运行一些性能测量来确定。有关此特性的更多细节见[这篇博客](https://developers.redhat.com/articles/2024/09/05/scaling-virtio-blk-disk-io-iothread-virtqueue-mapping#how_iothread_virtqueue_mapping_works)。
 
+#### 使用专用（绑核）CPU 的 IOThreads {#iothreads-with-dedicated-pinned-cpus}
 
-#### IOThreads with Dedicated (pinned) CPUs
+当客户机的 vCPU 绑定到宿主机的物理 CPU 时，最好也把 IOThread 绑定到特定 CPU，以防止它们在各 CPU 之间浮动。KubeVirt 会根据二者之间的比例自动计算，并把每个 IOThread 绑定到一个 CPU 或一组 CPU。如果 IOThread 多于 CPU，则每个 IOThread 会以轮询方式绑定到一个 CPU。否则，当 IOThread 少于 CPU 时，每个 IOThread 会绑定到一组 CPU。
 
-When guest's vCPUs are pinned to a host's physical CPUs, it is also best
-to pin the IOThreads to specific CPUs to prevent these from floating
-between the CPUs. KubeVirt will automatically calculate and pin each
-IOThread to a CPU or a set of CPUs, depending on the ration between
-them. In case there are more IOThreads than CPUs, each IOThread will be
-pinned to a CPU, in a round-robin fashion. Otherwise, when there are
-fewer IOThreads than CPU, each IOThread will be pinned to a set of CPUs.
+#### 使用 QEMU 模拟器线程和专用（绑核）CPU 的 IOThreads {#iothreads-with-qemu-emulator-thread-and-dedicated-pinned-cpus}
 
-#### IOThreads with QEMU Emulator thread and Dedicated (pinned) CPUs
+为了进一步改善 vCPU 延迟，KubeVirt 可以额外分配一个专用物理 CPU<sup>[1](../compute/virtual_hardware.md#cpu)</sup>，专供模拟器线程使用，并把该线程绑定到这个 CPU。这会有效地把模拟器线程与 VMI 的 vCPU“隔离”开来。当 `ioThreadsPolicy` 设置为 `auto` 时，IOThread 也会与 vCPU“隔离”，并放置在与 QEMU 模拟器线程相同的物理 CPU 上。
 
-To further improve the vCPUs latency, KubeVirt can allocate an
-additional dedicated physical CPU<sup>[1](../compute/virtual_hardware.md#cpu)</sup>, exclusively for the emulator thread, to which it will
-be pinned. This will effectively "isolate" the emulator thread from the vCPUs
-of the VMI. When `ioThreadsPolicy` is set to `auto` IOThreads will also be
-"isolated" from the vCPUs and placed on the same physical CPU as the QEMU
-emulator thread.
+### 示例 {#examples}
 
-### Examples
-
-#### Shared IOThreads
+#### 共享 IOThreads {#shared-iothreads}
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1551,7 +1319,7 @@ spec:
     name: emptydisk6
 ```
 
-In this example, emptydisk and emptydisk2 both request a dedicated IOThread. vmi-shared_disk, and emptydisk 3 through 6 will all shared one IOThread.
+在此示例中，emptydisk 和 emptydisk2 都请求专用 IOThread。vmi-shared_disk 以及 emptydisk 3 到 6 将全部共享一个 IOThread。
 
     mypvc:        1
     emptydisk:    2
@@ -1561,7 +1329,7 @@ In this example, emptydisk and emptydisk2 both request a dedicated IOThread. vmi
     emptydisk5:   1
     emptydisk6:   1
 
-#### Auto IOThreads
+#### 自动 IOThreads {#auto-iothreads}
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1629,12 +1397,9 @@ spec:
     name: emptydisk6
 ```
 
-This VM is identical to the first, except it requests auto IOThreads.
-`emptydisk` and `emptydisk2` will still be allocated individual
-IOThreads, but the rest of the disks will be split across 2 separate
-iothreads (twice the number of CPU cores is 4).
+此 VM 与第一个相同，区别是它请求 auto IOThreads。`emptydisk` 和 `emptydisk2` 仍会各自分配独立的 IOThread，但其余磁盘会分摊到 2 个独立的 iothread 上（CPU 核心数的两倍是 4）。
 
-Disks will be assigned to IOThreads like this:
+磁盘将按如下方式分配给 IOThread：
 
     mypvc:        1
     emptydisk:    3
@@ -1644,23 +1409,13 @@ Disks will be assigned to IOThreads like this:
     emptydisk5:   2
     emptydisk6:   1
 
-**Note:** `dedicatedIOThreads` isn't currently supported for disks using `scsi` as bus type.
-If the field is set, then the webhook will complain with this error message:
-`IOThreads are not supported for disks on a %s bus`. The reason for this limitation
-consists that KubeVirt supports a single scsi controller for all the disks using the
-`scsi` bus, and QEMU does not support assigning each IOThreads to each scsi disks,
-instead they can only be assigned at the controller level.
+**注意：** 目前不支持 `dedicatedIOThreads`。以 `scsi` 作为总线类型的磁盘如果设置了该字段，webhook 会报出此错误消息：`IOThreads are not supported for disks on a %s bus`。这一限制的原因在于，KubeVirt 对所有使用 `scsi` 总线的磁盘只支持一个 scsi 控制器，而 QEMU 不支持把各个 IOThread 分配给各个 scsi 磁盘，它们只能在控制器级别分配。
 
-### Virtio Block Multi-Queue
+### Virtio 块多队列 {#virtio-block-multi-queue}
 
-Block Multi-Queue is a framework for the Linux block layer that maps
-Device I/O queries to multiple queues. This splits I/O processing up
-across multiple threads, and therefor multiple CPUs. libvirt recommends
-that the number of queues used should match the number of CPUs allocated
-for optimal performance.
+块多队列是 Linux 块层的一个框架，它把设备 I/O 请求映射到多个队列。这把 I/O 处理拆分到多个线程，因而也拆分到多个 CPU。libvirt 建议所使用的队列数应与所分配的 CPU 数匹配，以获得最佳性能。
 
-This feature is enabled by the `BlockMultiQueue` setting under
-`Devices`:
+此特性由 `BlockMultiQueue` 设置启用，该设置位于 `Devices` 之下：
 
 ```yaml
 spec:
@@ -1673,18 +1428,9 @@ spec:
         name: mydisk
 ```
 
-**Note:** Due to the way KubeVirt implements CPU allocation,
-blockMultiQueue can only be used if a specific CPU allocation is
-requested. If a specific number of CPUs hasn't been allocated to a
-VirtualMachine, KubeVirt will use all CPU's on the node on a best effort
-basis. In that case the amount of CPU allocation to a VM at the host
-level could change over time. If blockMultiQueue were to request a
-number of queues to match all the CPUs on a node, that could lead to
-over-allocation scenarios. To avoid this, KubeVirt enforces that a
-specific slice of CPU resources is requested in order to take advantage
-of this feature.
+**注意：** 由于 KubeVirt 实现 CPU 分配的方式，只有在请求了特定的 CPU 分配时才能使用 blockMultiQueue。如果没有为 VirtualMachine 分配特定数量的 CPU，KubeVirt 会尽力使用节点上的全部 CPU。在这种情况下，在宿主机层面分配给 VM 的 CPU 数量可能会随时间变化。如果 blockMultiQueue 请求与节点上全部 CPU 数量相匹配的队列数，就可能导致过度分配。为避免这种情况，KubeVirt 强制要求请求特定的一份 CPU 资源，才能使用此特性。
 
-#### Example
+#### 示例 {#example}
 
 ```yaml
 metadata:
@@ -1709,31 +1455,23 @@ spec:
         claimName: mypvc
 ```
 
-This example will enable Block Multi-Queue for the disk `mypvcdisk` and
-allocate 4 queues (to match the number of CPUs requested).
+此示例将为磁盘 `mypvcdisk` 启用块多队列，并分配 4 个队列（以匹配所请求的 CPU 数量）。
 
-### Disk device cache
+### 磁盘设备缓存 {#disk-device-cache}
 
-KubeVirt supports `none`, `writeback`, and `writethrough` KVM/QEMU cache modes.
+KubeVirt 支持 `none`、`writeback` 和 `writethrough` 这几种 KVM/QEMU 缓存模式。
 
--   `none` I/O from the guest is not cached on the host. Use this option
-    for guests with large I/O requirements. This option is generally the
-    best choice.
+-   `none`：来自客户机的 I/O 不会在宿主机上缓存。对 I/O 需求较大的客户机使用此选项。此选项通常是最佳选择。
 
--   `writeback` I/O from the guest is cached on the host and written through
-    to the physical media when the guest OS issues a flush.
+-   `writeback`：来自客户机的 I/O 在宿主机上缓存，并在客户机操作系统发出 flush 时写穿到物理介质。
 
--   `writethrough` I/O from the guest is cached on the host but must be written
-    through to the physical medium before the write operation completes.
+-   `writethrough`：来自客户机的 I/O 在宿主机上缓存，但必须在写操作完成之前写穿到物理介质。
 
-> **Important:** `none` cache mode is set as default if the file system
-> supports direct I/O, otherwise, `writethrough` is used.
+> **重要：** 如果文件系统支持直接 I/O，则默认设置 `none` 缓存模式，否则使用 `writethrough`。
 
-> **Note:** It is possible to force a specific cache mode, although if
-> `none` mode has been chosen and the file system does not support
-> direct I/O then started VMI will return an error.
+> **注意：** 可以强制指定特定的缓存模式，不过如果选择了 `none` 模式而文件系统不支持直接 I/O，则启动的 VMI 会返回错误。
 
-Example: force `writethrough` cache mode
+示例：强制使用 `writethrough` 缓存模式
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1763,13 +1501,14 @@ spec:
 status: {}
 ```
 
-### Disk sharing
+### 磁盘共享 {#disk-sharing}
 
-Shareable disks allow multiple VMs to share the same underlying storage. In order to use this feature, special care is required because this could lead to data corruption and the loss of important data. Shareable disks demand either data synchronization at the application level or the use of clustered filesystems. These advanced configurations are not within the scope of this documentation and are use-case specific.
+可共享磁盘允许多个 VM 共享同一底层存储。使用此特性时需要特别小心，因为这可能导致数据损坏和重要数据丢失。可共享磁盘要求在应用层进行数据同步，或者使用集群文件系统。这些高级配置不在本文档范围内，并且因用例而异。
 
-If the `shareable` option is set, it indicates to libvirt/QEMU that the disk is going to be accessed by multiple VMs and not to create a lock for the writes.
+如果设置了 `shareable` 选项，它会告知 libvirt/QEMU 该磁盘将由多个 VM 访问，并且不要为写入创建锁。
 
-In this example, we use Rook Ceph in order to dynamically provisioning the PVC.
+在此示例中，我们使用 Rook Ceph 来动态置备 PVC。
+
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -1784,12 +1523,15 @@ spec:
       storage: 1Gi
   storageClassName: rook-ceph-block
 ```
+
 ```bash
 $ kubectl get pvc
 NAME        STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS      AGE
 block-pvc   Bound    pvc-0a161bb2-57c7-4d97-be96-0a20ff0222e2   1Gi        RWO            rook-ceph-block   51s
 ```
-Then, we can declare 2 VMs and set the `shareable` option to true for the shared disk.
+
+然后，我们可以声明 2 个 VM，并把共享磁盘的 `shareable` 选项设置为 true。
+
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -1893,7 +1635,9 @@ spec:
         persistentVolumeClaim:
           claimName: block-pvc
 ```
-We can now attempt to write a string from the first guest and then read the string from the second guest to test that the sharing is working.
+
+现在我们可以尝试从第一个客户机写入一个字符串，然后从第二个客户机读取该字符串，以测试共享是否正常工作。
+
 ```bash
 $ virtctl console vm-block-1
 $ printf "Test awesome shareable disks" | sudo dd  of=/dev/vdc bs=1 count=150 conv=notrunc
@@ -1908,31 +1652,26 @@ Test awesome shareable disks150+0 records in
 150 bytes copied, 0.136753 s, 1.1 kB/s
 ```
 
-If you are using local devices or RWO PVCs, setting the affinity on the VMs that share the storage guarantees they will be scheduled on the same node. In the example, we set the affinity on the second VM using the label used on the first VM. If you are using shared storage with RWX PVCs, then the affinity rule is not necessary as the storage can be attached simultaneously on multiple nodes.
+如果使用的是本地设备或 RWO PVC，在共享该存储的 VM 上设置亲和性可以保证它们被调度到同一节点。在示例中，我们使用第一个 VM 上所用的标签，在第二个 VM 上设置亲和性。如果使用的是带 RWX PVC 的共享存储，则不需要亲和性规则，因为该存储可以同时挂接到多个节点。
 
-## Sharing Directories with VMs
+## 与 VM 共享目录 {#sharing-directories-with-vms}
 
-`Virtiofs` allows to make visible external filesystems to `KubeVirt` VMs.
-`Virtiofs` is a shared file system that lets VMs access a directory tree on the host.
-Further details can be found at [Official Virtiofs Site](https://virtio-fs.gitlab.io/).
+`Virtiofs` 可以使外部文件系统对 `KubeVirt` VM 可见。`Virtiofs` 是一种共享文件系统，让 VM 能够访问宿主机上的目录树。更多细节见 [Virtiofs 官方网站](https://virtio-fs.gitlab.io/)。
 
-KubeVirt only supports to share PVCs using a non-privileged virtiofs daemon. Because the lack of privileges, it has some
-limitations:
+KubeVirt 只支持使用非特权 virtiofs 守护进程来共享 PVC。由于缺少特权，它有一些限制：
 
-- The virtiofsd daemon (the daemon in charge of sharing the PVC with the VM) will run with the QEMU UID/GID (107),
-  and cannot switch between different UIDs/GIDs.
-  Therefore, it will only have access to directories and files that UID/GID 107 has permission to.
-  Additionally, when creating new files they will always be created with QEMU's UID/GID regardless of the UID/GID of the
-  process within the guest.
-- Extended attributes are not supported.
+- virtiofsd 守护进程（负责与 VM 共享 PVC 的守护进程）将以 QEMU 的 UID/GID（107）运行，并且不能在不同的 UID/GID 之间切换。因此，它只能访问 UID/GID 107 有权限的目录和文件。此外，创建新文件时，无论客户机内进程的 UID/GID 是什么，这些文件始终以 QEMU 的 UID/GID 创建。
+- 不支持扩展属性。
 
-> **Note:** You need to enable the feature gate `EnableVirtioFsStorageVolumes` for sharing `PVCs` with `virtiofs`.
+> **注意：** 需要启用功能门控 `EnableVirtioFsStorageVolumes`，才能把 `PVCs` 交由 `virtiofs` 共享。
 
-### Sharing Persistent Volume Claims
-#### Cluster Configuration
+### 共享持久卷声明 {#sharing-persistent-volume-claims}
 
-We need to create a new VM definition including the `spec.devices.disk.filesystems.virtiofs` and a PVC.
-Example:
+#### 集群配置 {#cluster-configuration}
+
+我们需要创建一个新的 VM 定义，其中包含 `spec.devices.disk.filesystems.virtiofs` 和一个 PVC。
+
+示例：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -1970,50 +1709,39 @@ spec:
         claimName: mypvc
 ```
 
-#### Configuration Inside the VM
-The following configuration can be done in using startup script. See [cloudInitNoCloud](#cloudinitnocloud) section for
-more details.
-However, we can do it manually by logging in to the VM and mounting it.
-Here are examples of how to mount it in a linux and windows VMs:
+#### VM 内部配置 {#configuration-inside-the-vm}
 
-- Linux Example
+以下配置可以使用启动脚本完成。更多细节见 [cloudInitNoCloud](#cloudinitnocloud) 一节。不过，我们也可以通过登录到 VM 并挂载来手动完成。下面是在 Linux 和 Windows VM 中如何挂载的示例：
+
+- Linux 示例
 
 ```bash
 $ sudo mkdir -p /mnt/disks/virtio
 $ sudo mount -t virtiofs virtiofs-disk /mnt/disks/virtio
 ```
 
-- Windows Example
+- Windows 示例
 
-  See [this](https://virtio-fs.gitlab.io/howto-windows.html) guide for details on startup steps needed for Windows VMs.
+  有关 Windows VM 所需启动步骤的细节，请参阅[此](https://virtio-fs.gitlab.io/howto-windows.html)指南。
 
-### Sharing Node Directories
+### 共享节点目录 {#sharing-node-directories}
 
-It is allowed using [hostpaths](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath).
-The following configuration example is shown for illustrative purposes.
-However, the [PVCs](#sharing-persistent-volume-claims) method is preferred since using hostpath is generally discouraged for
-security reasons.
+允许使用 [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath)。下面的配置示例仅供说明。不过，更推荐 [PVCs](#sharing-persistent-volume-claims) 方法，因为出于安全原因，通常不鼓励使用 hostPath。
 
+#### 节点内部配置 {#configuration-inside-the-node}
 
-#### Configuration Inside the Node
-
-To share the directory with the VMs, we need to log in to the node, create the shared directory (if it does not already
-exist), and set the proper SELinux context label `container_file_t` to the shared directory.
-In this example we are going to share a new directory `/mnt/data` (if the desired directory is an existing one, you can
-skip the `mkdir` command):
+要与 VM 共享该目录，我们需要登录到节点，创建共享目录（如果它尚不存在），并为共享目录设置正确的 SELinux 上下文标签 `container_file_t`。在此示例中，我们将共享一个新目录 `/mnt/data`（如果所需目录已经存在，可以跳过 `mkdir` 命令）：
 
 ```shell
 $ mkdir /tmp/data
 $ sudo chcon -t container_file_t /tmp/data
 ```
 
-> **Note:** If you are attempting to share an existing directory, you must first check the SELinux context label with the
-> command `ls -Z <directory>`. In the case that the label is not present or is not `container_file_t` you need to label
-> it with the `chcon`  command.
+> **注意：** 如果要共享一个已存在的目录，必须先用命令 `ls -Z <directory>` 检查 SELinux 上下文标签。如果标签不存在或不是 `container_file_t`，则需要用 `chcon` 命令为它打标签。
 
-#### Cluster Configuration
+#### 集群配置 {#cluster-configuration_1}
 
-We need a `StorageClass` which uses the provider `no-provisioner`:
+我们需要一个 `StorageClass`，它使用提供者 `no-provisioner`：
 
 ```yaml
 apiVersion: storage.k8s.io/v1
@@ -2025,7 +1753,7 @@ reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 ```
 
-To make the shared directory available for VMs, we need to create a PV and a PVC that could be consumed by the VMs:
+为了让共享目录可供 VM 使用，我们需要创建一个可供 VM 使用的 PV 和一个 PVC：
 
 ```yaml
 kind: PersistentVolume
@@ -2061,10 +1789,10 @@ spec:
     requests:
       storage: 10Gi
 ```
-> **Note:** Change the `node01` value for the node name where you want the shared directory will be located.
 
+> **注意：** 把 `node01` 的值改为你希望共享目录所在节点的名称。
 
-The VM definitions have to request the PVC `hostpath-claim` and attach it as a virtiofs filesystem:
+VM 定义必须请求 PVC `hostpath-claim`，并把它作为 virtiofs 文件系统挂接：
 
 ```yaml
 apiVersion: kubevirt.io/v1
@@ -2125,27 +1853,25 @@ spec:
             claimName: hostpath-claim
 ```
 
-#### Configuration Inside the VM
+#### VM 内部配置 {#configuration-inside-the-vm_1}
 
-We need to log in to the VM and mount the shared directory:
+我们需要登录到 VM 并挂载共享目录：
 
 ```shell
 $ sudo mount -t virtiofs vm-hostpath /mnt
 ```
 
-#### Update volumes strategy
+#### 更新卷策略 {#update-volumes-strategy}
 
-The `updateVolumesStrategy` field is used to specify the strategy for updating the volumes of a running VM.
-The following strategies are supported:
-  * `Replacement`: the update volumes will be replaced upon the VM restart.
-  * `Migration`: the update of the volumes will trigger a storage migration of
-    the old volumes to the new ones. More details about volume migration can be
-    found in the [volume migration documentation](../storage/volume_migration.md).
+`updateVolumesStrategy` 字段用于指定更新正在运行的 VM 的卷时所采用的策略。支持以下策略：
 
-The update volume migration depends on the feature gate `VolumesUpdateStrategy`
-which depends on the workloadUpdateStrategy configuration.
+  * `Replacement`：更新后的卷将在 VM 重启时被替换。
+  * `Migration`：卷的更新会触发从旧卷到新卷的存储迁移。有关卷迁移的更多细节见[卷迁移文档](../storage/volume_migration.md)。
 
-KubeVirt CR:
+更新卷迁移依赖于功能门控 `VolumesUpdateStrategy`，而该功能门控依赖于 workloadUpdateStrategy 配置。
+
+KubeVirt CR：
+
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: KubeVirt
